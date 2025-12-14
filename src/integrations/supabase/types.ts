@@ -188,6 +188,144 @@ export type Database = {
         }
         Relationships: []
       }
+      product_sync_logs: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          products_created: number | null
+          products_failed: number | null
+          products_received: number | null
+          products_updated: number | null
+          source: string | null
+          started_at: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          products_created?: number | null
+          products_failed?: number | null
+          products_received?: number | null
+          products_updated?: number | null
+          source?: string | null
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          products_created?: number | null
+          products_failed?: number | null
+          products_received?: number | null
+          products_updated?: number | null
+          source?: string | null
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category_id: number | null
+          category_name: string | null
+          colors: Json | null
+          created_at: string
+          description: string | null
+          external_id: string | null
+          featured: boolean | null
+          id: string
+          images: Json | null
+          is_active: boolean | null
+          is_kit: boolean | null
+          kit_items: Json | null
+          materials: string[] | null
+          metadata: Json | null
+          min_quantity: number | null
+          name: string
+          new_arrival: boolean | null
+          on_sale: boolean | null
+          price: number
+          sku: string
+          stock: number | null
+          stock_status: string | null
+          subcategory: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+          synced_at: string
+          tags: Json | null
+          updated_at: string
+          variations: Json | null
+          video_url: string | null
+        }
+        Insert: {
+          category_id?: number | null
+          category_name?: string | null
+          colors?: Json | null
+          created_at?: string
+          description?: string | null
+          external_id?: string | null
+          featured?: boolean | null
+          id?: string
+          images?: Json | null
+          is_active?: boolean | null
+          is_kit?: boolean | null
+          kit_items?: Json | null
+          materials?: string[] | null
+          metadata?: Json | null
+          min_quantity?: number | null
+          name: string
+          new_arrival?: boolean | null
+          on_sale?: boolean | null
+          price?: number
+          sku: string
+          stock?: number | null
+          stock_status?: string | null
+          subcategory?: string | null
+          supplier_id?: string | null
+          supplier_name?: string | null
+          synced_at?: string
+          tags?: Json | null
+          updated_at?: string
+          variations?: Json | null
+          video_url?: string | null
+        }
+        Update: {
+          category_id?: number | null
+          category_name?: string | null
+          colors?: Json | null
+          created_at?: string
+          description?: string | null
+          external_id?: string | null
+          featured?: boolean | null
+          id?: string
+          images?: Json | null
+          is_active?: boolean | null
+          is_kit?: boolean | null
+          kit_items?: Json | null
+          materials?: string[] | null
+          metadata?: Json | null
+          min_quantity?: number | null
+          name?: string
+          new_arrival?: boolean | null
+          on_sale?: boolean | null
+          price?: number
+          sku?: string
+          stock?: number | null
+          stock_status?: string | null
+          subcategory?: string | null
+          supplier_id?: string | null
+          supplier_name?: string | null
+          synced_at?: string
+          tags?: Json | null
+          updated_at?: string
+          variations?: Json | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
