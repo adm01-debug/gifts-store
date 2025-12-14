@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ComparisonProvider } from "@/contexts/ComparisonContext";
 import { QuoteProvider } from "@/contexts/QuoteContext";
+import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import { CompareBar } from "@/components/compare/CompareBar";
 import { QuoteBar } from "@/components/quote/QuoteBar";
 import Dashboard from "./pages/Dashboard";
@@ -28,27 +29,29 @@ const App = () => (
       <FavoritesProvider>
         <ComparisonProvider>
           <QuoteProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/produtos" element={<Index />} />
-                  <Route path="/produto/:id" element={<ProductDetail />} />
-                  <Route path="/clientes" element={<ClientList />} />
-                  <Route path="/cliente/:id" element={<ClientDetail />} />
-                  <Route path="/filtros" element={<FiltersPage />} />
-                  <Route path="/favoritos" element={<FavoritesPage />} />
-                  <Route path="/comparar" element={<ComparePage />} />
-                  <Route path="/orcamento" element={<QuotePage />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <CompareBar />
-                <QuoteBar />
-              </BrowserRouter>
-            </TooltipProvider>
+            <NotificationsProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/produtos" element={<Index />} />
+                    <Route path="/produto/:id" element={<ProductDetail />} />
+                    <Route path="/clientes" element={<ClientList />} />
+                    <Route path="/cliente/:id" element={<ClientDetail />} />
+                    <Route path="/filtros" element={<FiltersPage />} />
+                    <Route path="/favoritos" element={<FavoritesPage />} />
+                    <Route path="/comparar" element={<ComparePage />} />
+                    <Route path="/orcamento" element={<QuotePage />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                  <CompareBar />
+                  <QuoteBar />
+                </BrowserRouter>
+              </TooltipProvider>
+            </NotificationsProvider>
           </QuoteProvider>
         </ComparisonProvider>
       </FavoritesProvider>

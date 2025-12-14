@@ -1,4 +1,4 @@
-import { Search, Bell, User, Menu, Sparkles, Sun, Moon, Heart, FileText } from "lucide-react";
+import { Search, User, Menu, Sparkles, Sun, Moon, Heart, FileText } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
 import { useQuoteContext } from "@/contexts/QuoteContext";
+import { NotificationPanel } from "@/components/notifications/NotificationPanel";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -140,15 +141,7 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
           </Tooltip>
 
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
-            >
-              3
-            </Badge>
-          </Button>
+          <NotificationPanel />
 
           {/* User menu */}
           <DropdownMenu>
