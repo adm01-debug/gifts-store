@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -27,19 +26,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Palette,
   Plus,
@@ -49,9 +45,10 @@ import {
   Package,
   MapPin,
   Layers,
-  ChevronRight,
-  Settings2,
+  Check,
+  X,
 } from "lucide-react";
+import { InlineEditField } from "@/components/admin/InlineEditField";
 
 interface Product {
   id: string;
@@ -198,9 +195,22 @@ export default function AdminPersonalizationPage() {
       queryClient.invalidateQueries({ queryKey: ["product-components"] });
       setIsAddComponentOpen(false);
       setNewComponent({ code: "", name: "" });
-      toast.success("Componente adicionado com sucesso!");
+      toast.success("Componente adicionado!");
     },
     onError: () => toast.error("Erro ao adicionar componente"),
+  });
+
+  // Update component mutation
+  const updateComponentMutation = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; component_code?: string; component_name?: string; is_personalizable?: boolean; is_active?: boolean }) => {
+      const { error } = await supabase.from("product_components").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["product-components"] });
+      toast.success("Componente atualizado!");
+    },
+    onError: () => toast.error("Erro ao atualizar componente"),
   });
 
   // Add location mutation
@@ -219,9 +229,22 @@ export default function AdminPersonalizationPage() {
       queryClient.invalidateQueries({ queryKey: ["component-locations"] });
       setIsAddLocationOpen(false);
       setNewLocation({ code: "", name: "", maxWidth: "", maxHeight: "" });
-      toast.success("Localização adicionada com sucesso!");
+      toast.success("Localização adicionada!");
     },
     onError: () => toast.error("Erro ao adicionar localização"),
+  });
+
+  // Update location mutation
+  const updateLocationMutation = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; location_code?: string; location_name?: string; max_width_cm?: number | null; max_height_cm?: number | null; is_active?: boolean }) => {
+      const { error } = await supabase.from("product_component_locations").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["component-locations"] });
+      toast.success("Localização atualizada!");
+    },
+    onError: () => toast.error("Erro ao atualizar localização"),
   });
 
   // Add technique to location mutation
@@ -238,9 +261,22 @@ export default function AdminPersonalizationPage() {
       queryClient.invalidateQueries({ queryKey: ["location-techniques"] });
       setIsAddTechniqueOpen(false);
       setNewTechniqueId("");
-      toast.success("Técnica associada com sucesso!");
+      toast.success("Técnica associada!");
     },
     onError: () => toast.error("Erro ao associar técnica"),
+  });
+
+  // Update technique default mutation
+  const updateTechniqueDefaultMutation = useMutation({
+    mutationFn: async ({ id, is_default }: { id: string; is_default: boolean }) => {
+      const { error } = await supabase.from("product_component_location_techniques").update({ is_default }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["location-techniques"] });
+      toast.success("Técnica padrão atualizada!");
+    },
+    onError: () => toast.error("Erro ao atualizar técnica"),
   });
 
   // Delete component mutation
@@ -389,7 +425,7 @@ export default function AdminPersonalizationPage() {
                     Componentes do Produto
                   </CardTitle>
                   <CardDescription>
-                    Gerencie os componentes que podem ser personalizados
+                    Clique nos campos para editar inline
                   </CardDescription>
                 </div>
                 <Dialog open={isAddComponentOpen} onOpenChange={setIsAddComponentOpen}>
@@ -468,17 +504,85 @@ export default function AdminPersonalizationPage() {
                       className="border rounded-lg px-4"
                     >
                       <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline">{component.component_code}</Badge>
+                        <div className="flex items-center gap-3 flex-1">
+                          <Badge variant="outline" className="font-mono">
+                            {component.component_code}
+                          </Badge>
                           <span className="font-medium">{component.component_name}</span>
-                          {component.is_personalizable && (
-                            <Badge variant="secondary" className="text-xs">
-                              Personalizável
-                            </Badge>
-                          )}
+                          <div className="flex items-center gap-2 ml-auto mr-4">
+                            {component.is_personalizable && (
+                              <Badge variant="secondary" className="text-xs">
+                                Personalizável
+                              </Badge>
+                            )}
+                            {!component.is_active && (
+                              <Badge variant="destructive" className="text-xs">
+                                Inativo
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="pt-4 pb-2">
+                        {/* Editable component fields */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg mb-4">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Código</Label>
+                            <InlineEditField
+                              value={component.component_code}
+                              onSave={(value) =>
+                                updateComponentMutation.mutate({
+                                  id: component.id,
+                                  component_code: value.toUpperCase(),
+                                })
+                              }
+                              className="font-mono"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Nome</Label>
+                            <InlineEditField
+                              value={component.component_name}
+                              onSave={(value) =>
+                                updateComponentMutation.mutate({
+                                  id: component.id,
+                                  component_name: value,
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              id={`personalizable-${component.id}`}
+                              checked={component.is_personalizable}
+                              onCheckedChange={(checked) =>
+                                updateComponentMutation.mutate({
+                                  id: component.id,
+                                  is_personalizable: checked,
+                                })
+                              }
+                            />
+                            <Label htmlFor={`personalizable-${component.id}`} className="text-sm">
+                              Personalizável
+                            </Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              id={`active-${component.id}`}
+                              checked={component.is_active}
+                              onCheckedChange={(checked) =>
+                                updateComponentMutation.mutate({
+                                  id: component.id,
+                                  is_active: checked,
+                                })
+                              }
+                            />
+                            <Label htmlFor={`active-${component.id}`} className="text-sm">
+                              Ativo
+                            </Label>
+                          </div>
+                        </div>
+
                         {/* Locations for this component */}
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
@@ -588,33 +692,103 @@ export default function AdminPersonalizationPage() {
                                   key={location.id}
                                   className="border rounded-lg p-3 bg-muted/30"
                                 >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant="secondary" className="text-xs">
-                                        {location.location_code}
-                                      </Badge>
-                                      <span className="text-sm font-medium">
-                                        {location.location_name}
-                                      </span>
-                                      {location.max_width_cm && location.max_height_cm && (
-                                        <span className="text-xs text-muted-foreground">
-                                          ({location.max_width_cm}x{location.max_height_cm}cm)
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Dialog
-                                        open={
-                                          isAddTechniqueOpen && selectedLocationId === location.id
+                                  {/* Editable location fields */}
+                                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+                                    <div>
+                                      <Label className="text-xs text-muted-foreground">Código</Label>
+                                      <InlineEditField
+                                        value={location.location_code}
+                                        onSave={(value) =>
+                                          updateLocationMutation.mutate({
+                                            id: location.id,
+                                            location_code: value.toUpperCase(),
+                                          })
                                         }
+                                        className="font-mono text-xs"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs text-muted-foreground">Nome</Label>
+                                      <InlineEditField
+                                        value={location.location_name}
+                                        onSave={(value) =>
+                                          updateLocationMutation.mutate({
+                                            id: location.id,
+                                            location_name: value,
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs text-muted-foreground">Largura (cm)</Label>
+                                      <InlineEditField
+                                        value={location.max_width_cm?.toString() || ""}
+                                        onSave={(value) =>
+                                          updateLocationMutation.mutate({
+                                            id: location.id,
+                                            max_width_cm: value ? parseFloat(value) : null,
+                                          })
+                                        }
+                                        type="number"
+                                        placeholder="—"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs text-muted-foreground">Altura (cm)</Label>
+                                      <InlineEditField
+                                        value={location.max_height_cm?.toString() || ""}
+                                        onSave={(value) =>
+                                          updateLocationMutation.mutate({
+                                            id: location.id,
+                                            max_height_cm: value ? parseFloat(value) : null,
+                                          })
+                                        }
+                                        type="number"
+                                        placeholder="—"
+                                      />
+                                    </div>
+                                    <div className="flex items-end gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <Switch
+                                          id={`loc-active-${location.id}`}
+                                          checked={location.is_active}
+                                          onCheckedChange={(checked) =>
+                                            updateLocationMutation.mutate({
+                                              id: location.id,
+                                              is_active: checked,
+                                            })
+                                          }
+                                        />
+                                        <Label htmlFor={`loc-active-${location.id}`} className="text-xs">
+                                          Ativo
+                                        </Label>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="text-destructive hover:text-destructive h-7 w-7 p-0"
+                                        onClick={() => deleteLocationMutation.mutate(location.id)}
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {/* Techniques section */}
+                                  <div className="border-t pt-2 mt-2">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-xs text-muted-foreground">Técnicas disponíveis:</span>
+                                      <Dialog
+                                        open={isAddTechniqueOpen && selectedLocationId === location.id}
                                         onOpenChange={(open) => {
                                           setIsAddTechniqueOpen(open);
                                           if (open) setSelectedLocationId(location.id);
                                         }}
                                       >
                                         <DialogTrigger asChild>
-                                          <Button size="sm" variant="ghost">
-                                            <Plus className="h-3 w-3" />
+                                          <Button size="sm" variant="ghost" className="h-6 px-2">
+                                            <Plus className="h-3 w-3 mr-1" />
+                                            <span className="text-xs">Técnica</span>
                                           </Button>
                                         </DialogTrigger>
                                         <DialogContent>
@@ -662,39 +836,45 @@ export default function AdminPersonalizationPage() {
                                           </DialogFooter>
                                         </DialogContent>
                                       </Dialog>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="text-destructive hover:text-destructive"
-                                        onClick={() => deleteLocationMutation.mutate(location.id)}
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </Button>
                                     </div>
-                                  </div>
-
-                                  {/* Techniques for this location */}
-                                  <div className="flex flex-wrap gap-1">
-                                    {getTechniquesForLocation(location.id).map((lt) => (
-                                      <Badge
-                                        key={lt.id}
-                                        variant={lt.is_default ? "default" : "outline"}
-                                        className="text-xs gap-1 group"
-                                      >
-                                        {lt.technique?.name || lt.composed_code}
-                                        <button
-                                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                          onClick={() => deleteTechniqueMutation.mutate(lt.id)}
-                                        >
-                                          ×
-                                        </button>
-                                      </Badge>
-                                    ))}
-                                    {getTechniquesForLocation(location.id).length === 0 && (
-                                      <span className="text-xs text-muted-foreground">
-                                        Nenhuma técnica associada
-                                      </span>
-                                    )}
+                                    <div className="flex flex-wrap gap-1">
+                                      {getTechniquesForLocation(location.id).map((lt) => (
+                                        <Tooltip key={lt.id}>
+                                          <TooltipTrigger asChild>
+                                            <Badge
+                                              variant={lt.is_default ? "default" : "outline"}
+                                              className="text-xs gap-1 group cursor-pointer"
+                                              onClick={() =>
+                                                updateTechniqueDefaultMutation.mutate({
+                                                  id: lt.id,
+                                                  is_default: !lt.is_default,
+                                                })
+                                              }
+                                            >
+                                              {lt.is_default && <Check className="h-2 w-2" />}
+                                              {lt.technique?.name || lt.composed_code}
+                                              <button
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity ml-1"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  deleteTechniqueMutation.mutate(lt.id);
+                                                }}
+                                              >
+                                                <X className="h-2 w-2" />
+                                              </button>
+                                            </Badge>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>Clique para {lt.is_default ? "remover" : "definir"} como padrão</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      ))}
+                                      {getTechniquesForLocation(location.id).length === 0 && (
+                                        <span className="text-xs text-muted-foreground">
+                                          Nenhuma técnica associada
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               ))}

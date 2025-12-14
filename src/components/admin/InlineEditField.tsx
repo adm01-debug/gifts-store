@@ -1,0 +1,111 @@
+import { useState, useRef, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Check, X, Pencil } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface InlineEditFieldProps {
+  value: string;
+  onSave: (value: string) => void;
+  className?: string;
+  inputClassName?: string;
+  placeholder?: string;
+  type?: "text" | "number";
+  disabled?: boolean;
+}
+
+export function InlineEditField({
+  value,
+  onSave,
+  className,
+  inputClassName,
+  placeholder,
+  type = "text",
+  disabled = false,
+}: InlineEditFieldProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  useEffect(() => {
+    setEditValue(value);
+  }, [value]);
+
+  const handleSave = () => {
+    if (editValue !== value) {
+      onSave(editValue);
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditValue(value);
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSave();
+    } else if (e.key === "Escape") {
+      handleCancel();
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div className={cn("flex items-center gap-1", className)}>
+        <Input
+          ref={inputRef}
+          type={type}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleSave}
+          className={cn("h-7 text-sm", inputClassName)}
+          placeholder={placeholder}
+        />
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-6 w-6 text-green-600 hover:text-green-700"
+          onClick={handleSave}
+        >
+          <Check className="h-3 w-3" />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-6 w-6 text-destructive"
+          onClick={handleCancel}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "group flex items-center gap-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 transition-colors",
+        disabled && "cursor-default hover:bg-transparent",
+        className
+      )}
+      onClick={() => !disabled && setIsEditing(true)}
+    >
+      <span className={cn("text-sm", !value && "text-muted-foreground")}>
+        {value || placeholder || "—"}
+      </span>
+      {!disabled && (
+        <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+      )}
+    </div>
+  );
+}
