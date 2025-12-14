@@ -14,6 +14,138 @@ export type Database = {
   }
   public: {
     Tables: {
+      bitrix_clients: {
+        Row: {
+          address: string | null
+          bitrix_id: string
+          created_at: string
+          email: string | null
+          id: string
+          last_purchase_date: string | null
+          logo_url: string | null
+          name: string
+          nicho: string | null
+          phone: string | null
+          primary_color_hex: string | null
+          primary_color_name: string | null
+          ramo: string | null
+          synced_at: string
+          total_spent: number | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          bitrix_id: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_purchase_date?: string | null
+          logo_url?: string | null
+          name: string
+          nicho?: string | null
+          phone?: string | null
+          primary_color_hex?: string | null
+          primary_color_name?: string | null
+          ramo?: string | null
+          synced_at?: string
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          bitrix_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_purchase_date?: string | null
+          logo_url?: string | null
+          name?: string
+          nicho?: string | null
+          phone?: string | null
+          primary_color_hex?: string | null
+          primary_color_name?: string | null
+          ramo?: string | null
+          synced_at?: string
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bitrix_deals: {
+        Row: {
+          bitrix_client_id: string
+          bitrix_id: string
+          close_date: string | null
+          created_at: string
+          created_at_bitrix: string | null
+          currency: string | null
+          id: string
+          stage: string | null
+          synced_at: string
+          title: string
+          value: number | null
+        }
+        Insert: {
+          bitrix_client_id: string
+          bitrix_id: string
+          close_date?: string | null
+          created_at?: string
+          created_at_bitrix?: string | null
+          currency?: string | null
+          id?: string
+          stage?: string | null
+          synced_at?: string
+          title: string
+          value?: number | null
+        }
+        Update: {
+          bitrix_client_id?: string
+          bitrix_id?: string
+          close_date?: string | null
+          created_at?: string
+          created_at_bitrix?: string | null
+          currency?: string | null
+          id?: string
+          stage?: string | null
+          synced_at?: string
+          title?: string
+          value?: number | null
+        }
+        Relationships: []
+      }
+      bitrix_sync_logs: {
+        Row: {
+          clients_synced: number | null
+          completed_at: string | null
+          deals_synced: number | null
+          error_message: string | null
+          id: string
+          started_at: string
+          status: string
+          synced_by: string | null
+        }
+        Insert: {
+          clients_synced?: number | null
+          completed_at?: string | null
+          deals_synced?: number | null
+          error_message?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          synced_by?: string | null
+        }
+        Update: {
+          clients_synced?: number | null
+          completed_at?: string | null
+          deals_synced?: number | null
+          error_message?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          synced_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
