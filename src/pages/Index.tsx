@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
@@ -17,6 +18,7 @@ type ViewMode = 'grid' | 'list';
 type SortOption = 'name' | 'price-asc' | 'price-desc' | 'stock' | 'newest';
 
 export default function Index() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -111,10 +113,7 @@ export default function Index() {
   }, [filters, sortBy]);
 
   const handleViewProduct = (product: Product) => {
-    toast({
-      title: "Visualizar Produto",
-      description: `Abrindo detalhes de ${product.name}`,
-    });
+    navigate(`/produto/${product.id}`);
   };
 
   const handleShareProduct = (product: Product) => {
