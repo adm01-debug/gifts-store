@@ -21,6 +21,7 @@ import ComparePage from "./pages/ComparePage";
 import CollectionsPage from "./pages/CollectionsPage";
 import CollectionDetailPage from "./pages/CollectionDetailPage";
 import AdminPanel from "./pages/AdminPanel";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -89,6 +90,11 @@ const App = () => (
                     <Route path="/admin" element={
                       <ProtectedRoute requireAdmin>
                         <AdminPanel />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/perfil" element={
+                      <ProtectedRoute>
+                        <ProfilePage />
                       </ProtectedRoute>
                     } />
                     

@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -33,8 +34,9 @@ const mainNavItems = [
 ];
 
 const bottomNavItems = [
+  { icon: User, label: "Meu Perfil", href: "/perfil", adminOnly: false },
   { icon: ShieldCheck, label: "Admin", href: "/admin", adminOnly: true },
-  { icon: Settings, label: "Configurações", href: "/configuracoes" },
+  { icon: Settings, label: "Configurações", href: "/configuracoes", adminOnly: false },
 ];
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
