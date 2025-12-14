@@ -1,9 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Initialize Supabase client for database operations
+function getSupabaseClient() {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -241,88 +249,279 @@ serve(async (req) => {
       }
 
       case 'sync_full': {
-        // Full sync: get companies with their deals
-        console.log('Starting full sync...');
+        // Full sync: get companies with their deals and save to database
+        console.log('Starting full sync with database persistence...');
         
-        // Get all companies
-        const companiesResponse = await fetch(`${bitrixWebhookUrl}/crm.company.list`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            select: ['ID', 'TITLE', 'UF_CRM_1590780873288', 'UF_CRM_1631795570468', 'UF_CRM_1755898066', 'EMAIL', 'PHONE'],
-            start: data?.start || 0,
-          }),
-        });
+        const supabase = getSupabaseClient();
+        const syncStartTime = new Date().toISOString();
 
-        if (!companiesResponse.ok) {
-          throw new Error(`Bitrix24 companies error: ${companiesResponse.status}`);
+        // Create sync log entry
+        const { data: syncLog, error: logError } = await supabase
+          .from('bitrix_sync_logs')
+          .insert({ status: 'in_progress', started_at: syncStartTime })
+          .select()
+          .single();
+
+        if (logError) {
+          console.error('Error creating sync log:', logError);
         }
 
-        const companiesData = await companiesResponse.json();
-        console.log(`Fetched ${companiesData.result?.length || 0} companies`);
+        try {
+          // Get all companies
+          const companiesResponse = await fetch(`${bitrixWebhookUrl}/crm.company.list`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              select: ['ID', 'TITLE', 'UF_CRM_1590780873288', 'UF_CRM_1631795570468', 'UF_CRM_1755898066', 'EMAIL', 'PHONE', 'ADDRESS'],
+              start: data?.start || 0,
+            }),
+          });
 
-        // Get all deals
-        const dealsResponse = await fetch(`${bitrixWebhookUrl}/crm.deal.list`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            select: ['ID', 'TITLE', 'COMPANY_ID', 'OPPORTUNITY', 'STAGE_ID', 'DATE_CREATE'],
-            order: { DATE_CREATE: 'DESC' },
-            start: 0,
-          }),
-        });
-
-        if (!dealsResponse.ok) {
-          throw new Error(`Bitrix24 deals error: ${dealsResponse.status}`);
-        }
-
-        const dealsData = await dealsResponse.json();
-        console.log(`Fetched ${dealsData.result?.length || 0} deals`);
-
-        // Group deals by company
-        const dealsByCompany: Record<string, any[]> = {};
-        (dealsData.result || []).forEach((deal: any) => {
-          const companyId = deal.COMPANY_ID;
-          if (companyId) {
-            if (!dealsByCompany[companyId]) {
-              dealsByCompany[companyId] = [];
-            }
-            dealsByCompany[companyId].push({
-              id: deal.ID,
-              title: deal.TITLE,
-              value: parseFloat(deal.OPPORTUNITY) || 0,
-              stage: deal.STAGE_ID,
-              date: deal.DATE_CREATE,
-            });
+          if (!companiesResponse.ok) {
+            throw new Error(`Bitrix24 companies error: ${companiesResponse.status}`);
           }
-        });
 
-        // Combine companies with their deals
-        const clients = (companiesData.result || []).map((company: any) => {
-          const companyDeals = dealsByCompany[company.ID] || [];
-          const totalSpent = companyDeals.reduce((sum: number, d: any) => sum + d.value, 0);
-          
-          return {
-            id: company.ID,
-            name: company.TITLE || 'Sem nome',
-            ramo: company.UF_CRM_1590780873288 || 'Não informado',
-            nicho: company.UF_CRM_1631795570468 || 'Não informado',
-            primaryColor: parseColor(company.UF_CRM_1755898066),
-            email: getFirstValue(company.EMAIL),
-            phone: getFirstValue(company.PHONE),
-            deals: companyDeals,
-            totalSpent,
-            lastPurchase: companyDeals[0]?.date || null,
+          const companiesData = await companiesResponse.json();
+          console.log(`Fetched ${companiesData.result?.length || 0} companies`);
+
+          // Get all deals
+          const dealsResponse = await fetch(`${bitrixWebhookUrl}/crm.deal.list`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              select: ['ID', 'TITLE', 'COMPANY_ID', 'OPPORTUNITY', 'CURRENCY_ID', 'STAGE_ID', 'CLOSEDATE', 'DATE_CREATE'],
+              order: { DATE_CREATE: 'DESC' },
+              start: 0,
+            }),
+          });
+
+          if (!dealsResponse.ok) {
+            throw new Error(`Bitrix24 deals error: ${dealsResponse.status}`);
+          }
+
+          const dealsData = await dealsResponse.json();
+          console.log(`Fetched ${dealsData.result?.length || 0} deals`);
+
+          // Group deals by company for calculating totals
+          const dealsByCompany: Record<string, any[]> = {};
+          (dealsData.result || []).forEach((deal: any) => {
+            const companyId = deal.COMPANY_ID;
+            if (companyId) {
+              if (!dealsByCompany[companyId]) {
+                dealsByCompany[companyId] = [];
+              }
+              dealsByCompany[companyId].push({
+                id: deal.ID,
+                title: deal.TITLE,
+                value: parseFloat(deal.OPPORTUNITY) || 0,
+                currency: deal.CURRENCY_ID || 'BRL',
+                stage: deal.STAGE_ID,
+                closeDate: deal.CLOSEDATE,
+                date: deal.DATE_CREATE,
+              });
+            }
+          });
+
+          // Upsert clients to database
+          const clientsToUpsert = (companiesData.result || []).map((company: any) => {
+            const companyDeals = dealsByCompany[company.ID] || [];
+            const totalSpent = companyDeals.reduce((sum: number, d: any) => sum + d.value, 0);
+            const parsedColor = parseColor(company.UF_CRM_1755898066);
+            
+            return {
+              bitrix_id: company.ID,
+              name: company.TITLE || 'Sem nome',
+              ramo: company.UF_CRM_1590780873288 || null,
+              nicho: company.UF_CRM_1631795570468 || null,
+              primary_color_name: parsedColor.name,
+              primary_color_hex: parsedColor.hex,
+              email: getFirstValue(company.EMAIL) || null,
+              phone: getFirstValue(company.PHONE) || null,
+              address: company.ADDRESS || null,
+              total_spent: totalSpent,
+              last_purchase_date: companyDeals[0]?.date || null,
+              synced_at: syncStartTime,
+            };
+          });
+
+          if (clientsToUpsert.length > 0) {
+            const { error: clientsError } = await supabase
+              .from('bitrix_clients')
+              .upsert(clientsToUpsert, { onConflict: 'bitrix_id' });
+
+            if (clientsError) {
+              console.error('Error upserting clients:', clientsError);
+              throw new Error(`Database error: ${clientsError.message}`);
+            }
+            console.log(`Upserted ${clientsToUpsert.length} clients to database`);
+          }
+
+          // Upsert deals to database
+          const dealsToUpsert = (dealsData.result || []).map((deal: any) => ({
+            bitrix_id: deal.ID,
+            bitrix_client_id: deal.COMPANY_ID || '',
+            title: deal.TITLE || 'Sem título',
+            value: parseFloat(deal.OPPORTUNITY) || 0,
+            currency: deal.CURRENCY_ID || 'BRL',
+            stage: deal.STAGE_ID || null,
+            close_date: deal.CLOSEDATE || null,
+            created_at_bitrix: deal.DATE_CREATE || null,
+            synced_at: syncStartTime,
+          }));
+
+          if (dealsToUpsert.length > 0) {
+            const { error: dealsError } = await supabase
+              .from('bitrix_deals')
+              .upsert(dealsToUpsert, { onConflict: 'bitrix_id' });
+
+            if (dealsError) {
+              console.error('Error upserting deals:', dealsError);
+              throw new Error(`Database error: ${dealsError.message}`);
+            }
+            console.log(`Upserted ${dealsToUpsert.length} deals to database`);
+          }
+
+          // Update sync log with success
+          if (syncLog) {
+            await supabase
+              .from('bitrix_sync_logs')
+              .update({
+                status: 'completed',
+                clients_synced: clientsToUpsert.length,
+                deals_synced: dealsToUpsert.length,
+                completed_at: new Date().toISOString(),
+              })
+              .eq('id', syncLog.id);
+          }
+
+          // Build response with combined data
+          const clients = (companiesData.result || []).map((company: any) => {
+            const companyDeals = dealsByCompany[company.ID] || [];
+            const totalSpent = companyDeals.reduce((sum: number, d: any) => sum + d.value, 0);
+            
+            return {
+              id: company.ID,
+              name: company.TITLE || 'Sem nome',
+              ramo: company.UF_CRM_1590780873288 || 'Não informado',
+              nicho: company.UF_CRM_1631795570468 || 'Não informado',
+              primaryColor: parseColor(company.UF_CRM_1755898066),
+              email: getFirstValue(company.EMAIL),
+              phone: getFirstValue(company.PHONE),
+              deals: companyDeals,
+              totalSpent,
+              lastPurchase: companyDeals[0]?.date || null,
+            };
+          });
+
+          result = {
+            clients,
+            totalCompanies: companiesData.total || clients.length,
+            totalDeals: dealsData.total || 0,
+            nextCompanies: companiesData.next,
+            syncedAt: syncStartTime,
+            savedToDatabase: true,
           };
-        });
+
+        } catch (syncError) {
+          // Update sync log with error
+          if (syncLog) {
+            await supabase
+              .from('bitrix_sync_logs')
+              .update({
+                status: 'failed',
+                error_message: syncError instanceof Error ? syncError.message : 'Unknown error',
+                completed_at: new Date().toISOString(),
+              })
+              .eq('id', syncLog.id);
+          }
+          throw syncError;
+        }
+        break;
+      }
+
+      case 'get_stored_clients': {
+        // Get clients from local database
+        const supabase = getSupabaseClient();
+        
+        const { data: clients, error, count } = await supabase
+          .from('bitrix_clients')
+          .select('*', { count: 'exact' })
+          .order('name', { ascending: true })
+          .range(data?.start || 0, (data?.start || 0) + (data?.limit || 50) - 1);
+
+        if (error) {
+          throw new Error(`Database error: ${error.message}`);
+        }
 
         result = {
-          clients,
-          totalCompanies: companiesData.total || clients.length,
-          totalDeals: dealsData.total || 0,
-          nextCompanies: companiesData.next,
-          syncedAt: new Date().toISOString(),
+          clients: clients?.map(c => ({
+            id: c.bitrix_id,
+            name: c.name,
+            ramo: c.ramo || 'Não informado',
+            nicho: c.nicho || 'Não informado',
+            primaryColor: { name: c.primary_color_name, hex: c.primary_color_hex, group: 'CUSTOM' },
+            email: c.email,
+            phone: c.phone,
+            totalSpent: parseFloat(c.total_spent) || 0,
+            lastPurchase: c.last_purchase_date,
+            syncedAt: c.synced_at,
+          })) || [],
+          total: count || 0,
         };
+        break;
+      }
+
+      case 'get_stored_deals': {
+        // Get deals from local database
+        const supabase = getSupabaseClient();
+        
+        let query = supabase
+          .from('bitrix_deals')
+          .select('*', { count: 'exact' })
+          .order('created_at_bitrix', { ascending: false });
+
+        if (data?.clientId) {
+          query = query.eq('bitrix_client_id', data.clientId);
+        }
+
+        const { data: deals, error, count } = await query
+          .range(data?.start || 0, (data?.start || 0) + (data?.limit || 50) - 1);
+
+        if (error) {
+          throw new Error(`Database error: ${error.message}`);
+        }
+
+        result = {
+          deals: deals?.map(d => ({
+            id: d.bitrix_id,
+            title: d.title,
+            value: parseFloat(d.value) || 0,
+            currency: d.currency,
+            stage: d.stage,
+            closeDate: d.close_date,
+            createdAt: d.created_at_bitrix,
+            syncedAt: d.synced_at,
+          })) || [],
+          total: count || 0,
+        };
+        break;
+      }
+
+      case 'get_sync_logs': {
+        // Get sync history
+        const supabase = getSupabaseClient();
+        
+        const { data: logs, error } = await supabase
+          .from('bitrix_sync_logs')
+          .select('*')
+          .order('started_at', { ascending: false })
+          .limit(data?.limit || 10);
+
+        if (error) {
+          throw new Error(`Database error: ${error.message}`);
+        }
+
+        result = { logs };
         break;
       }
 

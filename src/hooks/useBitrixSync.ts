@@ -65,7 +65,7 @@ export function useBitrixSync() {
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("bitrix-sync", {
-        body: { action: "get_deals", data: { companyId } },
+        body: { action: "get_stored_deals", data: { clientId: companyId } },
       });
 
       if (fnError) throw new Error(fnError.message);
@@ -75,7 +75,7 @@ export function useBitrixSync() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao buscar negócios";
       setError(message);
-      toast.error("Erro ao buscar negócios do Bitrix24", { description: message });
+      toast.error("Erro ao buscar negócios", { description: message });
       return [];
     } finally {
       setIsLoading(false);
@@ -87,7 +87,7 @@ export function useBitrixSync() {
     setError(null);
 
     try {
-      toast.info("Iniciando sincronização...", { description: "Buscando dados do Bitrix24" });
+      toast.info("Iniciando sincronização...", { description: "Buscando dados do Bitrix24 e salvando no banco" });
 
       const { data, error: fnError } = await supabase.functions.invoke("bitrix-sync", {
         body: { action: "sync_full" },
@@ -98,7 +98,7 @@ export function useBitrixSync() {
 
       setSyncResult(data);
       toast.success("Sincronização concluída!", {
-        description: `${data.totalCompanies} empresas e ${data.totalDeals} negócios sincronizados`,
+        description: `${data.totalCompanies} empresas e ${data.totalDeals} negócios sincronizados e salvos`,
       });
 
       return data;
@@ -109,6 +109,42 @@ export function useBitrixSync() {
       return null;
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const fetchStoredClients = async (start = 0, limit = 50): Promise<BitrixClient[]> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("bitrix-sync", {
+        body: { action: "get_stored_clients", data: { start, limit } },
+      });
+
+      if (fnError) throw new Error(fnError.message);
+      if (data.error) throw new Error(data.error);
+
+      return data.clients || [];
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao buscar clientes salvos";
+      setError(message);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchSyncLogs = async (): Promise<any[]> => {
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("bitrix-sync", {
+        body: { action: "get_sync_logs", data: { limit: 10 } },
+      });
+
+      if (fnError) throw new Error(fnError.message);
+      return data.logs || [];
+    } catch (err) {
+      console.error("Error fetching sync logs:", err);
+      return [];
     }
   };
 
@@ -135,6 +171,8 @@ export function useBitrixSync() {
     fetchDeals,
     syncAll,
     searchClients,
+    fetchStoredClients,
+    fetchSyncLogs,
     isLoading,
     isSyncing,
     syncResult,

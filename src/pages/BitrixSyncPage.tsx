@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useBitrixSync } from "@/hooks/useBitrixSync";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,17 +25,49 @@ import {
   Building2,
   DollarSign,
   Calendar,
+  Database,
+  Clock,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface SyncLog {
+  id: string;
+  status: string;
+  clients_synced: number;
+  deals_synced: number;
+  error_message: string | null;
+  started_at: string;
+  completed_at: string | null;
+}
+
 export default function BitrixSyncPage() {
-  const { syncAll, isSyncing, syncResult, error } = useBitrixSync();
+  const { syncAll, fetchStoredClients, fetchSyncLogs, isSyncing, syncResult, error } = useBitrixSync();
   const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [storedClients, setStoredClients] = useState<any[]>([]);
+  const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
+  const [isLoadingStored, setIsLoadingStored] = useState(false);
+
+  useEffect(() => {
+    loadStoredData();
+  }, []);
+
+  const loadStoredData = async () => {
+    setIsLoadingStored(true);
+    const [clients, logs] = await Promise.all([
+      fetchStoredClients(0, 20),
+      fetchSyncLogs(),
+    ]);
+    setStoredClients(clients);
+    setSyncLogs(logs);
+    setIsLoadingStored(false);
+  };
 
   const handleSync = async () => {
     const result = await syncAll();
     if (result) {
       setLastSync(new Date());
+      await loadStoredData();
     }
   };
 
@@ -118,27 +150,27 @@ export default function BitrixSyncPage() {
 
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Empresas Sincronizadas</CardTitle>
-              <Building2 className="h-5 w-5 text-primary" />
+              <CardTitle className="text-sm font-medium">Empresas no Banco</CardTitle>
+              <Database className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {syncResult?.totalCompanies || 0}
+                {storedClients.length || syncResult?.totalCompanies || 0}
               </div>
-              <p className="text-xs text-muted-foreground">clientes importados</p>
+              <p className="text-xs text-muted-foreground">clientes salvos localmente</p>
             </CardContent>
           </Card>
 
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Negócios Sincronizados</CardTitle>
-              <ShoppingCart className="h-5 w-5 text-primary" />
+              <CardTitle className="text-sm font-medium">Sincronizações</CardTitle>
+              <History className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {syncResult?.totalDeals || 0}
+                {syncLogs.length}
               </div>
-              <p className="text-xs text-muted-foreground">histórico de compras</p>
+              <p className="text-xs text-muted-foreground">no histórico</p>
             </CardContent>
           </Card>
         </div>
@@ -255,14 +287,79 @@ export default function BitrixSyncPage() {
           </Card>
         )}
 
+        {/* Sync History Logs */}
+        {syncLogs.length > 0 && (
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                Histórico de Sincronizações
+              </CardTitle>
+              <CardDescription>
+                Últimas sincronizações realizadas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Empresas</TableHead>
+                    <TableHead className="text-right">Negócios</TableHead>
+                    <TableHead className="text-right">Duração</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {syncLogs.map((log) => {
+                    const duration = log.completed_at && log.started_at
+                      ? Math.round((new Date(log.completed_at).getTime() - new Date(log.started_at).getTime()) / 1000)
+                      : null;
+                    
+                    return (
+                      <TableRow key={log.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              {new Date(log.started_at).toLocaleString("pt-BR")}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={log.status === "completed" ? "default" : log.status === "failed" ? "destructive" : "secondary"}
+                            className={log.status === "completed" ? "bg-green-500 hover:bg-green-600" : ""}
+                          >
+                            {log.status === "completed" ? "Concluído" : log.status === "failed" ? "Falhou" : "Em progresso"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {log.clients_synced}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {log.deals_synced}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {duration !== null ? `${duration}s` : "-"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Empty State */}
-        {!isSyncing && !syncResult && !error && (
+        {!isSyncing && !syncResult && storedClients.length === 0 && !error && (
           <Card className="border-dashed border-2">
             <CardContent className="py-12 text-center">
-              <Cloud className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-medium mb-2">Nenhum dado sincronizado</h3>
+              <Database className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+              <h3 className="text-lg font-medium mb-2">Nenhum dado no banco</h3>
               <p className="text-muted-foreground mb-4">
-                Clique em "Sincronizar Agora" para importar clientes e histórico do Bitrix24
+                Clique em "Sincronizar Agora" para importar e salvar dados do Bitrix24
               </p>
               <Button onClick={handleSync} variant="outline">
                 <RefreshCw className="h-4 w-4 mr-2" />
