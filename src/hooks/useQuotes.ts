@@ -317,6 +317,52 @@ export function useQuotes() {
     }
   };
 
+  // Sync quote to Bitrix via N8N
+  const syncQuoteToBitrix = async (quoteId: string): Promise<boolean> => {
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("quote-sync", {
+        body: { action: "sync_quote", data: { quoteId } },
+      });
+
+      if (fnError) throw new Error(fnError.message);
+      if (data.error) throw new Error(data.error);
+
+      toast.success("Orçamento sincronizado com Bitrix!", {
+        description: `Deal ID: ${data.bitrix_deal_id || "N/A"}`,
+      });
+
+      await fetchQuotes();
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao sincronizar";
+      toast.error("Erro ao sincronizar com Bitrix", { description: message });
+      return false;
+    }
+  };
+
+  // Test N8N webhook connection
+  const testWebhookConnection = async (): Promise<boolean> => {
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("quote-sync", {
+        body: { action: "test_webhook", data: {} },
+      });
+
+      if (fnError) throw new Error(fnError.message);
+      
+      if (data.success) {
+        toast.success("Conexão com N8N estabelecida!");
+        return true;
+      } else {
+        toast.error("Falha na conexão com N8N");
+        return false;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao testar conexão";
+      toast.error("Erro ao testar webhook", { description: message });
+      return false;
+    }
+  };
+
   // Fetch personalization techniques
   const fetchTechniques = async () => {
     try {
@@ -351,5 +397,7 @@ export function useQuotes() {
     updateQuoteStatus,
     deleteQuote,
     fetchTechniques,
+    syncQuoteToBitrix,
+    testWebhookConnection,
   };
 }

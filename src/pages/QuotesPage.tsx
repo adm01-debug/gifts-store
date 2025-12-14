@@ -12,7 +12,8 @@ import {
   Send,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  RefreshCw
 } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -57,9 +58,10 @@ const statusConfig = {
 
 export default function QuotesPage() {
   const navigate = useNavigate();
-  const { quotes, isLoading, updateQuoteStatus, deleteQuote } = useQuotes();
+  const { quotes, isLoading, updateQuoteStatus, deleteQuote, syncQuoteToBitrix } = useQuotes();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [syncingQuoteId, setSyncingQuoteId] = useState<string | null>(null);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -82,6 +84,12 @@ export default function QuotesPage() {
     if (window.confirm("Tem certeza que deseja excluir este orçamento?")) {
       await deleteQuote(quoteId);
     }
+  };
+
+  const handleSync = async (quoteId: string) => {
+    setSyncingQuoteId(quoteId);
+    await syncQuoteToBitrix(quoteId);
+    setSyncingQuoteId(null);
   };
 
   // Stats
@@ -263,6 +271,15 @@ export default function QuotesPage() {
                                 >
                                   <Send className="h-4 w-4 mr-2" />
                                   Enviar
+                                </DropdownMenuItem>
+                              )}
+                              {!quote.synced_to_bitrix && quote.status !== "draft" && (
+                                <DropdownMenuItem
+                                  onClick={() => handleSync(quote.id!)}
+                                  disabled={syncingQuoteId === quote.id}
+                                >
+                                  <RefreshCw className={`h-4 w-4 mr-2 ${syncingQuoteId === quote.id ? "animate-spin" : ""}`} />
+                                  Sincronizar Bitrix
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuSeparator />
