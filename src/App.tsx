@@ -9,6 +9,7 @@ import { ComparisonProvider } from "@/contexts/ComparisonContext";
 import { QuoteProvider } from "@/contexts/QuoteContext";
 import { CompareBar } from "@/components/compare/CompareBar";
 import { QuoteBar } from "@/components/quote/QuoteBar";
+import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
 import ProductDetail from "./pages/ProductDetail";
 import ClientDetail from "./pages/ClientDetail";
@@ -32,7 +33,8 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <Routes>
-                  <Route path="/" element={<Index />} />
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/produtos" element={<Index />} />
                   <Route path="/produto/:id" element={<ProductDetail />} />
                   <Route path="/clientes" element={<ClientList />} />
                   <Route path="/cliente/:id" element={<ClientDetail />} />
