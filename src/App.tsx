@@ -22,6 +22,7 @@ import CollectionsPage from "./pages/CollectionsPage";
 import CollectionDetailPage from "./pages/CollectionDetailPage";
 import AdminPanel from "./pages/AdminPanel";
 import ProfilePage from "./pages/ProfilePage";
+import DashboardPage from "./pages/DashboardPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -95,6 +96,11 @@ const App = () => (
                     <Route path="/perfil" element={
                       <ProtectedRoute>
                         <ProfilePage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/dashboard" element={
+                      <ProtectedRoute>
+                        <DashboardPage />
                       </ProtectedRoute>
                     } />
                     
