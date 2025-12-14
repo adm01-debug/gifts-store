@@ -1,0 +1,39 @@
+import React, { createContext, useContext, ReactNode } from "react";
+import { useCollections, Collection } from "@/hooks/useCollections";
+import { Product } from "@/data/mockData";
+
+interface CollectionsContextType {
+  collections: Collection[];
+  isLoaded: boolean;
+  createCollection: (name: string, description?: string, color?: string, icon?: string) => Collection;
+  updateCollection: (id: string, updates: Partial<Omit<Collection, "id" | "createdAt">>) => void;
+  deleteCollection: (id: string) => void;
+  addProductToCollection: (collectionId: string, productId: string) => void;
+  removeProductFromCollection: (collectionId: string, productId: string) => void;
+  addProductToMultipleCollections: (productId: string, collectionIds: string[]) => void;
+  getCollectionProducts: (collectionId: string) => Product[];
+  getProductCollections: (productId: string) => Collection[];
+  isProductInCollection: (productId: string, collectionId: string) => boolean;
+  defaultColors: string[];
+  defaultIcons: string[];
+}
+
+const CollectionsContext = createContext<CollectionsContextType | undefined>(undefined);
+
+export function CollectionsProvider({ children }: { children: ReactNode }) {
+  const collectionsHook = useCollections();
+
+  return (
+    <CollectionsContext.Provider value={collectionsHook}>
+      {children}
+    </CollectionsContext.Provider>
+  );
+}
+
+export function useCollectionsContext() {
+  const context = useContext(CollectionsContext);
+  if (context === undefined) {
+    throw new Error("useCollectionsContext must be used within a CollectionsProvider");
+  }
+  return context;
+}
