@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Bot, X, Send, Loader2, User, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Bot, X, Send, Loader2, User, Sparkles, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,12 @@ interface Message {
   content: string;
 }
 
+interface ProductLink {
+  id: string;
+  name: string;
+  fullMatch: string;
+}
+
 interface ExpertChatDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -20,11 +27,70 @@ interface ExpertChatDialogProps {
 }
 
 export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: ExpertChatDialogProps) {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Parse product links from message content
+  const parseProductLinks = (content: string): (string | ProductLink)[] => {
+    const regex = /\[\[PRODUTO:([^:]+):([^\]]+)\]\]/g;
+    const parts: (string | ProductLink)[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(content)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        parts.push(content.slice(lastIndex, match.index));
+      }
+      
+      // Add the product link
+      parts.push({
+        id: match[1],
+        name: match[2],
+        fullMatch: match[0]
+      });
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text
+    if (lastIndex < content.length) {
+      parts.push(content.slice(lastIndex));
+    }
+    
+    return parts.length > 0 ? parts : [content];
+  };
+
+  const handleProductClick = (productId: string) => {
+    onClose();
+    navigate(`/produto/${productId}`);
+  };
+
+  // Render message content with clickable product links
+  const renderMessageContent = (content: string) => {
+    const parts = parseProductLinks(content);
+    
+    return parts.map((part, index) => {
+      if (typeof part === "string") {
+        return <span key={index}>{part}</span>;
+      }
+      
+      return (
+        <button
+          key={index}
+          onClick={() => handleProductClick(part.id)}
+          className="inline-flex items-center gap-1 text-primary hover:text-primary/80 font-medium underline underline-offset-2 transition-colors"
+        >
+          {part.name}
+          <ExternalLink className="h-3 w-3" />
+        </button>
+      );
+    });
+  };
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -239,7 +305,12 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
                       : "bg-muted"
                   )}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  <p className="whitespace-pre-wrap">
+                    {message.role === "assistant" 
+                      ? renderMessageContent(message.content)
+                      : message.content
+                    }
+                  </p>
                 </div>
                 {message.role === "user" && (
                   <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
