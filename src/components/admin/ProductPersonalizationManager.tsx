@@ -47,6 +47,21 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {
   Plus,
   Trash2,
   Loader2,
@@ -61,6 +76,7 @@ import {
 } from "lucide-react";
 import { InlineEditField } from "./InlineEditField";
 import { ImageUploadButton } from "./ImageUploadButton";
+import { SortableItem } from "./SortableItem";
 
 interface Product {
   id: string;
@@ -135,6 +151,12 @@ export function ProductPersonalizationManager() {
   const [newLocation, setNewLocation] = useState({ code: "", name: "", maxWidth: "", maxHeight: "", maxArea: "" });
   const [newTechniqueId, setNewTechniqueId] = useState("");
   const [newMaxColors, setNewMaxColors] = useState("");
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   // Fetch products
   const { data: products, isLoading: productsLoading } = useQuery({
@@ -534,6 +556,28 @@ export function ProductPersonalizationManager() {
     return locationTechniques?.filter((lt) => lt.component_location_id === locationId) || [];
   };
 
+  // Drag and drop handler
+  const handleComponentDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !components) return;
+
+    const oldIndex = components.findIndex((c) => c.id === active.id);
+    const newIndex = components.findIndex((c) => c.id === over.id);
+    const reordered = arrayMove(components, oldIndex, newIndex);
+
+    // Update sort_order for all affected components
+    for (let i = 0; i < reordered.length; i++) {
+      if (reordered[i].sort_order !== i) {
+        await supabase
+          .from("product_components")
+          .update({ sort_order: i })
+          .eq("id", reordered[i].id);
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["product-components"] });
+    toast.success("Ordem atualizada!");
+  };
+
   const isUsingGroupRules = productMembership?.use_group_rules ?? false;
   const hasGroup = !!productMembership;
 
@@ -752,22 +796,32 @@ export function ProductPersonalizationManager() {
                 <p className="text-sm">Adicione componentes para definir as áreas de personalização</p>
               </div>
             ) : (
-              <Accordion type="multiple" className="space-y-2">
-                {components.map((component) => (
-                  <AccordionItem key={component.id} value={component.id} className="border rounded-lg px-4">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-3 flex-1">
-                        <Badge variant="outline" className="font-mono">
-                          {component.component_code}
-                        </Badge>
-                        <span className="font-medium">{component.component_name}</span>
-                        <div className="flex items-center gap-2 ml-auto mr-4">
-                          {component.is_personalizable && (
-                            <Badge variant="secondary" className="text-xs">Personalizável</Badge>
-                          )}
-                          {!component.is_active && (
-                            <Badge variant="destructive" className="text-xs">Inativo</Badge>
-                          )}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleComponentDragEnd}
+              >
+                <SortableContext
+                  items={components.map((c) => c.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <Accordion type="multiple" className="space-y-2">
+                    {components.map((component) => (
+                      <SortableItem key={component.id} id={component.id}>
+                        <AccordionItem value={component.id} className="border rounded-lg px-4">
+                          <AccordionTrigger className="hover:no-underline">
+                            <div className="flex items-center gap-3 flex-1">
+                              <Badge variant="outline" className="font-mono">
+                                {component.component_code}
+                              </Badge>
+                              <span className="font-medium">{component.component_name}</span>
+                              <div className="flex items-center gap-2 ml-auto mr-4">
+                                {component.is_personalizable && (
+                                  <Badge variant="secondary" className="text-xs">Personalizável</Badge>
+                                )}
+                                {!component.is_active && (
+                                  <Badge variant="destructive" className="text-xs">Inativo</Badge>
+                                )}
                         </div>
                       </div>
                     </AccordionTrigger>
@@ -1087,8 +1141,11 @@ export function ProductPersonalizationManager() {
                       </div>
                     </AccordionContent>
                   </AccordionItem>
-                ))}
-              </Accordion>
+                </SortableItem>
+              ))}
+            </Accordion>
+          </SortableContext>
+        </DndContext>
             )}
           </CardContent>
         </Card>
