@@ -2,3 +2,6 @@ project_id = "lgjogrvydtwxxsjarrxm"
 
 [functions.bitrix-sync]
 verify_jwt = false
+
+[functions.ai-recommendations]
+verify_jwt = true
