@@ -1,0 +1,45 @@
+-- Create table for saved personalization simulations
+CREATE TABLE public.personalization_simulations (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  seller_id UUID NOT NULL,
+  client_id UUID REFERENCES public.bitrix_clients(id) ON DELETE SET NULL,
+  product_id UUID REFERENCES public.products(id) ON DELETE SET NULL,
+  product_name TEXT NOT NULL,
+  product_sku TEXT,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  product_unit_price NUMERIC NOT NULL DEFAULT 0,
+  simulation_data JSONB NOT NULL DEFAULT '[]'::jsonb,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE public.personalization_simulations ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies
+CREATE POLICY "Sellers can view their own simulations"
+ON public.personalization_simulations
+FOR SELECT
+USING (seller_id = auth.uid() OR has_role(auth.uid(), 'admin'::app_role));
+
+CREATE POLICY "Sellers can create their own simulations"
+ON public.personalization_simulations
+FOR INSERT
+WITH CHECK (seller_id = auth.uid());
+
+CREATE POLICY "Sellers can update their own simulations"
+ON public.personalization_simulations
+FOR UPDATE
+USING (seller_id = auth.uid() OR has_role(auth.uid(), 'admin'::app_role));
+
+CREATE POLICY "Sellers can delete their own simulations"
+ON public.personalization_simulations
+FOR DELETE
+USING (seller_id = auth.uid() OR has_role(auth.uid(), 'admin'::app_role));
+
+-- Trigger for updated_at
+CREATE TRIGGER update_personalization_simulations_updated_at
+BEFORE UPDATE ON public.personalization_simulations
+FOR EACH ROW
+EXECUTE FUNCTION public.update_updated_at_column();
