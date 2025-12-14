@@ -158,6 +158,10 @@ export default function PersonalizationSimulator() {
   
   // View saved simulation modal
   const [viewSimulation, setViewSimulation] = useState<SavedSimulation | null>(null);
+  
+  // Filters for saved simulations
+  const [filterClientId, setFilterClientId] = useState<string | null>(null);
+  const [filterProductSearch, setFilterProductSearch] = useState("");
 
   // Fetch products
   const { data: products, isLoading: productsLoading } = useQuery({
@@ -983,7 +987,49 @@ Opção ${idx + 1}: ${opt.techniqueName}
                   Consulte suas simulações anteriores ou vincule a um cliente
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Buscar por produto..."
+                      value={filterProductSearch}
+                      onChange={(e) => setFilterProductSearch(e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                  <Select 
+                    value={filterClientId || ""} 
+                    onValueChange={(val) => setFilterClientId(val || null)}
+                  >
+                    <SelectTrigger className="w-full sm:w-[200px] h-9">
+                      <SelectValue placeholder="Todos os clientes" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="">Todos os clientes</SelectItem>
+                      {clients?.map(client => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {(filterProductSearch || filterClientId) && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-9 px-3"
+                      onClick={() => {
+                        setFilterProductSearch("");
+                        setFilterClientId(null);
+                      }}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+
                 {savedSimulationsLoading ? (
                   <div className="space-y-3">
                     <Skeleton className="h-20 w-full" />
@@ -991,8 +1037,28 @@ Opção ${idx + 1}: ${opt.techniqueName}
                     <Skeleton className="h-20 w-full" />
                   </div>
                 ) : savedSimulations && savedSimulations.length > 0 ? (
-                  <div className="space-y-3">
-                    {savedSimulations.map(sim => (
+                  (() => {
+                    const filteredSimulations = savedSimulations.filter(sim => {
+                      const matchesProduct = !filterProductSearch || 
+                        sim.product_name.toLowerCase().includes(filterProductSearch.toLowerCase()) ||
+                        (sim.product_sku && sim.product_sku.toLowerCase().includes(filterProductSearch.toLowerCase()));
+                      const matchesClient = !filterClientId || sim.client_id === filterClientId;
+                      return matchesProduct && matchesClient;
+                    });
+
+                    if (filteredSimulations.length === 0) {
+                      return (
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                          <p className="text-muted-foreground text-sm">
+                            Nenhuma simulação encontrada com os filtros aplicados.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-3">
+                        {filteredSimulations.map(sim => (
                       <div
                         key={sim.id}
                         className="p-4 rounded-xl border border-border bg-card hover:border-primary/50 transition-colors"
@@ -1065,7 +1131,9 @@ Opção ${idx + 1}: ${opt.techniqueName}
                         </div>
                       </div>
                     ))}
-                  </div>
+                      </div>
+                    );
+                  })()
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
