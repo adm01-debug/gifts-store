@@ -145,6 +145,187 @@ serve(async (req) => {
         break;
       }
 
+      case 'get_deals': {
+        // Fetch deals (purchase history) from Bitrix24
+        const companyId = data?.companyId;
+        
+        const filter: Record<string, any> = {};
+        if (companyId) {
+          filter.COMPANY_ID = companyId;
+        }
+        if (data?.status) {
+          filter.STAGE_ID = data.status;
+        }
+
+        const response = await fetch(`${bitrixWebhookUrl}/crm.deal.list`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            select: [
+              'ID',
+              'TITLE',
+              'COMPANY_ID',
+              'OPPORTUNITY',
+              'CURRENCY_ID',
+              'STAGE_ID',
+              'CLOSEDATE',
+              'DATE_CREATE',
+              'DATE_MODIFY',
+              'ASSIGNED_BY_ID',
+            ],
+            filter,
+            order: { DATE_CREATE: 'DESC' },
+            start: data?.start || 0,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Bitrix24 deals error:', errorText);
+          throw new Error(`Bitrix24 API error: ${response.status}`);
+        }
+
+        const bitrixData = await response.json();
+        console.log('Bitrix24 deals response:', JSON.stringify(bitrixData).slice(0, 500));
+
+        const deals = (bitrixData.result || []).map((deal: any) => ({
+          id: deal.ID,
+          title: deal.TITLE || 'Sem título',
+          companyId: deal.COMPANY_ID,
+          value: parseFloat(deal.OPPORTUNITY) || 0,
+          currency: deal.CURRENCY_ID || 'BRL',
+          stage: deal.STAGE_ID || 'NEW',
+          closeDate: deal.CLOSEDATE,
+          createdAt: deal.DATE_CREATE,
+          updatedAt: deal.DATE_MODIFY,
+          assignedTo: deal.ASSIGNED_BY_ID,
+        }));
+
+        result = {
+          deals,
+          total: bitrixData.total || deals.length,
+          next: bitrixData.next,
+        };
+        break;
+      }
+
+      case 'get_deal_products': {
+        // Fetch products in a deal
+        const dealId = data?.dealId;
+        if (!dealId) {
+          throw new Error('Deal ID is required');
+        }
+
+        const response = await fetch(`${bitrixWebhookUrl}/crm.deal.productrows.get`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: dealId }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Bitrix24 API error: ${response.status}`);
+        }
+
+        const bitrixData = await response.json();
+        
+        result = (bitrixData.result || []).map((product: any) => ({
+          id: product.ID,
+          productId: product.PRODUCT_ID,
+          productName: product.PRODUCT_NAME || 'Produto',
+          quantity: parseInt(product.QUANTITY) || 1,
+          price: parseFloat(product.PRICE) || 0,
+          discount: parseFloat(product.DISCOUNT_SUM) || 0,
+          total: parseFloat(product.SUM) || 0,
+        }));
+        break;
+      }
+
+      case 'sync_full': {
+        // Full sync: get companies with their deals
+        console.log('Starting full sync...');
+        
+        // Get all companies
+        const companiesResponse = await fetch(`${bitrixWebhookUrl}/crm.company.list`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            select: ['ID', 'TITLE', 'UF_CRM_1590780873288', 'UF_CRM_1631795570468', 'UF_CRM_1755898066', 'EMAIL', 'PHONE'],
+            start: data?.start || 0,
+          }),
+        });
+
+        if (!companiesResponse.ok) {
+          throw new Error(`Bitrix24 companies error: ${companiesResponse.status}`);
+        }
+
+        const companiesData = await companiesResponse.json();
+        console.log(`Fetched ${companiesData.result?.length || 0} companies`);
+
+        // Get all deals
+        const dealsResponse = await fetch(`${bitrixWebhookUrl}/crm.deal.list`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            select: ['ID', 'TITLE', 'COMPANY_ID', 'OPPORTUNITY', 'STAGE_ID', 'DATE_CREATE'],
+            order: { DATE_CREATE: 'DESC' },
+            start: 0,
+          }),
+        });
+
+        if (!dealsResponse.ok) {
+          throw new Error(`Bitrix24 deals error: ${dealsResponse.status}`);
+        }
+
+        const dealsData = await dealsResponse.json();
+        console.log(`Fetched ${dealsData.result?.length || 0} deals`);
+
+        // Group deals by company
+        const dealsByCompany: Record<string, any[]> = {};
+        (dealsData.result || []).forEach((deal: any) => {
+          const companyId = deal.COMPANY_ID;
+          if (companyId) {
+            if (!dealsByCompany[companyId]) {
+              dealsByCompany[companyId] = [];
+            }
+            dealsByCompany[companyId].push({
+              id: deal.ID,
+              title: deal.TITLE,
+              value: parseFloat(deal.OPPORTUNITY) || 0,
+              stage: deal.STAGE_ID,
+              date: deal.DATE_CREATE,
+            });
+          }
+        });
+
+        // Combine companies with their deals
+        const clients = (companiesData.result || []).map((company: any) => {
+          const companyDeals = dealsByCompany[company.ID] || [];
+          const totalSpent = companyDeals.reduce((sum: number, d: any) => sum + d.value, 0);
+          
+          return {
+            id: company.ID,
+            name: company.TITLE || 'Sem nome',
+            ramo: company.UF_CRM_1590780873288 || 'Não informado',
+            nicho: company.UF_CRM_1631795570468 || 'Não informado',
+            primaryColor: parseColor(company.UF_CRM_1755898066),
+            email: getFirstValue(company.EMAIL),
+            phone: getFirstValue(company.PHONE),
+            deals: companyDeals,
+            totalSpent,
+            lastPurchase: companyDeals[0]?.date || null,
+          };
+        });
+
+        result = {
+          clients,
+          totalCompanies: companiesData.total || clients.length,
+          totalDeals: dealsData.total || 0,
+          nextCompanies: companiesData.next,
+          syncedAt: new Date().toISOString(),
+        };
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: `Unknown action: ${action}` }),
