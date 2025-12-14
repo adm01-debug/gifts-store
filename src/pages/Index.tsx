@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List, User, X, Palette, Sparkles, Loader2 } from "lucide-react";
+import { ExpertChatButton } from "@/components/expert/ExpertChatButton";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { ProductList } from "@/components/products/ProductList";
@@ -623,6 +624,12 @@ export default function Index() {
         onOpenChange={setClientModalOpen}
         onSelectClient={setSelectedClient}
         selectedClientId={selectedClient?.id}
+      />
+
+      {/* Expert Chat Button */}
+      <ExpertChatButton 
+        clientId={selectedClient?.id} 
+        clientName={selectedClient?.name} 
       />
     </MainLayout>
   );

@@ -33,6 +33,7 @@ import {
   FileText,
   RefreshCw
 } from "lucide-react";
+import { ExpertChatButton } from "@/components/expert/ExpertChatButton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState, useEffect } from "react";
@@ -433,6 +434,9 @@ export default function ClientDetail() {
             Última sincronização: {format(new Date(client.synced_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
           </span>
         </div>
+
+        {/* Expert Chat Button */}
+        <ExpertChatButton clientId={client.id} clientName={client.name} />
       </div>
     </MainLayout>
   );
