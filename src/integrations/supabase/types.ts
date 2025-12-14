@@ -173,6 +173,66 @@ export type Database = {
         }
         Relationships: []
       }
+      personalization_simulations: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          product_id: string | null
+          product_name: string
+          product_sku: string | null
+          product_unit_price: number
+          quantity: number
+          seller_id: string
+          simulation_data: Json
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          product_name: string
+          product_sku?: string | null
+          product_unit_price?: number
+          quantity?: number
+          seller_id: string
+          simulation_data?: Json
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          product_name?: string
+          product_sku?: string | null
+          product_unit_price?: number
+          quantity?: number
+          seller_id?: string
+          simulation_data?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personalization_simulations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "bitrix_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personalization_simulations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       personalization_sizes: {
         Row: {
           area_cm2: number | null

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -31,6 +32,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { 
   Calculator, 
   Package, 
@@ -40,20 +55,34 @@ import {
   DollarSign,
   Loader2,
   Info,
-  Send,
   Trash2,
-  Plus,
   Copy,
-  Check
+  Check,
+  Save,
+  History,
+  User,
+  Building2,
+  CalendarDays,
+  Eye,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface Product {
   id: string;
   name: string;
   sku: string;
   price: number;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  ramo: string | null;
+  nicho: string | null;
 }
 
 interface Technique {
@@ -81,14 +110,34 @@ interface SimulationOption {
   totalPersonalizationCost: number;
   costPerUnit: number;
   estimatedDays: number;
-  // With product price
   productUnitPrice: number;
   totalProductCost: number;
   grandTotal: number;
   grandTotalPerUnit: number;
 }
 
+interface SavedSimulation {
+  id: string;
+  product_id: string | null;
+  product_name: string;
+  product_sku: string | null;
+  quantity: number;
+  product_unit_price: number;
+  simulation_data: SimulationOption[];
+  notes: string | null;
+  created_at: string;
+  client_id: string | null;
+  bitrix_clients?: {
+    id: string;
+    name: string;
+    ramo: string | null;
+  } | null;
+}
+
 export default function PersonalizationSimulator() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number>(100);
   const [customProductPrice, setCustomProductPrice] = useState<string>("");
@@ -101,6 +150,14 @@ export default function PersonalizationSimulator() {
     positions: number;
   }>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  
+  // Save simulation modal states
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [simulationNotes, setSimulationNotes] = useState("");
+  
+  // View saved simulation modal
+  const [viewSimulation, setViewSimulation] = useState<SavedSimulation | null>(null);
 
   // Fetch products
   const { data: products, isLoading: productsLoading } = useQuery({
@@ -113,6 +170,19 @@ export default function PersonalizationSimulator() {
         .order("name");
       if (error) throw error;
       return data as Product[];
+    },
+  });
+
+  // Fetch clients
+  const { data: clients } = useQuery({
+    queryKey: ["simulator-clients"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bitrix_clients")
+        .select("id, name, ramo, nicho")
+        .order("name");
+      if (error) throw error;
+      return data as Client[];
     },
   });
 
@@ -130,11 +200,88 @@ export default function PersonalizationSimulator() {
     },
   });
 
+  // Fetch saved simulations
+  const { data: savedSimulations, isLoading: savedSimulationsLoading } = useQuery({
+    queryKey: ["saved-simulations"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("personalization_simulations")
+        .select(`
+          *,
+          bitrix_clients (
+            id,
+            name,
+            ramo
+          )
+        `)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      // Parse simulation_data from JSON
+      return (data || []).map(item => ({
+        ...item,
+        simulation_data: item.simulation_data as unknown as SimulationOption[],
+      })) as SavedSimulation[];
+    },
+  });
+
+  // Save simulation mutation
+  const saveSimulationMutation = useMutation({
+    mutationFn: async () => {
+      if (!user || !selectedProduct || simulationOptions.length === 0) {
+        throw new Error("Dados incompletos");
+      }
+
+      const { error } = await supabase
+        .from("personalization_simulations")
+        .insert([{
+          seller_id: user.id,
+          client_id: selectedClientId,
+          product_id: selectedProduct.id,
+          product_name: selectedProduct.name,
+          product_sku: selectedProduct.sku,
+          quantity,
+          product_unit_price: effectiveProductPrice,
+          simulation_data: JSON.parse(JSON.stringify(simulationOptions)),
+          notes: simulationNotes || null,
+        }]);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Simulação salva com sucesso!");
+      setSaveDialogOpen(false);
+      setSelectedClientId(null);
+      setSimulationNotes("");
+      queryClient.invalidateQueries({ queryKey: ["saved-simulations"] });
+    },
+    onError: () => {
+      toast.error("Erro ao salvar simulação");
+    },
+  });
+
+  // Delete simulation mutation
+  const deleteSimulationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("personalization_simulations")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Simulação excluída");
+      queryClient.invalidateQueries({ queryKey: ["saved-simulations"] });
+    },
+    onError: () => {
+      toast.error("Erro ao excluir simulação");
+    },
+  });
+
   const selectedProduct = useMemo(() => {
     return products?.find(p => p.id === selectedProductId);
   }, [products, selectedProductId]);
 
-  // Get effective product price (custom or from product)
   const effectiveProductPrice = useMemo(() => {
     if (customProductPrice && parseFloat(customProductPrice) > 0) {
       return parseFloat(customProductPrice);
@@ -147,7 +294,6 @@ export default function PersonalizationSimulator() {
       if (prev.includes(techniqueId)) {
         return prev.filter(id => id !== techniqueId);
       }
-      // Initialize settings for new technique
       if (!techniqueSettings[techniqueId]) {
         setTechniqueSettings(s => ({
           ...s,
@@ -183,13 +329,7 @@ export default function PersonalizationSimulator() {
       if (!technique) return null;
 
       const settings = techniqueSettings[techId] || { colors: 1, width: 10, height: 10, positions: 1 };
-      
-      // Calculate area in cm²
       const area = settings.width * settings.height;
-      
-      // Base unit cost calculation
-      // For techniques like silk, multiply by number of colors
-      // For techniques like DTF/sublimation, consider area
       let unitCostMultiplier = 1;
       
       const codeUpper = technique.code?.toUpperCase() || "";
@@ -197,22 +337,18 @@ export default function PersonalizationSimulator() {
       if (codeUpper.includes("SILK") || codeUpper.includes("SERIGRAFIA")) {
         unitCostMultiplier = settings.colors;
       } else if (codeUpper.includes("DTF") || codeUpper.includes("SUB") || codeUpper.includes("TRANSFER")) {
-        // Area-based pricing: base is 100cm², scale proportionally
         unitCostMultiplier = Math.max(1, area / 100);
       } else if (codeUpper.includes("BORD") || codeUpper.includes("EMBROID")) {
-        // Embroidery: based on area and complexity (colors approximate complexity)
         unitCostMultiplier = Math.max(1, (area / 50) * Math.max(1, settings.colors * 0.5));
       } else if (codeUpper.includes("LASER")) {
         unitCostMultiplier = Math.max(1, area / 100);
       }
 
-      // Calculate costs
       const unitCost = technique.unit_cost * unitCostMultiplier * settings.positions;
       const setupCost = technique.setup_cost * settings.positions * (codeUpper.includes("SILK") ? settings.colors : 1);
       const totalPersonalizationCost = (unitCost * quantity) + setupCost;
       const costPerUnit = totalPersonalizationCost / quantity;
 
-      // Calculate with product price
       const productUnitPrice = effectiveProductPrice;
       const totalProductCost = productUnitPrice * quantity;
       const grandTotal = totalProductCost + totalPersonalizationCost;
@@ -320,6 +456,33 @@ Opção ${idx + 1}: ${opt.techniqueName}
            c.includes("BORD") || c.includes("EMBROID") || c.includes("LASER");
   };
 
+  const loadSavedSimulation = (simulation: SavedSimulation) => {
+    // Set product
+    setSelectedProductId(simulation.product_id);
+    setQuantity(simulation.quantity);
+    setCustomProductPrice(simulation.product_unit_price.toString());
+    setSimulationOptions(simulation.simulation_data);
+    
+    // Set techniques that were used
+    const techIds = simulation.simulation_data.map(s => s.techniqueId);
+    setSelectedTechniques(techIds);
+    
+    // Reconstruct technique settings
+    const settings: Record<string, { colors: number; width: number; height: number; positions: number }> = {};
+    simulation.simulation_data.forEach(opt => {
+      settings[opt.techniqueId] = {
+        colors: opt.colors,
+        width: opt.width,
+        height: opt.height,
+        positions: opt.positions,
+      };
+    });
+    setTechniqueSettings(settings);
+    
+    setViewSimulation(null);
+    toast.success("Simulação carregada!");
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6 animate-fade-in">
@@ -338,448 +501,767 @@ Opção ${idx + 1}: ${opt.techniqueName}
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Configuration Panel */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Product Selection */}
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Package className="h-5 w-5 text-primary" />
-                  Produto
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Selecione o produto</Label>
-                  <Select value={selectedProductId || ""} onValueChange={setSelectedProductId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Escolher produto..." />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-80">
-                      {productsLoading ? (
-                        <div className="p-4 flex justify-center">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        </div>
-                      ) : (
-                        products?.map(product => (
-                          <SelectItem key={product.id} value={product.id}>
-                            <span>{product.name}</span>
-                            <span className="text-xs text-muted-foreground ml-2">({product.sku})</span>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
+        <Tabs defaultValue="simulator" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="simulator" className="gap-2">
+              <Calculator className="h-4 w-4" />
+              Simulador
+            </TabsTrigger>
+            <TabsTrigger value="saved" className="gap-2">
+              <History className="h-4 w-4" />
+              Salvos
+              {savedSimulations && savedSimulations.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  {savedSimulations.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-                <div className="space-y-2">
-                  <Label>Quantidade</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                    placeholder="100"
-                  />
-                </div>
-
-                {/* Custom product price */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    Preço unitário produto
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs max-w-xs">
-                            Deixe em branco para usar o preço base do produto ou informe um valor negociado
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={customProductPrice}
-                      onChange={(e) => setCustomProductPrice(e.target.value)}
-                      placeholder={selectedProduct?.price?.toFixed(2) || "0.00"}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                {selectedProduct && (
-                  <div className="p-3 rounded-lg bg-secondary/50 text-sm space-y-1">
-                    <p className="font-medium">{selectedProduct.name}</p>
-                    <p className="text-muted-foreground">
-                      Preço base: {formatCurrency(selectedProduct.price)}/un
-                    </p>
-                    {effectiveProductPrice !== selectedProduct.price && (
-                      <p className="text-primary font-medium">
-                        Preço usado: {formatCurrency(effectiveProductPrice)}/un
-                      </p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Techniques Selection */}
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Palette className="h-5 w-5 text-primary" />
-                  Técnicas
-                </CardTitle>
-                <CardDescription>
-                  Selecione as técnicas para comparar
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {techniquesLoading ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {techniques?.map(technique => (
-                      <div 
-                        key={technique.id}
-                        className={cn(
-                          "p-3 rounded-lg border transition-all cursor-pointer",
-                          selectedTechniques.includes(technique.id)
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        )}
-                        onClick={() => handleTechniqueToggle(technique.id)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Checkbox
-                              checked={selectedTechniques.includes(technique.id)}
-                              onCheckedChange={() => handleTechniqueToggle(technique.id)}
-                            />
-                            <div>
-                              <p className="font-medium text-sm">{technique.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatCurrency(technique.unit_cost)}/un • Setup: {formatCurrency(technique.setup_cost)}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {technique.code}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Settings & Results Panel */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Technique Settings */}
-            {selectedTechniques.length > 0 && (
-              <Card>
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Ruler className="h-5 w-5 text-primary" />
-                    Configurações por Técnica
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4">
-                    {selectedTechniques.map(techId => {
-                      const technique = techniques?.find(t => t.id === techId);
-                      if (!technique) return null;
-
-                      const settings = techniqueSettings[techId] || { colors: 1, width: 10, height: 10, positions: 1 };
-                      const showColors = needsColorInput(technique.code || "");
-                      const showSize = needsSizeInput(technique.code || "");
-
-                      return (
-                        <div 
-                          key={techId}
-                          className="p-4 rounded-xl border border-border bg-card"
-                        >
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2">
-                              <Badge>{technique.code}</Badge>
-                              <span className="font-medium">{technique.name}</span>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleTechniqueToggle(techId)}
-                            >
-                              <Trash2 className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </div>
-
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {showColors && (
-                              <div className="space-y-2">
-                                <Label className="text-xs">Cores</Label>
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  max={12}
-                                  value={settings.colors}
-                                  onChange={(e) => updateTechniqueSetting(techId, 'colors', parseInt(e.target.value) || 1)}
-                                  className="h-9"
-                                />
-                              </div>
-                            )}
-
-                            {showSize && (
-                              <>
-                                <div className="space-y-2">
-                                  <Label className="text-xs">Largura (cm)</Label>
-                                  <Input
-                                    type="number"
-                                    min={1}
-                                    value={settings.width}
-                                    onChange={(e) => updateTechniqueSetting(techId, 'width', parseInt(e.target.value) || 1)}
-                                    className="h-9"
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label className="text-xs">Altura (cm)</Label>
-                                  <Input
-                                    type="number"
-                                    min={1}
-                                    value={settings.height}
-                                    onChange={(e) => updateTechniqueSetting(techId, 'height', parseInt(e.target.value) || 1)}
-                                    className="h-9"
-                                  />
-                                </div>
-                              </>
-                            )}
-
-                            <div className="space-y-2">
-                              <Label className="text-xs flex items-center gap-1">
-                                Posições
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Info className="h-3 w-3 text-muted-foreground" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p className="text-xs">Número de locais de gravação</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </Label>
-                              <Input
-                                type="number"
-                                min={1}
-                                max={10}
-                                value={settings.positions}
-                                onChange={(e) => updateTechniqueSetting(techId, 'positions', parseInt(e.target.value) || 1)}
-                                className="h-9"
-                              />
-                            </div>
-                          </div>
-
-                          {showSize && (
-                            <p className="text-xs text-muted-foreground mt-2">
-                              Área: {settings.width * settings.height} cm²
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="flex gap-3 mt-6">
-                    <Button onClick={calculateSimulation} className="flex-1 gap-2">
-                      <Calculator className="h-4 w-4" />
-                      Calcular Simulação
-                    </Button>
-                    <Button variant="outline" onClick={clearSimulation}>
-                      Limpar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Results */}
-            {simulationOptions.length > 0 && (
-              <Card>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
+          <TabsContent value="simulator">
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Configuration Panel */}
+              <div className="lg:col-span-1 space-y-6">
+                {/* Product Selection */}
+                <Card>
+                  <CardHeader className="pb-4">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <DollarSign className="h-5 w-5 text-success" />
-                      Resultado da Simulação
+                      <Package className="h-5 w-5 text-primary" />
+                      Produto
                     </CardTitle>
-                    <Button variant="outline" size="sm" onClick={copyAllOptions} className="gap-2">
-                      <Copy className="h-4 w-4" />
-                      Copiar Tudo
-                    </Button>
-                  </div>
-                  <CardDescription>
-                    {quantity} unidades de {selectedProduct?.name}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-lg border overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50">
-                          <TableHead>Técnica</TableHead>
-                          <TableHead className="text-center">Detalhes</TableHead>
-                          <TableHead className="text-right">Produto/Un</TableHead>
-                          <TableHead className="text-right">Pers./Un</TableHead>
-                          <TableHead className="text-right">Setup</TableHead>
-                          <TableHead className="text-right">Total Geral</TableHead>
-                          <TableHead className="text-right">Final/Un</TableHead>
-                          <TableHead className="text-center">Prazo</TableHead>
-                          <TableHead className="w-10"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {simulationOptions
-                          .sort((a, b) => a.grandTotal - b.grandTotal)
-                          .map((option, idx) => (
-                            <TableRow 
-                              key={option.id}
-                              className={cn(
-                                idx === 0 && "bg-success/5"
-                              )}
-                            >
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  {idx === 0 && (
-                                    <Badge className="bg-success text-success-foreground text-[10px]">
-                                      Menor custo
-                                    </Badge>
-                                  )}
-                                  <div>
-                                    <p className="font-medium">{option.techniqueName}</p>
-                                    <p className="text-xs text-muted-foreground">{option.techniqueCode}</p>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <div className="text-xs text-muted-foreground space-y-0.5">
-                                  {option.colors > 0 && <p>{option.colors} cor(es)</p>}
-                                  <p>{option.width}×{option.height}cm</p>
-                                  <p>{option.positions} pos.</p>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right font-mono text-xs">
-                                {formatCurrency(option.productUnitPrice)}
-                              </TableCell>
-                              <TableCell className="text-right font-mono text-xs">
-                                {formatCurrency(option.costPerUnit)}
-                              </TableCell>
-                              <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                                {formatCurrency(option.setupCost)}
-                              </TableCell>
-                              <TableCell className="text-right">
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Selecione o produto</Label>
+                      <Select value={selectedProductId || ""} onValueChange={setSelectedProductId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Escolher produto..." />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-80">
+                          {productsLoading ? (
+                            <div className="p-4 flex justify-center">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            </div>
+                          ) : (
+                            products?.map(product => (
+                              <SelectItem key={product.id} value={product.id}>
+                                <span>{product.name}</span>
+                                <span className="text-xs text-muted-foreground ml-2">({product.sku})</span>
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Quantidade</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={quantity}
+                        onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                        placeholder="100"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        Preço unitário produto
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs max-w-xs">
+                                Deixe em branco para usar o preço base do produto ou informe um valor negociado
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={customProductPrice}
+                          onChange={(e) => setCustomProductPrice(e.target.value)}
+                          placeholder={selectedProduct?.price?.toFixed(2) || "0.00"}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+
+                    {selectedProduct && (
+                      <div className="p-3 rounded-lg bg-secondary/50 text-sm space-y-1">
+                        <p className="font-medium">{selectedProduct.name}</p>
+                        <p className="text-muted-foreground">
+                          Preço base: {formatCurrency(selectedProduct.price)}/un
+                        </p>
+                        {effectiveProductPrice !== selectedProduct.price && (
+                          <p className="text-primary font-medium">
+                            Preço usado: {formatCurrency(effectiveProductPrice)}/un
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Techniques Selection */}
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Palette className="h-5 w-5 text-primary" />
+                      Técnicas
+                    </CardTitle>
+                    <CardDescription>
+                      Selecione as técnicas para comparar
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {techniquesLoading ? (
+                      <div className="space-y-2">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {techniques?.map(technique => (
+                          <div 
+                            key={technique.id}
+                            className={cn(
+                              "p-3 rounded-lg border transition-all cursor-pointer",
+                              selectedTechniques.includes(technique.id)
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            )}
+                            onClick={() => handleTechniqueToggle(technique.id)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Checkbox
+                                  checked={selectedTechniques.includes(technique.id)}
+                                  onCheckedChange={() => handleTechniqueToggle(technique.id)}
+                                />
                                 <div>
-                                  <span className="font-bold text-lg">
-                                    {formatCurrency(option.grandTotal)}
-                                  </span>
-                                  <p className="text-[10px] text-muted-foreground">
-                                    Prod: {formatCurrency(option.totalProductCost)} + Pers: {formatCurrency(option.totalPersonalizationCost)}
+                                  <p className="font-medium text-sm">{technique.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {formatCurrency(technique.unit_cost)}/un • Setup: {formatCurrency(technique.setup_cost)}
                                   </p>
                                 </div>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <span className="font-semibold text-primary">
-                                  {formatCurrency(option.grandTotalPerUnit)}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
-                                  <Clock className="h-3.5 w-3.5" />
-                                  {option.estimatedDays}d
+                              </div>
+                              <Badge variant="outline" className="text-xs">
+                                {technique.code}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Settings & Results Panel */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Technique Settings */}
+                {selectedTechniques.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Ruler className="h-5 w-5 text-primary" />
+                        Configurações por Técnica
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-4">
+                        {selectedTechniques.map(techId => {
+                          const technique = techniques?.find(t => t.id === techId);
+                          if (!technique) return null;
+
+                          const settings = techniqueSettings[techId] || { colors: 1, width: 10, height: 10, positions: 1 };
+                          const showColors = needsColorInput(technique.code || "");
+                          const showSize = needsSizeInput(technique.code || "");
+
+                          return (
+                            <div 
+                              key={techId}
+                              className="p-4 rounded-xl border border-border bg-card"
+                            >
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                  <Badge>{technique.code}</Badge>
+                                  <span className="font-medium">{technique.name}</span>
                                 </div>
-                              </TableCell>
-                              <TableCell>
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8"
-                                  onClick={() => copyToClipboard(option)}
+                                  onClick={() => handleTechniqueToggle(techId)}
                                 >
-                                  {copiedId === option.id ? (
-                                    <Check className="h-4 w-4 text-success" />
-                                  ) : (
-                                    <Copy className="h-4 w-4" />
-                                  )}
+                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
                                 </Button>
-                              </TableCell>
+                              </div>
+
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {showColors && (
+                                  <div className="space-y-2">
+                                    <Label className="text-xs">Cores</Label>
+                                    <Input
+                                      type="number"
+                                      min={1}
+                                      max={12}
+                                      value={settings.colors}
+                                      onChange={(e) => updateTechniqueSetting(techId, 'colors', parseInt(e.target.value) || 1)}
+                                      className="h-9"
+                                    />
+                                  </div>
+                                )}
+
+                                {showSize && (
+                                  <>
+                                    <div className="space-y-2">
+                                      <Label className="text-xs">Largura (cm)</Label>
+                                      <Input
+                                        type="number"
+                                        min={1}
+                                        value={settings.width}
+                                        onChange={(e) => updateTechniqueSetting(techId, 'width', parseInt(e.target.value) || 1)}
+                                        className="h-9"
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="text-xs">Altura (cm)</Label>
+                                      <Input
+                                        type="number"
+                                        min={1}
+                                        value={settings.height}
+                                        onChange={(e) => updateTechniqueSetting(techId, 'height', parseInt(e.target.value) || 1)}
+                                        className="h-9"
+                                      />
+                                    </div>
+                                  </>
+                                )}
+
+                                <div className="space-y-2">
+                                  <Label className="text-xs flex items-center gap-1">
+                                    Posições
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-3 w-3 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p className="text-xs">Número de locais de gravação</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </Label>
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    max={10}
+                                    value={settings.positions}
+                                    onChange={(e) => updateTechniqueSetting(techId, 'positions', parseInt(e.target.value) || 1)}
+                                    className="h-9"
+                                  />
+                                </div>
+                              </div>
+
+                              {showSize && (
+                                <p className="text-xs text-muted-foreground mt-2">
+                                  Área: {settings.width * settings.height} cm²
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex gap-3 mt-6">
+                        <Button onClick={calculateSimulation} className="flex-1 gap-2">
+                          <Calculator className="h-4 w-4" />
+                          Calcular Simulação
+                        </Button>
+                        <Button variant="outline" onClick={clearSimulation}>
+                          Limpar
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Results */}
+                {simulationOptions.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <DollarSign className="h-5 w-5 text-success" />
+                          Resultado da Simulação
+                        </CardTitle>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setSaveDialogOpen(true)} 
+                            className="gap-2"
+                          >
+                            <Save className="h-4 w-4" />
+                            Salvar
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={copyAllOptions} className="gap-2">
+                            <Copy className="h-4 w-4" />
+                            Copiar Tudo
+                          </Button>
+                        </div>
+                      </div>
+                      <CardDescription>
+                        {quantity} unidades de {selectedProduct?.name}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="rounded-lg border overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/50">
+                              <TableHead>Técnica</TableHead>
+                              <TableHead className="text-center">Detalhes</TableHead>
+                              <TableHead className="text-right">Produto/Un</TableHead>
+                              <TableHead className="text-right">Pers./Un</TableHead>
+                              <TableHead className="text-right">Setup</TableHead>
+                              <TableHead className="text-right">Total Geral</TableHead>
+                              <TableHead className="text-right">Final/Un</TableHead>
+                              <TableHead className="text-center">Prazo</TableHead>
+                              <TableHead className="w-10"></TableHead>
                             </TableRow>
-                          ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                          </TableHeader>
+                          <TableBody>
+                            {simulationOptions
+                              .sort((a, b) => a.grandTotal - b.grandTotal)
+                              .map((option, idx) => (
+                                <TableRow 
+                                  key={option.id}
+                                  className={cn(
+                                    idx === 0 && "bg-success/5"
+                                  )}
+                                >
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      {idx === 0 && (
+                                        <Badge className="bg-success text-success-foreground text-[10px]">
+                                          Menor custo
+                                        </Badge>
+                                      )}
+                                      <div>
+                                        <p className="font-medium">{option.techniqueName}</p>
+                                        <p className="text-xs text-muted-foreground">{option.techniqueCode}</p>
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <div className="text-xs text-muted-foreground space-y-0.5">
+                                      {option.colors > 0 && <p>{option.colors} cor(es)</p>}
+                                      <p>{option.width}×{option.height}cm</p>
+                                      <p>{option.positions} pos.</p>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono text-xs">
+                                    {formatCurrency(option.productUnitPrice)}
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono text-xs">
+                                    {formatCurrency(option.costPerUnit)}
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                                    {formatCurrency(option.setupCost)}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div>
+                                      <span className="font-bold text-lg">
+                                        {formatCurrency(option.grandTotal)}
+                                      </span>
+                                      <p className="text-[10px] text-muted-foreground">
+                                        Prod: {formatCurrency(option.totalProductCost)} + Pers: {formatCurrency(option.totalPersonalizationCost)}
+                                      </p>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <span className="font-semibold text-primary">
+                                      {formatCurrency(option.grandTotalPerUnit)}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
+                                      <Clock className="h-3.5 w-3.5" />
+                                      {option.estimatedDays}d
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => copyToClipboard(option)}
+                                    >
+                                      {copiedId === option.id ? (
+                                        <Check className="h-4 w-4 text-success" />
+                                      ) : (
+                                        <Copy className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </div>
 
-                  {/* Summary Cards */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
-                    <div className="p-4 rounded-xl bg-secondary/50 text-center">
-                      <p className="text-xs text-muted-foreground mb-1">Quantidade</p>
-                      <p className="text-2xl font-bold">{quantity}</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-secondary/50 text-center">
-                      <p className="text-xs text-muted-foreground mb-1">Preço/Un</p>
-                      <p className="text-xl font-bold">{formatCurrency(effectiveProductPrice)}</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-secondary/50 text-center">
-                      <p className="text-xs text-muted-foreground mb-1">Total Produtos</p>
-                      <p className="text-xl font-bold">{formatCurrency(effectiveProductPrice * quantity)}</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-success/10 text-center">
-                      <p className="text-xs text-muted-foreground mb-1">Menor Total</p>
-                      <p className="text-xl font-bold text-success">
-                        {formatCurrency(Math.min(...simulationOptions.map(o => o.grandTotal)))}
-                      </p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-warning/10 text-center">
-                      <p className="text-xs text-muted-foreground mb-1">Maior Total</p>
-                      <p className="text-xl font-bold text-warning">
-                        {formatCurrency(Math.max(...simulationOptions.map(o => o.grandTotal)))}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                      {/* Summary Cards */}
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
+                        <div className="p-4 rounded-xl bg-secondary/50 text-center">
+                          <p className="text-xs text-muted-foreground mb-1">Quantidade</p>
+                          <p className="text-2xl font-bold">{quantity}</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-secondary/50 text-center">
+                          <p className="text-xs text-muted-foreground mb-1">Preço/Un</p>
+                          <p className="text-xl font-bold">{formatCurrency(effectiveProductPrice)}</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-secondary/50 text-center">
+                          <p className="text-xs text-muted-foreground mb-1">Total Produtos</p>
+                          <p className="text-xl font-bold">{formatCurrency(effectiveProductPrice * quantity)}</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-success/10 text-center">
+                          <p className="text-xs text-muted-foreground mb-1">Menor Total</p>
+                          <p className="text-xl font-bold text-success">
+                            {formatCurrency(Math.min(...simulationOptions.map(o => o.grandTotal)))}
+                          </p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-warning/10 text-center">
+                          <p className="text-xs text-muted-foreground mb-1">Maior Total</p>
+                          <p className="text-xl font-bold text-warning">
+                            {formatCurrency(Math.max(...simulationOptions.map(o => o.grandTotal)))}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
-            {/* Empty State */}
-            {selectedTechniques.length === 0 && (
-              <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                    <Calculator className="h-8 w-8 text-muted-foreground" />
+                {/* Empty State */}
+                {selectedTechniques.length === 0 && (
+                  <Card className="border-dashed">
+                    <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                      <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                        <Calculator className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="font-display text-lg font-semibold mb-2">
+                        Selecione técnicas para simular
+                      </h3>
+                      <p className="text-muted-foreground text-sm max-w-sm">
+                        Escolha um produto e as técnicas de personalização que deseja comparar para ver os custos em tempo real.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="saved">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="h-5 w-5 text-primary" />
+                  Simulações Salvas
+                </CardTitle>
+                <CardDescription>
+                  Consulte suas simulações anteriores ou vincule a um cliente
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {savedSimulationsLoading ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
                   </div>
-                  <h3 className="font-display text-lg font-semibold mb-2">
-                    Selecione técnicas para simular
-                  </h3>
-                  <p className="text-muted-foreground text-sm max-w-sm">
-                    Escolha um produto e as técnicas de personalização que deseja comparar para ver os custos em tempo real.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
+                ) : savedSimulations && savedSimulations.length > 0 ? (
+                  <div className="space-y-3">
+                    {savedSimulations.map(sim => (
+                      <div
+                        key={sim.id}
+                        className="p-4 rounded-xl border border-border bg-card hover:border-primary/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{sim.product_name}</p>
+                              {sim.product_sku && (
+                                <Badge variant="outline" className="text-xs">
+                                  {sim.product_sku}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Package className="h-3.5 w-3.5" />
+                                {sim.quantity} un
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <DollarSign className="h-3.5 w-3.5" />
+                                {formatCurrency(sim.product_unit_price)}/un
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Palette className="h-3.5 w-3.5" />
+                                {sim.simulation_data.length} técnica(s)
+                              </span>
+                            </div>
+                            {sim.bitrix_clients && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="secondary" className="gap-1">
+                                  <Building2 className="h-3 w-3" />
+                                  {sim.bitrix_clients.name}
+                                </Badge>
+                                {sim.bitrix_clients.ramo && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {sim.bitrix_clients.ramo}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {sim.notes && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                                {sim.notes}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <CalendarDays className="h-3 w-3" />
+                              {format(new Date(sim.created_at), "dd/MM/yy", { locale: ptBR })}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setViewSimulation(sim)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => deleteSimulationMutation.mutate(sim.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                      <History className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-display text-lg font-semibold mb-2">
+                      Nenhuma simulação salva
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      Crie uma simulação e clique em "Salvar" para consultá-la depois.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* Save Simulation Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Salvar Simulação</DialogTitle>
+            <DialogDescription>
+              Salve esta simulação para consultar depois ou vincule a um cliente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Vincular a cliente (opcional)
+              </Label>
+              <Select 
+                value={selectedClientId || ""} 
+                onValueChange={(val) => setSelectedClientId(val || null)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cliente..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="">Nenhum cliente</SelectItem>
+                  {clients?.map(client => (
+                    <SelectItem key={client.id} value={client.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{client.name}</span>
+                        {client.ramo && (
+                          <span className="text-xs text-muted-foreground">• {client.ramo}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Observações (opcional)</Label>
+              <Textarea
+                value={simulationNotes}
+                onChange={(e) => setSimulationNotes(e.target.value)}
+                placeholder="Ex: Cliente precisa de entrega rápida..."
+                rows={3}
+              />
+            </div>
+
+            <div className="p-3 rounded-lg bg-secondary/50 text-sm">
+              <p className="font-medium">{selectedProduct?.name}</p>
+              <p className="text-muted-foreground">
+                {quantity} un • {simulationOptions.length} técnica(s) comparadas
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => saveSimulationMutation.mutate()}
+              disabled={saveSimulationMutation.isPending}
+              className="gap-2"
+            >
+              {saveSimulationMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Saved Simulation Dialog */}
+      <Dialog open={!!viewSimulation} onOpenChange={() => setViewSimulation(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Detalhes da Simulação
+            </DialogTitle>
+          </DialogHeader>
+
+          {viewSimulation && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-secondary/50">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-semibold text-lg">{viewSimulation.product_name}</p>
+                    {viewSimulation.product_sku && (
+                      <p className="text-sm text-muted-foreground">SKU: {viewSimulation.product_sku}</p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(viewSimulation.created_at), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-4 mt-3 text-sm">
+                  <span><strong>Quantidade:</strong> {viewSimulation.quantity}</span>
+                  <span><strong>Preço/un:</strong> {formatCurrency(viewSimulation.product_unit_price)}</span>
+                </div>
+                {viewSimulation.bitrix_clients && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{viewSimulation.bitrix_clients.name}</span>
+                    {viewSimulation.bitrix_clients.ramo && (
+                      <Badge variant="outline" className="text-xs">{viewSimulation.bitrix_clients.ramo}</Badge>
+                    )}
+                  </div>
+                )}
+                {viewSimulation.notes && (
+                  <p className="mt-3 text-sm italic text-muted-foreground">"{viewSimulation.notes}"</p>
+                )}
+              </div>
+
+              <div className="rounded-lg border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Técnica</TableHead>
+                      <TableHead className="text-center">Detalhes</TableHead>
+                      <TableHead className="text-right">Total Geral</TableHead>
+                      <TableHead className="text-right">Final/Un</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {viewSimulation.simulation_data
+                      .sort((a, b) => a.grandTotal - b.grandTotal)
+                      .map((opt, idx) => (
+                        <TableRow key={idx} className={cn(idx === 0 && "bg-success/5")}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {idx === 0 && (
+                                <Badge className="bg-success text-success-foreground text-[10px]">
+                                  Menor
+                                </Badge>
+                              )}
+                              <div>
+                                <p className="font-medium">{opt.techniqueName}</p>
+                                <p className="text-xs text-muted-foreground">{opt.techniqueCode}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center text-xs text-muted-foreground">
+                            {opt.colors} cor(es) • {opt.width}×{opt.height}cm • {opt.positions} pos.
+                          </TableCell>
+                          <TableCell className="text-right font-bold">
+                            {formatCurrency(opt.grandTotal)}
+                          </TableCell>
+                          <TableCell className="text-right font-semibold text-primary">
+                            {formatCurrency(opt.grandTotalPerUnit)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewSimulation(null)}>
+              Fechar
+            </Button>
+            <Button onClick={() => viewSimulation && loadSavedSimulation(viewSimulation)} className="gap-2">
+              <Calculator className="h-4 w-4" />
+              Carregar no Simulador
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }
