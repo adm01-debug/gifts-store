@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, Share2, Eye, Package, Layers, GitCompare } from "lucide-react";
+import { Heart, Share2, Eye, Package, Layers, GitCompare, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -19,6 +19,8 @@ export interface ProductCardProps {
   isInCompare?: boolean;
   onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean };
   canAddToCompare?: boolean;
+  isInQuote?: boolean;
+  onAddToQuote?: (productId: string) => void;
 }
 
 export function ProductCard({ 
@@ -32,7 +34,9 @@ export function ProductCard({
   onToggleFavorite,
   isInCompare = false,
   onToggleCompare,
-  canAddToCompare = true
+  canAddToCompare = true,
+  isInQuote = false,
+  onAddToQuote
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -63,6 +67,14 @@ export function ProductCard({
             : `"${product.name}" removido da comparação`
         );
       }
+    }
+  };
+
+  const handleAddToQuote = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onAddToQuote) {
+      onAddToQuote(product.id);
+      toast.success(`"${product.name}" adicionado ao orçamento`);
     }
   };
 
@@ -232,6 +244,31 @@ export function ProductCard({
             </TooltipTrigger>
             <TooltipContent>Ver detalhes</TooltipContent>
           </Tooltip>
+
+          {/* Add to quote */}
+          {onAddToQuote && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className={cn(
+                    "h-8 w-8 bg-card/90 backdrop-blur-sm hover:bg-card",
+                    isInQuote && "bg-success/20 hover:bg-success/30"
+                  )}
+                  onClick={handleAddToQuote}
+                >
+                  <FileText
+                    className={cn(
+                      "h-4 w-4 transition-colors",
+                      isInQuote && "text-success"
+                    )}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Adicionar ao orçamento</TooltipContent>
+            </Tooltip>
+          )}
         </div>
 
         {/* Color variations */}

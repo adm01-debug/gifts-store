@@ -1,4 +1,4 @@
-import { Search, Bell, User, Menu, Sparkles, Sun, Moon, Heart } from "lucide-react";
+import { Search, Bell, User, Menu, Sparkles, Sun, Moon, Heart, FileText } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
+import { useQuoteContext } from "@/contexts/QuoteContext";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -25,6 +26,7 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { favoriteCount } = useFavoritesContext();
+  const { itemCount: quoteCount } = useQuoteContext();
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -113,6 +115,28 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
               </Button>
             </TooltipTrigger>
             <TooltipContent>Meus Favoritos</TooltipContent>
+          </Tooltip>
+
+          {/* Quote */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => navigate("/orcamento")}
+              >
+                <FileText className="h-5 w-5" />
+                {quoteCount > 0 && (
+                  <Badge 
+                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-success text-success-foreground"
+                  >
+                    {quoteCount > 99 ? "99+" : quoteCount}
+                  </Badge>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Orçamento</TooltipContent>
           </Tooltip>
 
           {/* Notifications */}

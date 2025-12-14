@@ -6,7 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ComparisonProvider } from "@/contexts/ComparisonContext";
+import { QuoteProvider } from "@/contexts/QuoteContext";
 import { CompareBar } from "@/components/compare/CompareBar";
+import { QuoteBar } from "@/components/quote/QuoteBar";
 import Index from "./pages/Index";
 import ProductDetail from "./pages/ProductDetail";
 import ClientDetail from "./pages/ClientDetail";
@@ -14,6 +16,7 @@ import ClientList from "./pages/ClientList";
 import FiltersPage from "./pages/FiltersPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import ComparePage from "./pages/ComparePage";
+import QuotePage from "./pages/QuotePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,24 +26,28 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <FavoritesProvider>
         <ComparisonProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/produto/:id" element={<ProductDetail />} />
-                <Route path="/clientes" element={<ClientList />} />
-                <Route path="/cliente/:id" element={<ClientDetail />} />
-                <Route path="/filtros" element={<FiltersPage />} />
-                <Route path="/favoritos" element={<FavoritesPage />} />
-                <Route path="/comparar" element={<ComparePage />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <CompareBar />
-            </BrowserRouter>
-          </TooltipProvider>
+          <QuoteProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/produto/:id" element={<ProductDetail />} />
+                  <Route path="/clientes" element={<ClientList />} />
+                  <Route path="/cliente/:id" element={<ClientDetail />} />
+                  <Route path="/filtros" element={<FiltersPage />} />
+                  <Route path="/favoritos" element={<FavoritesPage />} />
+                  <Route path="/comparar" element={<ComparePage />} />
+                  <Route path="/orcamento" element={<QuotePage />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <CompareBar />
+                <QuoteBar />
+              </BrowserRouter>
+            </TooltipProvider>
+          </QuoteProvider>
         </ComparisonProvider>
       </FavoritesProvider>
     </ThemeProvider>
