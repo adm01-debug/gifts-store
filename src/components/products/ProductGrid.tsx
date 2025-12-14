@@ -1,15 +1,17 @@
 import { ProductCard } from "./ProductCard";
 import type { Product } from "@/data/mockData";
 
-interface ProductGridProps {
+export interface ProductGridProps {
   products: Product[];
+  onProductClick?: (productId: string) => void;
   onViewProduct?: (product: Product) => void;
   onShareProduct?: (product: Product) => void;
   onFavoriteProduct?: (product: Product) => void;
 }
 
 export function ProductGrid({ 
-  products, 
+  products,
+  onProductClick,
   onViewProduct, 
   onShareProduct, 
   onFavoriteProduct 
@@ -40,6 +42,7 @@ export function ProductGrid({
         >
           <ProductCard
             product={product}
+            onClick={onProductClick ? () => onProductClick(product.id) : undefined}
             onView={onViewProduct}
             onShare={onShareProduct}
             onFavorite={onFavoriteProduct}
