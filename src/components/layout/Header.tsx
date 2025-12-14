@@ -1,5 +1,6 @@
-import { Search, Bell, User, Menu, Sparkles, Sun, Moon } from "lucide-react";
+import { Search, Bell, User, Menu, Sparkles, Sun, Moon, Heart } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useFavoritesContext } from "@/contexts/FavoritesContext";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -20,6 +23,8 @@ interface HeaderProps {
 
 export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProps) {
   const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
+  const { favoriteCount } = useFavoritesContext();
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -86,6 +91,29 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
             <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             <span className="sr-only">Alternar tema</span>
           </Button>
+
+          {/* Favorites */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => navigate("/favoritos")}
+              >
+                <Heart className="h-5 w-5" />
+                {favoriteCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
+                  >
+                    {favoriteCount > 99 ? "99+" : favoriteCount}
+                  </Badge>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Meus Favoritos</TooltipContent>
+          </Tooltip>
 
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="relative">
