@@ -15,6 +15,7 @@ import { PRODUCTS, CATEGORIES, SUPPLIERS, type Product } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
 import { useComparisonContext } from "@/contexts/ComparisonContext";
+import { useQuoteContext } from "@/contexts/QuoteContext";
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'name' | 'price-asc' | 'price-desc' | 'stock' | 'newest';
@@ -24,6 +25,7 @@ export default function Index() {
   const { toast } = useToast();
   const { isFavorite, toggleFavorite, favoriteCount } = useFavoritesContext();
   const { isInCompare, toggleCompare, canAddMore } = useComparisonContext();
+  const { isInQuote, addItem: addToQuote } = useQuoteContext();
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('name');
@@ -366,6 +368,8 @@ export default function Index() {
               isInCompare={isInCompare}
               onToggleCompare={toggleCompare}
               canAddToCompare={canAddMore}
+              isInQuote={isInQuote}
+              onAddToQuote={(productId) => addToQuote(productId)}
             />
           </div>
         </div>
