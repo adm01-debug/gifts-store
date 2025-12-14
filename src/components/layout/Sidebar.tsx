@@ -14,6 +14,7 @@ import {
   User,
   LayoutDashboard,
   Cloud,
+  Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ const bottomNavItems = [
   { icon: Cloud, label: "Bitrix24", href: "/bitrix", adminOnly: false },
   { icon: User, label: "Meu Perfil", href: "/perfil", adminOnly: false },
   { icon: ShieldCheck, label: "Admin", href: "/admin", adminOnly: true },
+  { icon: Palette, label: "Personalização", href: "/admin/personalizacao", adminOnly: true },
   { icon: Settings, label: "Configurações", href: "/configuracoes", adminOnly: false },
 ];
 

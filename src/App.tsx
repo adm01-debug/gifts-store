@@ -21,6 +21,7 @@ import ComparePage from "./pages/ComparePage";
 import CollectionsPage from "./pages/CollectionsPage";
 import CollectionDetailPage from "./pages/CollectionDetailPage";
 import AdminPanel from "./pages/AdminPanel";
+import AdminPersonalizationPage from "./pages/AdminPersonalizationPage";
 import ProfilePage from "./pages/ProfilePage";
 import DashboardPage from "./pages/DashboardPage";
 import BitrixSyncPage from "./pages/BitrixSyncPage";
@@ -94,6 +95,11 @@ const App = () => (
                     <Route path="/admin" element={
                       <ProtectedRoute requireAdmin>
                         <AdminPanel />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/personalizacao" element={
+                      <ProtectedRoute requireAdmin>
+                        <AdminPersonalizationPage />
                       </ProtectedRoute>
                     } />
                     <Route path="/perfil" element={
