@@ -318,6 +318,20 @@ export function ProductPersonalizationRules({ productId, productSku }: ProductPe
                       )}
                     </div>
 
+                    {/* Area image */}
+                    {location.areaImageUrl && (
+                      <div className="relative rounded-lg overflow-hidden border border-border/50 bg-background">
+                        <img 
+                          src={location.areaImageUrl} 
+                          alt={`Área de impressão - ${location.name}`}
+                          className="w-full max-h-40 object-contain"
+                        />
+                        <div className="absolute bottom-2 left-2 px-2 py-1 rounded bg-background/80 backdrop-blur-sm text-xs text-muted-foreground">
+                          Área de impressão
+                        </div>
+                      </div>
+                    )}
+
                     {location.techniques.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {location.techniques.map((technique) => (
