@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List, User, X, Palette, Sparkles } from "lucide-react";
+import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List, User, X, Palette, Sparkles, ChevronDown, Loader2 } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { ProductList } from "@/components/products/ProductList";
@@ -37,6 +37,10 @@ export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeQuickFilterId, setActiveQuickFilterId] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(true);
+  const [displayCount, setDisplayCount] = useState(12);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const ITEMS_PER_PAGE = 12;
 
   // Simular carregamento inicial
   useEffect(() => {
@@ -44,6 +48,11 @@ export default function Index() {
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setDisplayCount(ITEMS_PER_PAGE);
+  }, [filters, sortBy, searchQuery, selectedClient]);
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (filters.colors.length) count += filters.colors.length;
@@ -160,7 +169,21 @@ export default function Index() {
     return result;
   }, [filters, sortBy, selectedClient, searchQuery]);
 
-  // Apply quick filter
+  // Paginated products
+  const paginatedProducts = useMemo(() => {
+    return filteredProducts.slice(0, displayCount);
+  }, [filteredProducts, displayCount]);
+
+  const hasMoreProducts = displayCount < filteredProducts.length;
+
+  const handleLoadMore = () => {
+    setIsLoadingMore(true);
+    // Simulate loading delay
+    setTimeout(() => {
+      setDisplayCount(prev => prev + ITEMS_PER_PAGE);
+      setIsLoadingMore(false);
+    }, 400);
+  };
   const handleApplyQuickFilter = (quickFilter: QuickFilter["filter"]) => {
     const newFilters = { ...defaultFilters };
     
@@ -514,7 +537,7 @@ export default function Index() {
               )
             ) : viewMode === 'grid' ? (
               <ProductGrid
-                products={filteredProducts}
+                products={paginatedProducts}
                 onProductClick={(productId) => navigate(`/produto/${productId}`)}
                 onViewProduct={handleViewProduct}
                 onShareProduct={handleShareProduct}
@@ -528,7 +551,7 @@ export default function Index() {
               />
             ) : (
               <ProductList
-                products={filteredProducts}
+                products={paginatedProducts}
                 onProductClick={(productId) => navigate(`/produto/${productId}`)}
                 onViewProduct={handleViewProduct}
                 onShareProduct={handleShareProduct}
@@ -540,6 +563,43 @@ export default function Index() {
                 canAddToCompare={canAddMore}
                 highlightColors={clientColorGroups}
               />
+            )}
+
+            {/* Load more button */}
+            {!isLoading && hasMoreProducts && (
+              <div className="flex flex-col items-center gap-3 pt-8">
+                <p className="text-sm text-muted-foreground">
+                  Mostrando {paginatedProducts.length} de {filteredProducts.length} produtos
+                </p>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className="rounded-full px-8 gap-2"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Carregando...
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4" />
+                      Carregar mais produtos
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* All products loaded message */}
+            {!isLoading && !hasMoreProducts && filteredProducts.length > ITEMS_PER_PAGE && (
+              <div className="flex justify-center pt-8">
+                <p className="text-sm text-muted-foreground">
+                  Todos os {filteredProducts.length} produtos foram carregados
+                </p>
+              </div>
             )}
           </div>
         </div>
