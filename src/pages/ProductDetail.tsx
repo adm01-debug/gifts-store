@@ -8,7 +8,10 @@ import {
   Shield, 
   Tag,
   Layers,
-  Star
+  Star,
+  Sparkles,
+  Check,
+  Share2
 } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProductGallery } from "@/components/products/ProductGallery";
@@ -39,17 +42,19 @@ export default function ProductDetail() {
   if (!product) {
     return (
       <MainLayout>
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-            <Package className="h-8 w-8 text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-muted to-secondary flex items-center justify-center mb-6">
+            <Package className="h-10 w-10 text-muted-foreground" />
           </div>
-          <h2 className="font-display text-xl font-semibold text-foreground mb-2">
+          <h2 className="font-display text-2xl font-bold text-foreground mb-3">
             Produto não encontrado
           </h2>
-          <p className="text-muted-foreground mb-4">
-            O produto que você está procurando não existe ou foi removido.
+          <p className="text-muted-foreground mb-6 max-w-sm">
+            O produto que você está procurando não existe ou foi removido do catálogo.
           </p>
-          <Button onClick={() => navigate("/")}>Voltar para Vitrine</Button>
+          <Button size="lg" onClick={() => navigate("/")} className="rounded-full px-8">
+            Voltar para Vitrine
+          </Button>
         </div>
       </MainLayout>
     );
@@ -65,13 +70,13 @@ export default function ProductDetail() {
   const getStockStatusInfo = (status: string) => {
     switch (status) {
       case "in-stock":
-        return { label: "Em estoque", class: "stock-indicator in-stock" };
+        return { label: "Em estoque", class: "bg-success/10 text-success border-success/20" };
       case "low-stock":
-        return { label: "Estoque baixo", class: "stock-indicator low-stock" };
+        return { label: "Estoque baixo", class: "bg-warning/10 text-warning border-warning/20" };
       case "out-of-stock":
-        return { label: "Sem estoque", class: "stock-indicator out-of-stock" };
+        return { label: "Sem estoque", class: "bg-destructive/10 text-destructive border-destructive/20" };
       default:
-        return { label: "Consultar", class: "stock-indicator" };
+        return { label: "Consultar", class: "bg-muted text-muted-foreground" };
     }
   };
 
@@ -92,40 +97,40 @@ export default function ProductDetail() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="space-y-8 animate-fade-in">
         {/* Breadcrumb / Back button */}
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
-            className="shrink-0"
+            className="shrink-0 h-10 w-10 rounded-full hover:bg-secondary transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span
-              className="hover:text-foreground cursor-pointer"
+              className="hover:text-foreground cursor-pointer transition-colors"
               onClick={() => navigate("/")}
             >
               Vitrine
             </span>
-            <span>/</span>
+            <span className="text-border">/</span>
             <span
-              className="hover:text-foreground cursor-pointer"
+              className="hover:text-foreground cursor-pointer transition-colors"
               onClick={() => navigate(`/?category=${product.category.id}`)}
             >
               {product.category.icon} {product.category.name}
             </span>
-            <span>/</span>
-            <span className="text-foreground truncate">{product.name}</span>
+            <span className="text-border">/</span>
+            <span className="text-foreground font-medium truncate">{product.name}</span>
           </div>
         </div>
 
         {/* Main content */}
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-2 gap-10">
           {/* Left column - Gallery */}
-          <div className="space-y-4">
+          <div className="space-y-6" style={{ animationDelay: '100ms' }}>
             <ProductGallery
               images={displayImages}
               video={product.video}
@@ -145,89 +150,111 @@ export default function ProductDetail() {
           </div>
 
           {/* Right column - Info */}
-          <div className="space-y-6">
+          <div className="space-y-6" style={{ animationDelay: '200ms' }}>
             {/* Header */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* Badges */}
               <div className="flex flex-wrap gap-2">
                 {product.featured && (
-                  <Badge className="bg-primary text-primary-foreground">
-                    <Star className="h-3 w-3 mr-1" />
+                  <Badge className="bg-gradient-to-r from-primary to-primary-glow text-primary-foreground px-3 py-1 shadow-lg">
+                    <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                     Destaque
                   </Badge>
                 )}
                 {product.newArrival && (
-                  <Badge className="bg-info text-info-foreground">Novidade</Badge>
+                  <Badge className="bg-gradient-to-r from-info to-info/80 text-info-foreground px-3 py-1">
+                    Novidade
+                  </Badge>
                 )}
                 {product.onSale && (
-                  <Badge className="bg-destructive text-destructive-foreground">
+                  <Badge className="bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground px-3 py-1">
                     Promoção
                   </Badge>
                 )}
                 {product.isKit && (
-                  <Badge className="bg-warning text-warning-foreground">
-                    <Layers className="h-3 w-3 mr-1" />
+                  <Badge className="bg-gradient-to-r from-warning to-warning/80 text-warning-foreground px-3 py-1">
+                    <Layers className="h-3.5 w-3.5 mr-1.5" />
                     KIT
                   </Badge>
                 )}
               </div>
 
               {/* Title */}
-              <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground">
+              <h1 className="font-display text-3xl lg:text-4xl font-bold text-foreground leading-tight">
                 {product.name}
               </h1>
 
               {/* SKU & Supplier */}
-              <div className="flex items-center gap-4 text-sm">
-                <span className="text-muted-foreground font-mono">
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-muted-foreground font-mono bg-muted px-3 py-1 rounded-full">
                   SKU: {selectedVariation?.sku || product.sku}
                 </span>
-                <span className="supplier-badge">{product.supplier.name}</span>
+                <span className="text-sm px-3 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
+                  {product.supplier.name}
+                </span>
               </div>
             </div>
 
-            {/* Price & Stock */}
-            <div className="card-stat space-y-3">
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">
-                    A partir de
-                  </p>
-                  <span className="price-tag">{formatPrice(product.price)}</span>
-                  <span className="text-muted-foreground">/un</span>
+            {/* Price & Stock Card */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-card to-secondary/20 border border-border p-6 shadow-lg">
+              {/* Decorative gradient */}
+              {product.featured && (
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent rounded-bl-full" />
+              )}
+              
+              <div className="relative space-y-4">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      A partir de
+                    </p>
+                    <span className="text-4xl font-display font-bold text-foreground">
+                      {formatPrice(product.price)}
+                    </span>
+                    <span className="text-lg text-muted-foreground ml-1">/un</span>
+                  </div>
+                  <div className="text-right">
+                    <span className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border",
+                      stockInfo.class
+                    )}>
+                      <Package className="h-4 w-4" />
+                      {stockInfo.label}
+                    </span>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {(selectedVariation?.stock || product.stock).toLocaleString("pt-BR")} unidades
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className={stockInfo.class}>
-                    <Package className="h-3 w-3" />
-                    {stockInfo.label}
-                  </span>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {(selectedVariation?.stock || product.stock).toLocaleString("pt-BR")} unidades
-                  </p>
-                </div>
-              </div>
 
-              <Separator />
+                <Separator className="bg-border/50" />
 
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Tag className="h-4 w-4" />
-                  <span>Mín. {product.minQuantity} un.</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Truck className="h-4 w-4" />
-                  <span>Consultar prazo</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Shield className="h-4 w-4" />
-                  <span>Garantia</span>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Tag className="h-4 w-4 text-primary" />
+                    </div>
+                    <span>Mín. {product.minQuantity} un.</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center">
+                      <Truck className="h-4 w-4 text-info" />
+                    </div>
+                    <span>Consultar prazo</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+                      <Shield className="h-4 w-4 text-success" />
+                    </div>
+                    <span>Garantia</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Description */}
-            <div className="space-y-2">
-              <h3 className="font-display font-semibold text-foreground">
+            <div className="space-y-3">
+              <h3 className="font-display text-lg font-semibold text-foreground">
                 Descrição
               </h3>
               <p className="text-muted-foreground leading-relaxed">
@@ -236,13 +263,17 @@ export default function ProductDetail() {
             </div>
 
             {/* Materials */}
-            <div className="space-y-2">
-              <h3 className="font-display font-semibold text-foreground">
+            <div className="space-y-3">
+              <h3 className="font-display text-lg font-semibold text-foreground">
                 Materiais
               </h3>
               <div className="flex flex-wrap gap-2">
                 {product.materials.map((material) => (
-                  <Badge key={material} variant="secondary">
+                  <Badge 
+                    key={material} 
+                    variant="secondary"
+                    className="px-4 py-1.5 text-sm rounded-full"
+                  >
                     {material}
                   </Badge>
                 ))}
@@ -271,39 +302,53 @@ export default function ProductDetail() {
               
               <Button
                 variant="outline"
-                size="icon"
+                size="lg"
                 onClick={handleFavorite}
                 className={cn(
-                  isFavorite && "bg-destructive/10 border-destructive/50"
+                  "rounded-full px-6 transition-all duration-300",
+                  isFavorite && "bg-destructive/10 border-destructive/50 hover:bg-destructive/20"
                 )}
               >
                 <Heart
                   className={cn(
-                    "h-5 w-5",
-                    isFavorite && "fill-destructive text-destructive"
+                    "h-5 w-5 mr-2 transition-all duration-300",
+                    isFavorite && "fill-destructive text-destructive scale-110"
                   )}
                 />
+                {isFavorite ? "Favoritado" : "Favoritar"}
               </Button>
             </div>
 
             {/* Tags */}
-            <div className="space-y-3 pt-4 border-t border-border">
-              <h3 className="font-display font-semibold text-foreground text-sm">
+            <div className="space-y-4 pt-4 border-t border-border">
+              <h3 className="font-display text-lg font-semibold text-foreground">
                 Indicado para
               </h3>
               <div className="flex flex-wrap gap-2">
                 {product.tags.publicoAlvo.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
+                  <Badge 
+                    key={tag} 
+                    variant="outline" 
+                    className="px-3 py-1.5 text-sm rounded-full hover:bg-secondary transition-colors cursor-default"
+                  >
                     👤 {tag}
                   </Badge>
                 ))}
                 {product.tags.datasComemorativas.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
+                  <Badge 
+                    key={tag} 
+                    variant="outline" 
+                    className="px-3 py-1.5 text-sm rounded-full hover:bg-secondary transition-colors cursor-default"
+                  >
                     📅 {tag}
                   </Badge>
                 ))}
-                {product.tags.endomarketing.slice(0, 2).map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
+                {product.tags.endomarketing.slice(0, 3).map((tag) => (
+                  <Badge 
+                    key={tag} 
+                    variant="outline" 
+                    className="px-3 py-1.5 text-sm rounded-full hover:bg-secondary transition-colors cursor-default"
+                  >
                     🎯 {tag}
                   </Badge>
                 ))}
