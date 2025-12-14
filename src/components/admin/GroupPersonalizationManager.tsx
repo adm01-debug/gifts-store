@@ -44,9 +44,9 @@ import {
   Palette,
   Check,
   X,
-  Image as ImageIcon,
 } from "lucide-react";
 import { InlineEditField } from "./InlineEditField";
+import { ImageUploadButton } from "./ImageUploadButton";
 
 interface ProductGroup {
   id: string;
@@ -657,16 +657,12 @@ export function GroupPersonalizationManager() {
                                       />
                                       <Label className="text-xs">Ativo</Label>
                                     </div>
-                                    {location.area_image_url && (
-                                      <Tooltip>
-                                        <TooltipTrigger>
-                                          <ImageIcon className="h-4 w-4 text-primary" />
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <img src={location.area_image_url} alt="Área" className="max-w-48" />
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    )}
+                                    <ImageUploadButton
+                                      currentImageUrl={location.area_image_url}
+                                      onUpload={(url) => updateLocationMutation.mutate({ id: location.id, area_image_url: url })}
+                                      onRemove={() => updateLocationMutation.mutate({ id: location.id, area_image_url: null })}
+                                      folder={`groups/${selectedGroup}`}
+                                    />
                                     <Button
                                       size="sm"
                                       variant="ghost"
