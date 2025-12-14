@@ -6,14 +6,16 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import type { Product } from "@/data/mockData";
 
-interface ProductCardProps {
+export interface ProductCardProps {
   product: Product;
+  onClick?: () => void;
   onView?: (product: Product) => void;
   onShare?: (product: Product) => void;
   onFavorite?: (product: Product) => void;
+  highlightColors?: string[];
 }
 
-export function ProductCard({ product, onView, onShare, onFavorite }: ProductCardProps) {
+export function ProductCard({ product, onClick, onView, onShare, onFavorite, highlightColors }: ProductCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -55,14 +57,20 @@ export function ProductCard({ product, onView, onShare, onFavorite }: ProductCar
     }
   };
 
+  const hasHighlightedColor = highlightColors?.some(group =>
+    product.colors.some(color => color.group === group)
+  );
+
   return (
     <article
       className={cn(
-        "card-interactive group overflow-hidden",
-        product.featured && "ring-2 ring-primary/20"
+        "card-interactive group overflow-hidden cursor-pointer",
+        product.featured && "ring-2 ring-primary/20",
+        hasHighlightedColor && "ring-2 ring-success/30"
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={onClick}
     >
       {/* Image container */}
       <div className="relative aspect-square overflow-hidden bg-secondary/30">

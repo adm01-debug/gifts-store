@@ -74,6 +74,30 @@ export interface Client {
   secondaryColors: ProductColor[];
   ramo: string;
   nicho: string;
+  cnpj?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  purchaseHistory?: PurchaseHistory[];
+  totalSpent?: number;
+  lastPurchase?: string;
+  registeredAt?: string;
+}
+
+export interface PurchaseHistory {
+  id: string;
+  date: string;
+  products: PurchaseItem[];
+  total: number;
+  status: 'completed' | 'pending' | 'cancelled';
+}
+
+export interface PurchaseItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  color: ProductColor;
 }
 
 // Cores disponíveis
@@ -539,7 +563,7 @@ export const PRODUCTS: Product[] = [
   },
 ];
 
-// Clientes mockados
+// Clientes mockados com histórico de compras
 export const CLIENTS: Client[] = [
   {
     id: 'cli-001',
@@ -548,6 +572,44 @@ export const CLIENTS: Client[] = [
     secondaryColors: [COLORS[1], COLORS[3]],
     ramo: 'Cooperativas de Crédito',
     nicho: 'Financeiro',
+    cnpj: '02.038.232/0001-64',
+    email: 'compras@sicoob.com.br',
+    phone: '(31) 3333-4444',
+    address: 'Av. Brasil, 1500 - Centro, Belo Horizonte/MG',
+    totalSpent: 45890.50,
+    lastPurchase: '2024-01-10',
+    registeredAt: '2022-03-15',
+    purchaseHistory: [
+      {
+        id: 'pur-001',
+        date: '2024-01-10',
+        products: [
+          { productId: 'prod-001', productName: 'Squeeze Plástico 700ml', quantity: 500, unitPrice: 12.90, color: COLORS[2] },
+          { productId: 'prod-005', productName: 'Camiseta Algodão Premium', quantity: 200, unitPrice: 42.00, color: COLORS[3] },
+        ],
+        total: 14850.00,
+        status: 'completed',
+      },
+      {
+        id: 'pur-002',
+        date: '2023-11-20',
+        products: [
+          { productId: 'prod-006', productName: 'Mochila Notebook 15"', quantity: 100, unitPrice: 89.90, color: COLORS[4] },
+        ],
+        total: 8990.00,
+        status: 'completed',
+      },
+      {
+        id: 'pur-003',
+        date: '2023-08-05',
+        products: [
+          { productId: 'prod-002', productName: 'Caneca Metal 350ml', quantity: 300, unitPrice: 28.50, color: COLORS[3] },
+          { productId: 'prod-004', productName: 'Pen Drive 32GB Giratório', quantity: 200, unitPrice: 35.00, color: COLORS[2] },
+        ],
+        total: 15550.00,
+        status: 'completed',
+      },
+    ],
   },
   {
     id: 'cli-002',
@@ -556,6 +618,34 @@ export const CLIENTS: Client[] = [
     secondaryColors: [COLORS[5], COLORS[3]],
     ramo: 'Mineradoras',
     nicho: 'Mineração',
+    cnpj: '33.592.510/0001-54',
+    email: 'marketing@vale.com',
+    phone: '(21) 3485-3000',
+    address: 'Praia de Botafogo, 186 - Botafogo, Rio de Janeiro/RJ',
+    totalSpent: 128450.00,
+    lastPurchase: '2024-01-05',
+    registeredAt: '2021-06-20',
+    purchaseHistory: [
+      {
+        id: 'pur-004',
+        date: '2024-01-05',
+        products: [
+          { productId: 'prod-003', productName: 'Kit Churrasco Premium 10 Peças', quantity: 150, unitPrice: 189.90, color: COLORS[4] },
+          { productId: 'prod-009', productName: 'Boné 5 Painéis Algodão', quantity: 1000, unitPrice: 15.50, color: COLORS[2] },
+        ],
+        total: 43985.00,
+        status: 'completed',
+      },
+      {
+        id: 'pur-005',
+        date: '2023-12-01',
+        products: [
+          { productId: 'prod-007', productName: 'Garrafa Térmica 500ml', quantity: 500, unitPrice: 65.00, color: COLORS[2] },
+        ],
+        total: 32500.00,
+        status: 'completed',
+      },
+    ],
   },
   {
     id: 'cli-003',
@@ -564,6 +654,25 @@ export const CLIENTS: Client[] = [
     secondaryColors: [COLORS[3]],
     ramo: 'Planos de Saúde',
     nicho: 'Saúde',
+    cnpj: '04.547.479/0001-37',
+    email: 'compras@unimed.com.br',
+    phone: '(11) 3111-2222',
+    address: 'Alameda Santos, 2000 - Cerqueira César, São Paulo/SP',
+    totalSpent: 67320.00,
+    lastPurchase: '2023-12-15',
+    registeredAt: '2022-01-10',
+    purchaseHistory: [
+      {
+        id: 'pur-006',
+        date: '2023-12-15',
+        products: [
+          { productId: 'prod-001', productName: 'Squeeze Plástico 700ml', quantity: 1000, unitPrice: 12.90, color: COLORS[2] },
+          { productId: 'prod-008', productName: 'Caderno Ecológico A5', quantity: 500, unitPrice: 18.90, color: COLORS[2] },
+        ],
+        total: 22350.00,
+        status: 'completed',
+      },
+    ],
   },
   {
     id: 'cli-004',
@@ -572,6 +681,34 @@ export const CLIENTS: Client[] = [
     secondaryColors: [COLORS[1], COLORS[3]],
     ramo: 'Bancos Comerciais e Múltiplos',
     nicho: 'Financeiro',
+    cnpj: '60.701.190/0001-04',
+    email: 'brindes@itau.com.br',
+    phone: '(11) 4004-4828',
+    address: 'Praça Alfredo Egydio de Souza Aranha, 100 - Jabaquara, São Paulo/SP',
+    totalSpent: 215780.00,
+    lastPurchase: '2024-01-12',
+    registeredAt: '2020-08-05',
+    purchaseHistory: [
+      {
+        id: 'pur-007',
+        date: '2024-01-12',
+        products: [
+          { productId: 'prod-010', productName: 'Power Bank 10000mAh Slim', quantity: 500, unitPrice: 75.00, color: COLORS[5] },
+          { productId: 'prod-006', productName: 'Mochila Notebook 15"', quantity: 300, unitPrice: 89.90, color: COLORS[1] },
+        ],
+        total: 64470.00,
+        status: 'completed',
+      },
+      {
+        id: 'pur-008',
+        date: '2023-10-20',
+        products: [
+          { productId: 'prod-005', productName: 'Camiseta Algodão Premium', quantity: 2000, unitPrice: 42.00, color: COLORS[5] },
+        ],
+        total: 84000.00,
+        status: 'completed',
+      },
+    ],
   },
   {
     id: 'cli-005',
@@ -580,5 +717,25 @@ export const CLIENTS: Client[] = [
     secondaryColors: [COLORS[6], COLORS[3]],
     ramo: 'Petróleo',
     nicho: 'Petróleo',
+    cnpj: '33.000.167/0001-01',
+    email: 'comunicacao@petrobras.com.br',
+    phone: '(21) 3224-4477',
+    address: 'Av. República do Chile, 65 - Centro, Rio de Janeiro/RJ',
+    totalSpent: 342150.00,
+    lastPurchase: '2024-01-08',
+    registeredAt: '2019-11-12',
+    purchaseHistory: [
+      {
+        id: 'pur-009',
+        date: '2024-01-08',
+        products: [
+          { productId: 'prod-003', productName: 'Kit Churrasco Premium 10 Peças', quantity: 200, unitPrice: 189.90, color: COLORS[4] },
+          { productId: 'prod-007', productName: 'Garrafa Térmica 500ml', quantity: 800, unitPrice: 65.00, color: COLORS[2] },
+          { productId: 'prod-009', productName: 'Boné 5 Painéis Algodão', quantity: 2000, unitPrice: 15.50, color: COLORS[6] },
+        ],
+        total: 120980.00,
+        status: 'completed',
+      },
+    ],
   },
 ];
