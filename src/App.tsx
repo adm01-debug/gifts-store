@@ -23,10 +23,7 @@ import CollectionDetailPage from "./pages/CollectionDetailPage";
 import AdminPanel from "./pages/AdminPanel";
 import AdminPersonalizationPage from "./pages/AdminPersonalizationPage";
 import ProfilePage from "./pages/ProfilePage";
-import DashboardPage from "./pages/DashboardPage";
 import BitrixSyncPage from "./pages/BitrixSyncPage";
-import QuotesPage from "./pages/QuotesPage";
-import CreateQuotePage from "./pages/CreateQuotePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -105,26 +102,6 @@ const App = () => (
                     <Route path="/perfil" element={
                       <ProtectedRoute>
                         <ProfilePage />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/dashboard" element={
-                      <ProtectedRoute>
-                        <DashboardPage />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/bitrix" element={
-                      <ProtectedRoute>
-                        <BitrixSyncPage />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/orcamentos" element={
-                      <ProtectedRoute>
-                        <QuotesPage />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/orcamentos/novo" element={
-                      <ProtectedRoute>
-                        <CreateQuotePage />
                       </ProtectedRoute>
                     } />
                     
