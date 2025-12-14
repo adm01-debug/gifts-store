@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   User,
   LayoutDashboard,
+  Cloud,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ const mainNavItems = [
 ];
 
 const bottomNavItems = [
+  { icon: Cloud, label: "Bitrix24", href: "/bitrix", adminOnly: false },
   { icon: User, label: "Meu Perfil", href: "/perfil", adminOnly: false },
   { icon: ShieldCheck, label: "Admin", href: "/admin", adminOnly: true },
   { icon: Settings, label: "Configurações", href: "/configuracoes", adminOnly: false },

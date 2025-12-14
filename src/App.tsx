@@ -23,6 +23,7 @@ import CollectionDetailPage from "./pages/CollectionDetailPage";
 import AdminPanel from "./pages/AdminPanel";
 import ProfilePage from "./pages/ProfilePage";
 import DashboardPage from "./pages/DashboardPage";
+import BitrixSyncPage from "./pages/BitrixSyncPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -101,6 +102,11 @@ const App = () => (
                     <Route path="/dashboard" element={
                       <ProtectedRoute>
                         <DashboardPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/bitrix" element={
+                      <ProtectedRoute>
+                        <BitrixSyncPage />
                       </ProtectedRoute>
                     } />
                     
