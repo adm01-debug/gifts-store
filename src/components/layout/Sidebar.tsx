@@ -10,11 +10,13 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CATEGORIES } from "@/data/mockData";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -31,12 +33,14 @@ const mainNavItems = [
 ];
 
 const bottomNavItems = [
+  { icon: ShieldCheck, label: "Admin", href: "/admin", adminOnly: true },
   { icon: Settings, label: "Configurações", href: "/configuracoes" },
 ];
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isAdmin } = useAuth();
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -141,39 +145,43 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             )}
           </nav>
 
-          {/* Bottom navigation */}
           <div className="px-2 py-4 border-t border-sidebar-border">
-            {bottomNavItems.map((item) => {
-              const Icon = item.icon;
+            {bottomNavItems
+              .filter((item) => !item.adminOnly || isAdmin)
+              .map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.href;
 
-              const linkContent = (
-                <NavLink
-                  to={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                    "text-sidebar-foreground/70 hover:bg-sidebar-accent"
-                  )}
-                >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  {!isCollapsed && <span>{item.label}</span>}
-                </NavLink>
-              );
-
-              if (isCollapsed) {
-                return (
-                  <Tooltip key={item.href} delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      {linkContent}
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      {item.label}
-                    </TooltipContent>
-                  </Tooltip>
+                const linkContent = (
+                  <NavLink
+                    to={item.href}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+                      "hover:bg-sidebar-accent",
+                      isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                      !isActive && "text-sidebar-foreground/70"
+                    )}
+                  >
+                    <Icon className={cn("h-5 w-5 shrink-0", isActive && "text-primary")} />
+                    {!isCollapsed && <span>{item.label}</span>}
+                  </NavLink>
                 );
-              }
 
-              return <div key={item.href}>{linkContent}</div>;
-            })}
+                if (isCollapsed) {
+                  return (
+                    <Tooltip key={item.href} delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        {linkContent}
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        {item.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                return <div key={item.href}>{linkContent}</div>;
+              })}
           </div>
         </div>
       </aside>

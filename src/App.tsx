@@ -20,6 +20,7 @@ import FavoritesPage from "./pages/FavoritesPage";
 import ComparePage from "./pages/ComparePage";
 import CollectionsPage from "./pages/CollectionsPage";
 import CollectionDetailPage from "./pages/CollectionDetailPage";
+import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,6 +84,11 @@ const App = () => (
                     <Route path="/colecao/:id" element={
                       <ProtectedRoute>
                         <CollectionDetailPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin" element={
+                      <ProtectedRoute requireAdmin>
+                        <AdminPanel />
                       </ProtectedRoute>
                     } />
                     
