@@ -22,6 +22,7 @@ import CollectionsPage from "./pages/CollectionsPage";
 import CollectionDetailPage from "./pages/CollectionDetailPage";
 import AdminPanel from "./pages/AdminPanel";
 import AdminPersonalizationPage from "./pages/AdminPersonalizationPage";
+import PersonalizationSimulator from "./pages/PersonalizationSimulator";
 import ProfilePage from "./pages/ProfilePage";
 import BitrixSyncPage from "./pages/BitrixSyncPage";
 import NotFound from "./pages/NotFound";
@@ -102,6 +103,11 @@ const App = () => (
                     <Route path="/perfil" element={
                       <ProtectedRoute>
                         <ProfilePage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/simulador" element={
+                      <ProtectedRoute>
+                        <PersonalizationSimulator />
                       </ProtectedRoute>
                     } />
                     

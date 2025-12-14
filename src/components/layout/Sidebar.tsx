@@ -14,6 +14,7 @@ import {
   User,
   Cloud,
   Palette,
+  Calculator,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ const mainNavItems = [
   { icon: Package, label: "Produtos", href: "/" },
   { icon: FolderOpen, label: "Coleções", href: "/colecoes" },
   { icon: Users, label: "Clientes", href: "/clientes" },
+  { icon: Calculator, label: "Simulador", href: "/simulador" },
   { icon: Filter, label: "Filtros", href: "/filtros" },
   { icon: Heart, label: "Favoritos", href: "/favoritos" },
   { icon: GitCompare, label: "Comparar", href: "/comparar" },
