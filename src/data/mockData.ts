@@ -21,7 +21,7 @@ export interface Product {
   video?: string;
   tags: {
     publicoAlvo: string[];
-    datasomemorativas: string[];
+    datasComemorativas: string[];
     endomarketing: string[];
     ramo: string[];
     nicho: string[];
@@ -203,7 +203,7 @@ export const PRODUCTS: Product[] = [
     ],
     tags: {
       publicoAlvo: ['UNISSEX', 'ESPORTISTA'],
-      datasomemorativas: ['DIA DO TRABALHADOR'],
+      datasComemorativas: ['DIA DO TRABALHADOR'],
       endomarketing: ['QUALIDADE DE VIDA', 'CIPA | SIPAT'],
       ramo: ['Indústria'],
       nicho: ['Saúde'],
@@ -238,7 +238,7 @@ export const PRODUCTS: Product[] = [
     ],
     tags: {
       publicoAlvo: ['UNISSEX', 'EXECUTIVO'],
-      datasomemorativas: ['NATAL', 'DIA DO TRABALHADOR'],
+      datasComemorativas: ['NATAL', 'DIA DO TRABALHADOR'],
       endomarketing: ['ONBOARDING | KIT BOAS-VINDAS', 'RECONHECIMENTO'],
       ramo: ['Escritório'],
       nicho: ['Financeiro', 'TI'],
@@ -275,7 +275,7 @@ export const PRODUCTS: Product[] = [
     ],
     tags: {
       publicoAlvo: ['HOMEM', 'EXECUTIVO'],
-      datasomemorativas: ['DIA DOS PAIS', 'NATAL'],
+      datasComemorativas: ['DIA DOS PAIS', 'NATAL'],
       endomarketing: ['PREMIAÇÃO | INCENTIVO', 'RECONHECIMENTO'],
       ramo: ['Agropecuária'],
       nicho: ['Agro'],
@@ -303,7 +303,7 @@ export const PRODUCTS: Product[] = [
     ],
     tags: {
       publicoAlvo: ['UNISSEX', 'EXECUTIVO'],
-      datasomemorativas: ['NATAL'],
+      datasComemorativas: ['NATAL'],
       endomarketing: ['ONBOARDING | KIT BOAS-VINDAS', 'TREINAMENTO | CAPACITAÇÃO'],
       ramo: ['Tecnologia'],
       nicho: ['TI'],
@@ -330,7 +330,7 @@ export const PRODUCTS: Product[] = [
     ],
     tags: {
       publicoAlvo: ['UNISSEX'],
-      datasomemorativas: ['DIA DO TRABALHADOR'],
+      datasComemorativas: ['DIA DO TRABALHADOR'],
       endomarketing: ['ONBOARDING | KIT BOAS-VINDAS', 'CONVENÇÃO DE VENDAS'],
       ramo: ['Indústria'],
       nicho: ['Indústria Têxtil'],
@@ -358,7 +358,7 @@ export const PRODUCTS: Product[] = [
     ],
     tags: {
       publicoAlvo: ['UNISSEX', 'EXECUTIVO'],
-      datasomemorativas: ['NATAL'],
+      datasComemorativas: ['NATAL'],
       endomarketing: ['ONBOARDING | KIT BOAS-VINDAS', 'PREMIAÇÃO | INCENTIVO'],
       ramo: ['Tecnologia'],
       nicho: ['TI', 'Financeiro'],
@@ -386,7 +386,7 @@ export const PRODUCTS: Product[] = [
     ],
     tags: {
       publicoAlvo: ['UNISSEX'],
-      datasomemorativas: ['DIA DO TRABALHADOR', 'NATAL'],
+      datasComemorativas: ['DIA DO TRABALHADOR', 'NATAL'],
       endomarketing: ['QUALIDADE DE VIDA', 'CIPA | SIPAT'],
       ramo: ['Escritório'],
       nicho: ['Saúde'],
@@ -413,7 +413,7 @@ export const PRODUCTS: Product[] = [
     ],
     tags: {
       publicoAlvo: ['UNISSEX'],
-      datasomemorativas: ['DIA DO MEIO AMBIENTE'],
+      datasComemorativas: ['DIA DO MEIO AMBIENTE'],
       endomarketing: ['ONBOARDING | KIT BOAS-VINDAS'],
       ramo: ['Educação'],
       nicho: ['Educação'],
@@ -441,7 +441,7 @@ export const PRODUCTS: Product[] = [
     ],
     tags: {
       publicoAlvo: ['UNISSEX'],
-      datasomemorativas: ['CARNAVAL', 'FESTA JUNINA'],
+      datasComemorativas: ['CARNAVAL', 'FESTA JUNINA'],
       endomarketing: ['CONVENÇÃO DE VENDAS', 'INTEGRAÇÃO | TEAM BUILDING'],
       ramo: ['Esportes'],
       nicho: ['Agro'],
@@ -468,7 +468,7 @@ export const PRODUCTS: Product[] = [
     ],
     tags: {
       publicoAlvo: ['UNISSEX', 'EXECUTIVO'],
-      datasomemorativas: ['NATAL'],
+      datasComemorativas: ['NATAL'],
       endomarketing: ['PREMIAÇÃO | INCENTIVO', 'ONBOARDING | KIT BOAS-VINDAS'],
       ramo: ['Tecnologia'],
       nicho: ['TI'],
@@ -496,7 +496,7 @@ export const PRODUCTS: Product[] = [
     ],
     tags: {
       publicoAlvo: ['UNISSEX', 'EXECUTIVO'],
-      datasomemorativas: [],
+      datasComemorativas: [],
       endomarketing: ['ONBOARDING | KIT BOAS-VINDAS'],
       ramo: ['Escritório'],
       nicho: ['Financeiro'],
@@ -530,7 +530,7 @@ export const PRODUCTS: Product[] = [
     ],
     tags: {
       publicoAlvo: ['UNISSEX', 'SECRETÁRIA', 'EXECUTIVO'],
-      datasomemorativas: ['DIA DA SECRETÁRIA'],
+      datasComemorativas: ['DIA DA SECRETÁRIA'],
       endomarketing: ['ONBOARDING | KIT BOAS-VINDAS'],
       ramo: ['Escritório'],
       nicho: ['Financeiro', 'TI'],

@@ -24,7 +24,7 @@ export interface FilterState {
   categories: number[];
   suppliers: string[];
   publicoAlvo: string[];
-  datasomemorativas: string[];
+  datasComemorativas: string[];
   endomarketing: string[];
   nichos: string[];
   materiais: string[];
@@ -46,7 +46,7 @@ export const defaultFilters: FilterState = {
   categories: [],
   suppliers: [],
   publicoAlvo: [],
-  datasomemorativas: [],
+  datasComemorativas: [],
   endomarketing: [],
   nichos: [],
   materiais: [],
@@ -246,10 +246,10 @@ export function FilterPanel({ filters, onFilterChange, onReset, activeFiltersCou
             {DATAS_COMEMORATIVAS.slice(0, 8).map((data) => (
               <button
                 key={data}
-                onClick={() => toggleArrayFilter('datasomemorativas', data)}
+                onClick={() => toggleArrayFilter('datasComemorativas', data)}
                 className={cn(
                   "filter-tag",
-                  filters.datasomemorativas.includes(data) && "active"
+                  filters.datasComemorativas.includes(data) && "active"
                 )}
               >
                 {data}
