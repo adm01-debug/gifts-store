@@ -1,0 +1,373 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Palette, 
+  MapPin, 
+  Maximize2, 
+  Clock,
+  Layers,
+  Info
+} from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+interface ProductPersonalizationRulesProps {
+  productId: string;
+  productSku: string;
+}
+
+interface TechniqueInfo {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  estimatedDays: number | null;
+  maxColors: number | null;
+  isDefault: boolean;
+}
+
+interface LocationInfo {
+  id: string;
+  code: string;
+  name: string;
+  maxWidth: number | null;
+  maxHeight: number | null;
+  maxArea: number | null;
+  areaImageUrl: string | null;
+  techniques: TechniqueInfo[];
+}
+
+interface ComponentInfo {
+  id: string;
+  code: string;
+  name: string;
+  isPersonalizable: boolean;
+  locations: LocationInfo[];
+}
+
+export function ProductPersonalizationRules({ productId, productSku }: ProductPersonalizationRulesProps) {
+  // Check if product uses group rules or has custom rules
+  const { data: productData, isLoading: loadingProduct } = useQuery({
+    queryKey: ["product-personalization-source", productSku],
+    queryFn: async () => {
+      // First find the product in our DB by SKU
+      const { data: dbProduct } = await supabase
+        .from("products")
+        .select("id")
+        .eq("sku", productSku)
+        .maybeSingle();
+
+      if (!dbProduct) return { source: "none" as const, productDbId: null };
+
+      // Check if product has custom components
+      const { data: customComponents } = await supabase
+        .from("product_components")
+        .select("id")
+        .eq("product_id", dbProduct.id)
+        .eq("is_active", true)
+        .limit(1);
+
+      if (customComponents && customComponents.length > 0) {
+        return { source: "product" as const, productDbId: dbProduct.id };
+      }
+
+      // Check if product belongs to a group
+      const { data: groupMember } = await supabase
+        .from("product_group_members")
+        .select("product_group_id, use_group_rules")
+        .eq("product_id", dbProduct.id)
+        .maybeSingle();
+
+      if (groupMember?.use_group_rules) {
+        return { source: "group" as const, productDbId: dbProduct.id, groupId: groupMember.product_group_id };
+      }
+
+      return { source: "none" as const, productDbId: dbProduct.id };
+    },
+  });
+
+  // Fetch product-specific rules
+  const { data: productComponents, isLoading: loadingProductRules } = useQuery({
+    queryKey: ["product-custom-rules", productData?.productDbId],
+    queryFn: async () => {
+      if (!productData?.productDbId || productData.source !== "product") return null;
+
+      const { data: components } = await supabase
+        .from("product_components")
+        .select(`
+          id,
+          component_code,
+          component_name,
+          is_personalizable,
+          product_component_locations (
+            id,
+            location_code,
+            location_name,
+            max_width_cm,
+            max_height_cm,
+            max_area_cm2,
+            area_image_url,
+            product_component_location_techniques (
+              id,
+              is_default,
+              max_colors,
+              personalization_techniques (
+                id,
+                name,
+                code,
+                description,
+                estimated_days
+              )
+            )
+          )
+        `)
+        .eq("product_id", productData.productDbId)
+        .eq("is_active", true)
+        .order("sort_order");
+
+      return components;
+    },
+    enabled: productData?.source === "product",
+  });
+
+  // Fetch group rules
+  const { data: groupComponents, isLoading: loadingGroupRules } = useQuery({
+    queryKey: ["product-group-rules", productData?.groupId],
+    queryFn: async () => {
+      if (!productData?.groupId || productData.source !== "group") return null;
+
+      const { data: components } = await supabase
+        .from("product_group_components")
+        .select(`
+          id,
+          component_code,
+          component_name,
+          is_personalizable,
+          product_group_locations (
+            id,
+            location_code,
+            location_name,
+            max_width_cm,
+            max_height_cm,
+            max_area_cm2,
+            area_image_url,
+            product_group_location_techniques (
+              id,
+              is_default,
+              max_colors,
+              personalization_techniques (
+                id,
+                name,
+                code,
+                description,
+                estimated_days
+              )
+            )
+          )
+        `)
+        .eq("product_group_id", productData.groupId)
+        .eq("is_active", true)
+        .order("sort_order");
+
+      return components;
+    },
+    enabled: productData?.source === "group",
+  });
+
+  const isLoading = loadingProduct || loadingProductRules || loadingGroupRules;
+
+  // Transform data to unified format
+  const components: ComponentInfo[] = (() => {
+    const rawComponents = productData?.source === "product" ? productComponents : groupComponents;
+    if (!rawComponents) return [];
+
+    return rawComponents.map((comp: any) => {
+      const locations = productData?.source === "product" 
+        ? comp.product_component_locations 
+        : comp.product_group_locations;
+
+      return {
+        id: comp.id,
+        code: comp.component_code,
+        name: comp.component_name,
+        isPersonalizable: comp.is_personalizable,
+        locations: (locations || []).map((loc: any) => {
+          const techniques = productData?.source === "product"
+            ? loc.product_component_location_techniques
+            : loc.product_group_location_techniques;
+
+          return {
+            id: loc.id,
+            code: loc.location_code,
+            name: loc.location_name,
+            maxWidth: loc.max_width_cm,
+            maxHeight: loc.max_height_cm,
+            maxArea: loc.max_area_cm2,
+            areaImageUrl: loc.area_image_url,
+            techniques: (techniques || []).map((tech: any) => ({
+              id: tech.personalization_techniques?.id,
+              name: tech.personalization_techniques?.name,
+              code: tech.personalization_techniques?.code,
+              description: tech.personalization_techniques?.description,
+              estimatedDays: tech.personalization_techniques?.estimated_days,
+              maxColors: tech.max_colors,
+              isDefault: tech.is_default,
+            })).filter((t: any) => t.id),
+          };
+        }),
+      };
+    });
+  })();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-24 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (!components || components.length === 0) {
+    return null;
+  }
+
+  const personalizableComponents = components.filter(c => c.isPersonalizable && c.locations.length > 0);
+  
+  if (personalizableComponents.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <h3 className="font-display text-lg font-semibold text-foreground">
+          Personalização
+        </h3>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Info className="h-4 w-4 text-muted-foreground" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-sm max-w-xs">
+                Técnicas e locais disponíveis para personalização deste produto
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      <Accordion type="single" collapsible className="w-full">
+        {personalizableComponents.map((component) => (
+          <AccordionItem 
+            key={component.id} 
+            value={component.id}
+            className="border border-border rounded-xl mb-2 px-4 bg-card/50"
+          >
+            <AccordionTrigger className="hover:no-underline py-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Layers className="h-4 w-4 text-primary" />
+                </div>
+                <div className="text-left">
+                  <span className="font-medium text-foreground">{component.name}</span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    {component.locations.length} {component.locations.length === 1 ? "local" : "locais"}
+                  </span>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pb-4">
+              <div className="space-y-4 pl-11">
+                {component.locations.map((location) => (
+                  <div 
+                    key={location.id} 
+                    className="p-4 rounded-xl bg-secondary/30 border border-border/50 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-info" />
+                        <span className="font-medium text-sm">{location.name}</span>
+                        <span className="text-xs text-muted-foreground font-mono">
+                          ({location.code})
+                        </span>
+                      </div>
+                      {(location.maxWidth || location.maxHeight) && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Maximize2 className="h-3.5 w-3.5" />
+                          {location.maxWidth && location.maxHeight 
+                            ? `${location.maxWidth} × ${location.maxHeight} cm`
+                            : location.maxArea 
+                              ? `${location.maxArea} cm²`
+                              : null
+                          }
+                        </div>
+                      )}
+                    </div>
+
+                    {location.techniques.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {location.techniques.map((technique) => (
+                          <TooltipProvider key={technique.id}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge 
+                                  variant={technique.isDefault ? "default" : "secondary"}
+                                  className="cursor-help text-xs px-3 py-1"
+                                >
+                                  <Palette className="h-3 w-3 mr-1.5" />
+                                  {technique.name}
+                                  {technique.maxColors && (
+                                    <span className="ml-1.5 opacity-75">
+                                      ({technique.maxColors} {technique.maxColors === 1 ? "cor" : "cores"})
+                                    </span>
+                                  )}
+                                  {technique.isDefault && (
+                                    <span className="ml-1.5 text-[10px] uppercase tracking-wide opacity-75">
+                                      padrão
+                                    </span>
+                                  )}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-xs">
+                                <div className="space-y-1">
+                                  <p className="font-medium">{technique.name}</p>
+                                  {technique.description && (
+                                    <p className="text-xs opacity-80">{technique.description}</p>
+                                  )}
+                                  {technique.estimatedDays && (
+                                    <p className="text-xs flex items-center gap-1 opacity-75">
+                                      <Clock className="h-3 w-3" />
+                                      ~{technique.estimatedDays} {technique.estimatedDays === 1 ? "dia" : "dias"}
+                                    </p>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </div>
+  );
+}
