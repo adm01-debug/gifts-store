@@ -1,0 +1,160 @@
+import { useState, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Loader2, Upload, X, Image as ImageIcon } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+interface ImageUploadButtonProps {
+  currentImageUrl: string | null;
+  onUpload: (url: string) => void;
+  onRemove: () => void;
+  folder?: string;
+  className?: string;
+}
+
+export function ImageUploadButton({
+  currentImageUrl,
+  onUpload,
+  onRemove,
+  folder = "locations",
+  className,
+}: ImageUploadButtonProps) {
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, selecione uma imagem");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Imagem muito grande. Máximo 5MB");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from("personalization-images")
+        .upload(fileName, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("personalization-images")
+        .getPublicUrl(data.path);
+
+      onUpload(urlData.publicUrl);
+      toast.success("Imagem enviada!");
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Erro ao enviar imagem");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleRemove = async () => {
+    if (!currentImageUrl) return;
+
+    try {
+      // Extract path from URL
+      const urlParts = currentImageUrl.split("/personalization-images/");
+      if (urlParts.length > 1) {
+        const filePath = urlParts[1];
+        await supabase.storage.from("personalization-images").remove([filePath]);
+      }
+      onRemove();
+      toast.success("Imagem removida!");
+    } catch (error) {
+      console.error("Remove error:", error);
+      toast.error("Erro ao remover imagem");
+    }
+  };
+
+  return (
+    <div className={className}>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
+      {currentImageUrl ? (
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0"
+              >
+                <ImageIcon className="h-4 w-4 text-primary" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="p-0">
+              <img
+                src={currentImageUrl}
+                alt="Área de gravação"
+                className="max-w-64 max-h-48 rounded"
+              />
+            </TooltipContent>
+          </Tooltip>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+            onClick={handleRemove}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+        >
+          {isUploading ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <>
+              <Upload className="h-3 w-3 mr-1" />
+              <span className="text-xs">Imagem</span>
+            </>
+          )}
+        </Button>
+      )}
+    </div>
+  );
+}
