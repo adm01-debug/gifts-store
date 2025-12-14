@@ -549,18 +549,21 @@ export type Database = {
           id: string
           product_group_id: string
           product_id: string
+          use_group_rules: boolean | null
         }
         Insert: {
           created_at?: string
           id?: string
           product_group_id: string
           product_id: string
+          use_group_rules?: boolean | null
         }
         Update: {
           created_at?: string
           id?: string
           product_group_id?: string
           product_id?: string
+          use_group_rules?: boolean | null
         }
         Relationships: [
           {
