@@ -308,7 +308,8 @@ export default function ProductDetail() {
             {/* Personalization Rules */}
             <ProductPersonalizationRules 
               productId={id || ""} 
-              productSku={product.sku} 
+              productSku={product.sku}
+              productName={product.name}
             />
 
             {/* Actions */}

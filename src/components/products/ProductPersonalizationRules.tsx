@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Palette, 
@@ -8,7 +9,10 @@ import {
   Maximize2, 
   Clock,
   Layers,
-  Info
+  Info,
+  FileSpreadsheet,
+  FileText,
+  Download
 } from "lucide-react";
 import {
   Accordion,
@@ -22,10 +26,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { exportToExcel, exportToPDF } from "@/utils/personalizationExport";
+import { toast } from "sonner";
 
 interface ProductPersonalizationRulesProps {
   productId: string;
   productSku: string;
+  productName?: string;
 }
 
 interface TechniqueInfo {
@@ -57,7 +70,7 @@ interface ComponentInfo {
   locations: LocationInfo[];
 }
 
-export function ProductPersonalizationRules({ productId, productSku }: ProductPersonalizationRulesProps) {
+export function ProductPersonalizationRules({ productId, productSku, productName }: ProductPersonalizationRulesProps) {
   // Check if product uses group rules or has custom rules
   const { data: productData, isLoading: loadingProduct } = useQuery({
     queryKey: ["product-personalization-source", productSku],
@@ -250,24 +263,73 @@ export function ProductPersonalizationRules({ productId, productSku }: ProductPe
     return null;
   }
 
+  const handleExportExcel = () => {
+    try {
+      exportToExcel({
+        productName: productName || productSku,
+        productSku,
+        components: personalizableComponents,
+      });
+      toast.success("Excel exportado com sucesso!");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Erro ao exportar Excel");
+    }
+  };
+
+  const handleExportPDF = () => {
+    try {
+      exportToPDF({
+        productName: productName || productSku,
+        productSku,
+        components: personalizableComponents,
+      });
+      toast.success("PDF exportado com sucesso!");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Erro ao exportar PDF");
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <h3 className="font-display text-lg font-semibold text-foreground">
-          Personalização
-        </h3>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <Info className="h-4 w-4 text-muted-foreground" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-sm max-w-xs">
-                Técnicas e locais disponíveis para personalização deste produto
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="font-display text-lg font-semibold text-foreground">
+            Personalização
+          </h3>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-4 w-4 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-sm max-w-xs">
+                  Técnicas e locais disponíveis para personalização deste produto
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Download className="h-4 w-4" />
+              Exportar
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExportExcel} className="gap-2 cursor-pointer">
+              <FileSpreadsheet className="h-4 w-4 text-success" />
+              Exportar Excel
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
+              <FileText className="h-4 w-4 text-destructive" />
+              Exportar PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Accordion type="single" collapsible className="w-full">
