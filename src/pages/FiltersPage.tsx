@@ -33,13 +33,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
 import { useComparisonContext } from "@/contexts/ComparisonContext";
-import { useQuoteContext } from "@/contexts/QuoteContext";
 
 export default function FiltersPage() {
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite } = useFavoritesContext();
   const { isInCompare, toggleCompare, canAddMore } = useComparisonContext();
-  const { isInQuote, addItem: addToQuote } = useQuoteContext();
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [activePresetId, setActivePresetId] = useState<string | undefined>();
   const [sortBy, setSortBy] = useState<string>("name");
@@ -370,8 +368,6 @@ export default function FiltersPage() {
                 isInCompare={isInCompare}
                 onToggleCompare={toggleCompare}
                 canAddToCompare={canAddMore}
-                isInQuote={isInQuote}
-                onAddToQuote={(productId) => addToQuote(productId)}
               />
             ) : (
               <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
