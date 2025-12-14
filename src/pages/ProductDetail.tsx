@@ -130,6 +130,17 @@ export default function ProductDetail() {
               images={displayImages}
               video={product.video}
               productName={product.name}
+              colors={product.variations?.map((variation) => ({
+                name: variation.color.name,
+                hex: variation.color.hex,
+                image: variation.image
+              }))}
+              onColorSelect={(index) => {
+                if (product.variations?.[index]) {
+                  setSelectedVariation(product.variations[index]);
+                }
+              }}
+              selectedColorIndex={product.variations?.findIndex(v => v === selectedVariation) ?? 0}
             />
           </div>
 
