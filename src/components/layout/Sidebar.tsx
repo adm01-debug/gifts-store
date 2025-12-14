@@ -12,7 +12,6 @@ import {
   ChevronRight,
   ShieldCheck,
   User,
-  LayoutDashboard,
   Cloud,
   Palette,
 } from "lucide-react";
@@ -28,7 +27,6 @@ interface SidebarProps {
 }
 
 const mainNavItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: Package, label: "Produtos", href: "/" },
   { icon: FolderOpen, label: "Coleções", href: "/colecoes" },
   { icon: Users, label: "Clientes", href: "/clientes" },
