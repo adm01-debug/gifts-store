@@ -78,14 +78,20 @@ interface SimulationOption {
   positions: number;
   unitCost: number;
   setupCost: number;
-  totalCost: number;
+  totalPersonalizationCost: number;
   costPerUnit: number;
   estimatedDays: number;
+  // With product price
+  productUnitPrice: number;
+  totalProductCost: number;
+  grandTotal: number;
+  grandTotalPerUnit: number;
 }
 
 export default function PersonalizationSimulator() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number>(100);
+  const [customProductPrice, setCustomProductPrice] = useState<string>("");
   const [selectedTechniques, setSelectedTechniques] = useState<string[]>([]);
   const [simulationOptions, setSimulationOptions] = useState<SimulationOption[]>([]);
   const [techniqueSettings, setTechniqueSettings] = useState<Record<string, {
@@ -127,6 +133,14 @@ export default function PersonalizationSimulator() {
   const selectedProduct = useMemo(() => {
     return products?.find(p => p.id === selectedProductId);
   }, [products, selectedProductId]);
+
+  // Get effective product price (custom or from product)
+  const effectiveProductPrice = useMemo(() => {
+    if (customProductPrice && parseFloat(customProductPrice) > 0) {
+      return parseFloat(customProductPrice);
+    }
+    return selectedProduct?.price || 0;
+  }, [customProductPrice, selectedProduct]);
 
   const handleTechniqueToggle = (techniqueId: string) => {
     setSelectedTechniques(prev => {
@@ -198,6 +212,12 @@ export default function PersonalizationSimulator() {
       const totalPersonalizationCost = (unitCost * quantity) + setupCost;
       const costPerUnit = totalPersonalizationCost / quantity;
 
+      // Calculate with product price
+      const productUnitPrice = effectiveProductPrice;
+      const totalProductCost = productUnitPrice * quantity;
+      const grandTotal = totalProductCost + totalPersonalizationCost;
+      const grandTotalPerUnit = grandTotal / quantity;
+
       return {
         id: `${techId}-${Date.now()}`,
         techniqueId: techId,
@@ -209,9 +229,13 @@ export default function PersonalizationSimulator() {
         positions: settings.positions,
         unitCost,
         setupCost,
-        totalCost: totalPersonalizationCost,
+        totalPersonalizationCost,
         costPerUnit,
         estimatedDays: technique.estimated_days,
+        productUnitPrice,
+        totalProductCost,
+        grandTotal,
+        grandTotalPerUnit,
       };
     }).filter(Boolean) as SimulationOption[];
 
@@ -239,9 +263,13 @@ ${option.techniqueName}
 - Cores: ${option.colors}
 - Tamanho: ${option.width} x ${option.height} cm
 - Posições: ${option.positions}
-- Custo unitário: ${formatCurrency(option.costPerUnit)}
+- Preço produto/un: ${formatCurrency(option.productUnitPrice)}
+- Custo personalização/un: ${formatCurrency(option.costPerUnit)}
 - Setup: ${formatCurrency(option.setupCost)}
-- Total personalização: ${formatCurrency(option.totalCost)}
+- Total produtos: ${formatCurrency(option.totalProductCost)}
+- Total personalização: ${formatCurrency(option.totalPersonalizationCost)}
+- TOTAL GERAL: ${formatCurrency(option.grandTotal)}
+- Custo final/un: ${formatCurrency(option.grandTotalPerUnit)}
 - Prazo: ~${option.estimatedDays} dias
     `.trim();
 
@@ -256,17 +284,24 @@ ${option.techniqueName}
 
     const header = `Simulação de Personalização
 Produto: ${selectedProduct?.name} (${selectedProduct?.sku})
+Preço unitário: ${formatCurrency(effectiveProductPrice)}
 Quantidade: ${quantity} unidades
 ---\n`;
 
-    const optionsText = simulationOptions.map((opt, idx) => `
+    const optionsText = simulationOptions
+      .sort((a, b) => a.grandTotal - b.grandTotal)
+      .map((opt, idx) => `
 Opção ${idx + 1}: ${opt.techniqueName}
 - Cores: ${opt.colors}
 - Tamanho: ${opt.width} x ${opt.height} cm
 - Posições: ${opt.positions}
-- Custo por unidade: ${formatCurrency(opt.costPerUnit)}
+- Preço produto/un: ${formatCurrency(opt.productUnitPrice)}
+- Personalização/un: ${formatCurrency(opt.costPerUnit)}
 - Setup: ${formatCurrency(opt.setupCost)}
-- Total personalização: ${formatCurrency(opt.totalCost)}
+- Total produtos: ${formatCurrency(opt.totalProductCost)}
+- Total personalização: ${formatCurrency(opt.totalPersonalizationCost)}
+- TOTAL GERAL: ${formatCurrency(opt.grandTotal)}
+- Custo final/un: ${formatCurrency(opt.grandTotalPerUnit)}
 - Prazo estimado: ~${opt.estimatedDays} dias
     `.trim()).join("\n\n");
 
@@ -349,12 +384,48 @@ Opção ${idx + 1}: ${opt.techniqueName}
                   />
                 </div>
 
+                {/* Custom product price */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    Preço unitário produto
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-xs">
+                            Deixe em branco para usar o preço base do produto ou informe um valor negociado
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={customProductPrice}
+                      onChange={(e) => setCustomProductPrice(e.target.value)}
+                      placeholder={selectedProduct?.price?.toFixed(2) || "0.00"}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
                 {selectedProduct && (
-                  <div className="p-3 rounded-lg bg-secondary/50 text-sm">
+                  <div className="p-3 rounded-lg bg-secondary/50 text-sm space-y-1">
                     <p className="font-medium">{selectedProduct.name}</p>
                     <p className="text-muted-foreground">
                       Preço base: {formatCurrency(selectedProduct.price)}/un
                     </p>
+                    {effectiveProductPrice !== selectedProduct.price && (
+                      <p className="text-primary font-medium">
+                        Preço usado: {formatCurrency(effectiveProductPrice)}/un
+                      </p>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -570,16 +641,18 @@ Opção ${idx + 1}: ${opt.techniqueName}
                         <TableRow className="bg-muted/50">
                           <TableHead>Técnica</TableHead>
                           <TableHead className="text-center">Detalhes</TableHead>
-                          <TableHead className="text-right">Custo/Un</TableHead>
+                          <TableHead className="text-right">Produto/Un</TableHead>
+                          <TableHead className="text-right">Pers./Un</TableHead>
                           <TableHead className="text-right">Setup</TableHead>
-                          <TableHead className="text-right">Total</TableHead>
+                          <TableHead className="text-right">Total Geral</TableHead>
+                          <TableHead className="text-right">Final/Un</TableHead>
                           <TableHead className="text-center">Prazo</TableHead>
                           <TableHead className="w-10"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {simulationOptions
-                          .sort((a, b) => a.totalCost - b.totalCost)
+                          .sort((a, b) => a.grandTotal - b.grandTotal)
                           .map((option, idx) => (
                             <TableRow 
                               key={option.id}
@@ -607,15 +680,28 @@ Opção ${idx + 1}: ${opt.techniqueName}
                                   <p>{option.positions} pos.</p>
                                 </div>
                               </TableCell>
-                              <TableCell className="text-right font-mono">
+                              <TableCell className="text-right font-mono text-xs">
+                                {formatCurrency(option.productUnitPrice)}
+                              </TableCell>
+                              <TableCell className="text-right font-mono text-xs">
                                 {formatCurrency(option.costPerUnit)}
                               </TableCell>
-                              <TableCell className="text-right font-mono text-muted-foreground">
+                              <TableCell className="text-right font-mono text-xs text-muted-foreground">
                                 {formatCurrency(option.setupCost)}
                               </TableCell>
                               <TableCell className="text-right">
-                                <span className="font-bold text-lg">
-                                  {formatCurrency(option.totalCost)}
+                                <div>
+                                  <span className="font-bold text-lg">
+                                    {formatCurrency(option.grandTotal)}
+                                  </span>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    Prod: {formatCurrency(option.totalProductCost)} + Pers: {formatCurrency(option.totalPersonalizationCost)}
+                                  </p>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className="font-semibold text-primary">
+                                  {formatCurrency(option.grandTotalPerUnit)}
                                 </span>
                               </TableCell>
                               <TableCell className="text-center">
@@ -645,25 +731,29 @@ Opção ${idx + 1}: ${opt.techniqueName}
                   </div>
 
                   {/* Summary Cards */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
                     <div className="p-4 rounded-xl bg-secondary/50 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Quantidade</p>
                       <p className="text-2xl font-bold">{quantity}</p>
                     </div>
                     <div className="p-4 rounded-xl bg-secondary/50 text-center">
-                      <p className="text-xs text-muted-foreground mb-1">Opções</p>
-                      <p className="text-2xl font-bold">{simulationOptions.length}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Preço/Un</p>
+                      <p className="text-xl font-bold">{formatCurrency(effectiveProductPrice)}</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-secondary/50 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Total Produtos</p>
+                      <p className="text-xl font-bold">{formatCurrency(effectiveProductPrice * quantity)}</p>
                     </div>
                     <div className="p-4 rounded-xl bg-success/10 text-center">
-                      <p className="text-xs text-muted-foreground mb-1">Menor Custo</p>
-                      <p className="text-2xl font-bold text-success">
-                        {formatCurrency(Math.min(...simulationOptions.map(o => o.totalCost)))}
+                      <p className="text-xs text-muted-foreground mb-1">Menor Total</p>
+                      <p className="text-xl font-bold text-success">
+                        {formatCurrency(Math.min(...simulationOptions.map(o => o.grandTotal)))}
                       </p>
                     </div>
                     <div className="p-4 rounded-xl bg-warning/10 text-center">
-                      <p className="text-xs text-muted-foreground mb-1">Maior Custo</p>
-                      <p className="text-2xl font-bold text-warning">
-                        {formatCurrency(Math.max(...simulationOptions.map(o => o.totalCost)))}
+                      <p className="text-xs text-muted-foreground mb-1">Maior Total</p>
+                      <p className="text-xl font-bold text-warning">
+                        {formatCurrency(Math.max(...simulationOptions.map(o => o.grandTotal)))}
                       </p>
                     </div>
                   </div>
