@@ -5,7 +5,8 @@ import {
   Users, 
   Filter, 
   Heart, 
-  Share2, 
+  GitCompare,
+  FolderOpen,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -22,10 +23,11 @@ interface SidebarProps {
 
 const mainNavItems = [
   { icon: Package, label: "Produtos", href: "/" },
+  { icon: FolderOpen, label: "Coleções", href: "/colecoes" },
   { icon: Users, label: "Clientes", href: "/clientes" },
   { icon: Filter, label: "Filtros", href: "/filtros" },
   { icon: Heart, label: "Favoritos", href: "/favoritos" },
-  { icon: Share2, label: "Comparar", href: "/comparar" },
+  { icon: GitCompare, label: "Comparar", href: "/comparar" },
 ];
 
 const bottomNavItems = [

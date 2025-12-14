@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Heart, Share2, Eye, Package, Layers, GitCompare } from "lucide-react";
+import { Heart, Share2, Eye, Package, Layers, GitCompare, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/data/mockData";
 import { toast } from "sonner";
+import { AddToCollectionModal } from "@/components/collections/AddToCollectionModal";
 
 export interface ProductCardProps {
   product: Product;
@@ -35,6 +36,7 @@ export function ProductCard({
   canAddToCompare = true,
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [collectionModalOpen, setCollectionModalOpen] = useState(false);
 
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -216,6 +218,24 @@ export function ProductCard({
             <TooltipContent>Compartilhar</TooltipContent>
           </Tooltip>
 
+          {/* Add to Collection */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-8 w-8 bg-card/90 backdrop-blur-sm hover:bg-card"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCollectionModalOpen(true);
+                }}
+              >
+                <FolderPlus className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Adicionar à coleção</TooltipContent>
+          </Tooltip>
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -329,6 +349,14 @@ export function ProductCard({
           )}
         </div>
       </div>
+
+      {/* Collection Modal */}
+      <AddToCollectionModal
+        open={collectionModalOpen}
+        onOpenChange={setCollectionModalOpen}
+        productId={product.id}
+        productName={product.name}
+      />
     </article>
   );
 }
