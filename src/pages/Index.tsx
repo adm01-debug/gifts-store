@@ -1,22 +1,23 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List } from "lucide-react";
+import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List, User, X, Palette } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { FilterPanel, FilterState, defaultFilters } from "@/components/filters/FilterPanel";
+import { ClientFilterModal } from "@/components/clients/ClientFilterModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { PRODUCTS, CATEGORIES, SUPPLIERS, type Product } from "@/data/mockData";
+import { PRODUCTS, CATEGORIES, SUPPLIERS, type Product, type Client } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
 import { useComparisonContext } from "@/contexts/ComparisonContext";
 
 type ViewMode = 'grid' | 'list';
-type SortOption = 'name' | 'price-asc' | 'price-desc' | 'stock' | 'newest';
+type SortOption = 'name' | 'price-asc' | 'price-desc' | 'stock' | 'newest' | 'color-match';
 
 export default function Index() {
   const navigate = useNavigate();
@@ -27,6 +28,8 @@ export default function Index() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('name');
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientModalOpen, setClientModalOpen] = useState(false);
 
   // Calcular contagem de filtros ativos
   const activeFiltersCount = useMemo(() => {
@@ -45,6 +48,21 @@ export default function Index() {
     if (filters.featured) count += 1;
     return count;
   }, [filters]);
+
+  // Get client colors for highlighting
+  const clientColorGroups = useMemo(() => {
+    if (!selectedClient) return [];
+    const colors = [selectedClient.primaryColor, ...selectedClient.secondaryColors];
+    return colors.map((c) => c.group);
+  }, [selectedClient]);
+
+  // Calculate color match score for a product
+  const getColorMatchScore = (product: Product): number => {
+    if (!selectedClient) return 0;
+    const clientColors = [selectedClient.primaryColor.group, ...selectedClient.secondaryColors.map(c => c.group)];
+    const matchCount = product.colors.filter(c => clientColors.includes(c.group)).length;
+    return matchCount;
+  };
 
   // Filtrar e ordenar produtos
   const filteredProducts = useMemo(() => {
@@ -110,10 +128,13 @@ export default function Index() {
       case 'newest':
         result.sort((a, b) => (b.newArrival ? 1 : 0) - (a.newArrival ? 1 : 0));
         break;
+      case 'color-match':
+        result.sort((a, b) => getColorMatchScore(b) - getColorMatchScore(a));
+        break;
     }
 
     return result;
-  }, [filters, sortBy]);
+  }, [filters, sortBy, selectedClient]);
 
   const handleViewProduct = (product: Product) => {
     navigate(`/produto/${product.id}`);
@@ -159,7 +180,51 @@ export default function Index() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Client filter button */}
+            <Button
+              variant={selectedClient ? "default" : "outline"}
+              size="sm"
+              onClick={() => setClientModalOpen(true)}
+              className="gap-2"
+            >
+              <User className="h-4 w-4" />
+              {selectedClient ? selectedClient.name : "Filtrar por cliente"}
+            </Button>
+
+            {/* Selected client indicator */}
+            {selectedClient && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                <Palette className="h-3 w-3 text-primary" />
+                <div className="flex items-center gap-1">
+                  <div
+                    className="w-4 h-4 rounded-full border border-border"
+                    style={{ backgroundColor: selectedClient.primaryColor.hex }}
+                    title={selectedClient.primaryColor.name}
+                  />
+                  {selectedClient.secondaryColors.slice(0, 2).map((color, idx) => (
+                    <div
+                      key={idx}
+                      className="w-4 h-4 rounded-full border border-border"
+                      style={{ backgroundColor: color.hex }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 ml-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedClient(null);
+                  }}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+
             <Badge variant="secondary" className="text-sm">
               {filteredProducts.length} produtos
             </Badge>
@@ -268,6 +333,9 @@ export default function Index() {
                     <SelectItem value="price-desc">Maior Preço</SelectItem>
                     <SelectItem value="stock">Maior Estoque</SelectItem>
                     <SelectItem value="newest">Novidades</SelectItem>
+                    {selectedClient && (
+                      <SelectItem value="color-match">Cores Compatíveis</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -372,10 +440,19 @@ export default function Index() {
               isInCompare={isInCompare}
               onToggleCompare={toggleCompare}
               canAddToCompare={canAddMore}
+              highlightColors={clientColorGroups}
             />
           </div>
         </div>
       </div>
+
+      {/* Client Filter Modal */}
+      <ClientFilterModal
+        open={clientModalOpen}
+        onOpenChange={setClientModalOpen}
+        onSelectClient={setSelectedClient}
+        selectedClientId={selectedClient?.id}
+      />
     </MainLayout>
   );
 }
