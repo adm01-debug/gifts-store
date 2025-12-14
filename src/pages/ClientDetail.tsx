@@ -1,10 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { CLIENTS } from "@/data/mockData";
+import { CLIENTS, PRODUCTS } from "@/data/mockData";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ClientColorPreferences } from "@/components/clients/ClientColorPreferences";
 import { ClientPurchaseHistory } from "@/components/clients/ClientPurchaseHistory";
 import { ClientStats } from "@/components/clients/ClientStats";
 import { ClientRecommendedProducts } from "@/components/clients/ClientRecommendedProducts";
+import { AIRecommendationsPanel } from "@/components/ai/AIRecommendationsPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -162,6 +163,35 @@ export default function ClientDetail() {
 
         {/* Stats */}
         <ClientStats client={client} />
+
+        {/* AI Recommendations */}
+        <AIRecommendationsPanel
+          client={{
+            name: client.name,
+            company: client.name,
+            industry: client.ramo,
+            preferences: [
+              client.primaryColor.name,
+              ...client.secondaryColors.map((c) => c.name),
+            ],
+            purchaseHistory: client.purchaseHistory?.flatMap((ph) =>
+              ph.products.map((p) => p.productName)
+            ),
+          }}
+          products={PRODUCTS.slice(0, 30).map((p) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category.name,
+            image: p.images[0],
+            minPrice: p.price,
+            tags: [
+              ...p.tags.publicoAlvo,
+              ...p.tags.ramo,
+              ...p.tags.nicho,
+            ],
+          }))}
+          onProductSelect={(productId) => navigate(`/produto/${productId}`)}
+        />
 
         {/* Grid de conteúdo */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
