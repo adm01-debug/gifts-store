@@ -271,6 +271,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_default: boolean | null
+          max_colors: number | null
           technique_id: string
         }
         Insert: {
@@ -281,6 +282,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_default?: boolean | null
+          max_colors?: number | null
           technique_id: string
         }
         Update: {
@@ -291,6 +293,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_default?: boolean | null
+          max_colors?: number | null
           technique_id?: string
         }
         Relationships: [
@@ -406,6 +409,205 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_group_components: {
+        Row: {
+          component_code: string
+          component_name: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_personalizable: boolean | null
+          product_group_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          component_code: string
+          component_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_personalizable?: boolean | null
+          product_group_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          component_code?: string
+          component_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_personalizable?: boolean | null
+          product_group_id?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_group_components_product_group_id_fkey"
+            columns: ["product_group_id"]
+            isOneToOne: false
+            referencedRelation: "product_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_group_location_techniques: {
+        Row: {
+          created_at: string
+          group_location_id: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          max_colors: number | null
+          technique_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_location_id: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          max_colors?: number | null
+          technique_id: string
+        }
+        Update: {
+          created_at?: string
+          group_location_id?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          max_colors?: number | null
+          technique_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_group_location_techniques_group_location_id_fkey"
+            columns: ["group_location_id"]
+            isOneToOne: false
+            referencedRelation: "product_group_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_group_location_techniques_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "personalization_techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_group_locations: {
+        Row: {
+          area_image_url: string | null
+          created_at: string
+          group_component_id: string
+          id: string
+          is_active: boolean | null
+          location_code: string
+          location_name: string
+          max_area_cm2: number | null
+          max_height_cm: number | null
+          max_width_cm: number | null
+        }
+        Insert: {
+          area_image_url?: string | null
+          created_at?: string
+          group_component_id: string
+          id?: string
+          is_active?: boolean | null
+          location_code: string
+          location_name: string
+          max_area_cm2?: number | null
+          max_height_cm?: number | null
+          max_width_cm?: number | null
+        }
+        Update: {
+          area_image_url?: string | null
+          created_at?: string
+          group_component_id?: string
+          id?: string
+          is_active?: boolean | null
+          location_code?: string
+          location_name?: string
+          max_area_cm2?: number | null
+          max_height_cm?: number | null
+          max_width_cm?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_group_locations_group_component_id_fkey"
+            columns: ["group_component_id"]
+            isOneToOne: false
+            referencedRelation: "product_group_components"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_group_members: {
+        Row: {
+          created_at: string
+          id: string
+          product_group_id: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_group_id: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_group_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_group_members_product_group_id_fkey"
+            columns: ["product_group_id"]
+            isOneToOne: false
+            referencedRelation: "product_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_group_members_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_groups: {
+        Row: {
+          created_at: string
+          description: string | null
+          group_code: string
+          group_name: string
+          id: string
+          is_active: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          group_code: string
+          group_name: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          group_code?: string
+          group_name?: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       product_sync_logs: {
         Row: {
