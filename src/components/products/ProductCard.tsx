@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, Share2, Eye, Package, Layers, GitCompare, FolderPlus } from "lucide-react";
+import { Heart, Share2, Eye, Package, Layers, GitCompare, FolderPlus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -37,6 +37,7 @@ export function ProductCard({
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -108,53 +109,81 @@ export function ProductCard({
   return (
     <article
       className={cn(
-        "card-interactive group overflow-hidden cursor-pointer",
-        product.featured && "ring-2 ring-primary/20",
-        hasHighlightedColor && "ring-2 ring-success/30"
+        "group relative overflow-hidden rounded-2xl bg-card border border-border/50 cursor-pointer",
+        "transition-all duration-500 ease-out",
+        "hover:border-primary/30 hover:shadow-xl hover:-translate-y-2",
+        product.featured && "ring-2 ring-primary/20 shadow-lg",
+        hasHighlightedColor && "ring-2 ring-success/40 shadow-glow-success"
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
-      {/* Image container */}
-      <div className="relative aspect-square overflow-hidden bg-secondary/30">
+      {/* Image container with gradient overlay */}
+      <div className="relative aspect-[4/5] overflow-hidden bg-gradient-to-br from-secondary/50 to-muted/30">
+        {/* Skeleton loader */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 animate-shimmer" />
+        )}
+        
         <img
           src={product.images[0]}
           alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className={cn(
+            "w-full h-full object-cover transition-all duration-700 ease-out",
+            "group-hover:scale-110",
+            imageLoaded ? "opacity-100" : "opacity-0"
+          )}
           loading="lazy"
+          onLoad={() => setImageLoaded(true)}
         />
 
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+        {/* Gradient overlay on hover */}
+        <div 
+          className={cn(
+            "absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent",
+            "transition-opacity duration-500",
+            isHovered ? "opacity-100" : "opacity-0"
+          )}
+        />
+
+        {/* Featured glow effect */}
+        {product.featured && (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5 pointer-events-none" />
+        )}
+
+        {/* Badges - Top Left */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
           {product.featured && (
-            <Badge className="bg-primary text-primary-foreground text-xs">
+            <Badge className="bg-gradient-to-r from-primary to-primary-glow text-primary-foreground text-xs shadow-lg animate-glow-pulse">
+              <Sparkles className="h-3 w-3 mr-1" />
               Destaque
             </Badge>
           )}
           {product.newArrival && (
-            <Badge className="bg-info text-info-foreground text-xs">
+            <Badge className="bg-gradient-to-r from-info to-info/80 text-info-foreground text-xs shadow-md">
               Novidade
             </Badge>
           )}
           {product.onSale && (
-            <Badge className="bg-destructive text-destructive-foreground text-xs">
+            <Badge className="bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground text-xs shadow-md animate-pulse">
               Promoção
             </Badge>
           )}
           {product.isKit && (
-            <Badge className="bg-warning text-warning-foreground text-xs">
+            <Badge className="bg-gradient-to-r from-warning to-warning/80 text-warning-foreground text-xs shadow-md">
               <Layers className="h-3 w-3 mr-1" />
               KIT
             </Badge>
           )}
         </div>
 
-        {/* Quick actions */}
+        {/* Quick actions - Right Side */}
         <div
           className={cn(
-            "absolute top-3 right-3 flex flex-col gap-1.5 transition-all duration-300",
-            isHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"
+            "absolute top-3 right-3 flex flex-col gap-2 z-10",
+            "transition-all duration-300 ease-out",
+            isHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
           )}
         >
           <Tooltip>
@@ -162,18 +191,22 @@ export function ProductCard({
               <Button
                 variant="secondary"
                 size="icon"
-                className="h-8 w-8 bg-card/90 backdrop-blur-sm hover:bg-card"
+                className={cn(
+                  "h-9 w-9 rounded-full bg-card/95 backdrop-blur-md shadow-lg border border-border/50",
+                  "hover:bg-card hover:scale-110 hover:shadow-xl transition-all duration-200",
+                  isFavorited && "bg-destructive/10 border-destructive/30"
+                )}
                 onClick={handleFavorite}
               >
                 <Heart
                   className={cn(
-                    "h-4 w-4 transition-colors",
-                    isFavorited && "fill-destructive text-destructive"
+                    "h-4 w-4 transition-all duration-300",
+                    isFavorited && "fill-destructive text-destructive scale-110"
                   )}
                 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}</TooltipContent>
+            <TooltipContent side="left">{isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -182,21 +215,22 @@ export function ProductCard({
                 variant="secondary"
                 size="icon"
                 className={cn(
-                  "h-8 w-8 bg-card/90 backdrop-blur-sm hover:bg-card",
-                  isInCompare && "bg-primary/20 hover:bg-primary/30"
+                  "h-9 w-9 rounded-full bg-card/95 backdrop-blur-md shadow-lg border border-border/50",
+                  "hover:bg-card hover:scale-110 hover:shadow-xl transition-all duration-200",
+                  isInCompare && "bg-primary/10 border-primary/30"
                 )}
                 onClick={handleCompare}
                 disabled={!isInCompare && !canAddToCompare}
               >
                 <GitCompare
                   className={cn(
-                    "h-4 w-4 transition-colors",
-                    isInCompare && "text-primary"
+                    "h-4 w-4 transition-all duration-300",
+                    isInCompare && "text-primary scale-110"
                   )}
                 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent side="left">
               {isInCompare ? "Remover da comparação" : "Adicionar à comparação"}
             </TooltipContent>
           </Tooltip>
@@ -206,25 +240,7 @@ export function ProductCard({
               <Button
                 variant="secondary"
                 size="icon"
-                className="h-8 w-8 bg-card/90 backdrop-blur-sm hover:bg-card"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onShare?.(product);
-                }}
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Compartilhar</TooltipContent>
-          </Tooltip>
-
-          {/* Add to Collection */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-8 w-8 bg-card/90 backdrop-blur-sm hover:bg-card"
+                className="h-9 w-9 rounded-full bg-card/95 backdrop-blur-md shadow-lg border border-border/50 hover:bg-card hover:scale-110 hover:shadow-xl transition-all duration-200"
                 onClick={(e) => {
                   e.stopPropagation();
                   setCollectionModalOpen(true);
@@ -233,7 +249,7 @@ export function ProductCard({
                 <FolderPlus className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Adicionar à coleção</TooltipContent>
+            <TooltipContent side="left">Adicionar à coleção</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -241,84 +257,104 @@ export function ProductCard({
               <Button
                 variant="secondary"
                 size="icon"
-                className="h-8 w-8 bg-card/90 backdrop-blur-sm hover:bg-card"
+                className="h-9 w-9 rounded-full bg-card/95 backdrop-blur-md shadow-lg border border-border/50 hover:bg-card hover:scale-110 hover:shadow-xl transition-all duration-200"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onView?.(product);
+                  onShare?.(product);
                 }}
               >
-                <Eye className="h-4 w-4" />
+                <Share2 className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Ver detalhes</TooltipContent>
+            <TooltipContent side="left">Compartilhar</TooltipContent>
           </Tooltip>
-
         </div>
 
-        {/* Color variations */}
+        {/* Color variations - Bottom */}
         {product.colors.length > 0 && (
           <div
             className={cn(
-              "absolute bottom-3 left-3 right-3 flex items-center gap-1 transition-all duration-300",
-              isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+              "absolute bottom-3 left-3 right-3 z-10",
+              "transition-all duration-400 ease-out",
+              isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             )}
           >
-            <div className="flex items-center gap-1 bg-card/90 backdrop-blur-sm rounded-full px-2 py-1">
-              {product.colors.slice(0, 5).map((color, idx) => (
+            <div className="flex items-center gap-1.5 bg-card/95 backdrop-blur-md rounded-full px-3 py-2 shadow-lg border border-border/50">
+              {product.colors.slice(0, 6).map((color, idx) => (
                 <Tooltip key={idx}>
                   <TooltipTrigger asChild>
                     <div
-                      className="w-4 h-4 rounded-full border border-border shadow-sm cursor-pointer hover:scale-125 transition-transform"
+                      className={cn(
+                        "w-5 h-5 rounded-full border-2 shadow-sm cursor-pointer",
+                        "transition-all duration-200 hover:scale-125 hover:shadow-md",
+                        highlightColors?.includes(color.group) 
+                          ? "border-success ring-2 ring-success/30 scale-110" 
+                          : "border-border/50"
+                      )}
                       style={{ 
                         backgroundColor: color.hex,
-                        border: color.hex === '#FFFFFF' ? '1px solid hsl(var(--border))' : undefined
+                        borderColor: color.hex === '#FFFFFF' ? 'hsl(var(--border))' : undefined
                       }}
                     />
                   </TooltipTrigger>
                   <TooltipContent>{color.name}</TooltipContent>
                 </Tooltip>
               ))}
-              {product.colors.length > 5 && (
-                <span className="text-xs text-muted-foreground ml-1">
-                  +{product.colors.length - 5}
+              {product.colors.length > 6 && (
+                <span className="text-xs font-medium text-muted-foreground ml-1">
+                  +{product.colors.length - 6}
                 </span>
               )}
             </div>
           </div>
         )}
+
+        {/* View button overlay on hover */}
+        <div
+          className={cn(
+            "absolute inset-0 flex items-center justify-center z-10",
+            "transition-all duration-400",
+            isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
+          )}
+        >
+          <Button
+            size="lg"
+            className="rounded-full shadow-2xl bg-primary/95 backdrop-blur-md hover:bg-primary hover:scale-105 transition-all duration-200"
+            onClick={(e) => {
+              e.stopPropagation();
+              onView?.(product);
+            }}
+          >
+            <Eye className="h-5 w-5 mr-2" />
+            Ver detalhes
+          </Button>
+        </div>
       </div>
 
       {/* Content */}
       <div className="p-4 space-y-3">
         {/* Category & Supplier */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-muted-foreground font-medium truncate">
             {product.category.icon} {product.category.name}
           </span>
-          <span className="supplier-badge">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium shrink-0">
             {product.supplier.name}
           </span>
         </div>
 
         {/* Name */}
-        <h3 className="font-display font-semibold text-foreground line-clamp-2 min-h-[2.5rem]">
+        <h3 className="font-display font-semibold text-foreground line-clamp-2 min-h-[2.75rem] leading-snug group-hover:text-primary transition-colors duration-300">
           {product.name}
         </h3>
 
-        {/* SKU */}
-        <p className="text-xs text-muted-foreground font-mono">
-          SKU: {product.sku}
-        </p>
-
         {/* Price & Stock */}
-        <div className="flex items-end justify-between">
+        <div className="flex items-end justify-between pt-1">
           <div>
-            <span className="price-tag-small">
+            <p className="text-xs text-muted-foreground mb-0.5">A partir de</p>
+            <span className="text-xl font-display font-bold text-foreground">
               {formatPrice(product.price)}
             </span>
-            <p className="text-xs text-muted-foreground">
-              Mín. {product.minQuantity} un.
-            </p>
           </div>
 
           <div className="flex flex-col items-end gap-1">
@@ -333,17 +369,17 @@ export function ProductCard({
         </div>
 
         {/* Materials */}
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/50">
           {product.materials.slice(0, 2).map((material) => (
             <span
               key={material}
-              className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+              className="text-xs px-2.5 py-1 rounded-full bg-muted/50 text-muted-foreground font-medium"
             >
               {material}
             </span>
           ))}
           {product.materials.length > 2 && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-muted/50 text-muted-foreground font-medium">
               +{product.materials.length - 2}
             </span>
           )}
