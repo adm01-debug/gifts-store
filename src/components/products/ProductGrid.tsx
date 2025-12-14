@@ -1,0 +1,51 @@
+import { ProductCard } from "./ProductCard";
+import type { Product } from "@/data/mockData";
+
+interface ProductGridProps {
+  products: Product[];
+  onViewProduct?: (product: Product) => void;
+  onShareProduct?: (product: Product) => void;
+  onFavoriteProduct?: (product: Product) => void;
+}
+
+export function ProductGrid({ 
+  products, 
+  onViewProduct, 
+  onShareProduct, 
+  onFavoriteProduct 
+}: ProductGridProps) {
+  if (products.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+          <span className="text-3xl">📦</span>
+        </div>
+        <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+          Nenhum produto encontrado
+        </h3>
+        <p className="text-muted-foreground max-w-md">
+          Tente ajustar os filtros ou realizar uma nova busca para encontrar os produtos desejados.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+      {products.map((product, index) => (
+        <div
+          key={product.id}
+          className="animate-fade-in"
+          style={{ animationDelay: `${index * 50}ms` }}
+        >
+          <ProductCard
+            product={product}
+            onView={onViewProduct}
+            onShare={onShareProduct}
+            onFavorite={onFavoriteProduct}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
