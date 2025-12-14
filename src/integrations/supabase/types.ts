@@ -146,6 +146,48 @@ export type Database = {
         }
         Relationships: []
       }
+      personalization_techniques: {
+        Row: {
+          code: string | null
+          created_at: string
+          description: string | null
+          estimated_days: number | null
+          id: string
+          is_active: boolean | null
+          min_quantity: number | null
+          name: string
+          setup_cost: number | null
+          unit_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_days?: number | null
+          id?: string
+          is_active?: boolean | null
+          min_quantity?: number | null
+          name: string
+          setup_cost?: number | null
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_days?: number | null
+          id?: string
+          is_active?: boolean | null
+          min_quantity?: number | null
+          name?: string
+          setup_cost?: number | null
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -175,6 +217,196 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      quote_item_personalizations: {
+        Row: {
+          area_cm2: number | null
+          colors_count: number | null
+          created_at: string
+          id: string
+          notes: string | null
+          positions_count: number | null
+          quote_item_id: string
+          setup_cost: number | null
+          technique_id: string
+          total_cost: number | null
+          unit_cost: number | null
+        }
+        Insert: {
+          area_cm2?: number | null
+          colors_count?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          positions_count?: number | null
+          quote_item_id: string
+          setup_cost?: number | null
+          technique_id: string
+          total_cost?: number | null
+          unit_cost?: number | null
+        }
+        Update: {
+          area_cm2?: number | null
+          colors_count?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          positions_count?: number | null
+          quote_item_id?: string
+          setup_cost?: number | null
+          technique_id?: string
+          total_cost?: number | null
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_item_personalizations_quote_item_id_fkey"
+            columns: ["quote_item_id"]
+            isOneToOne: false
+            referencedRelation: "quote_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_item_personalizations_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "personalization_techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_items: {
+        Row: {
+          color_hex: string | null
+          color_name: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          product_id: string | null
+          product_image_url: string | null
+          product_name: string
+          product_sku: string | null
+          quantity: number
+          quote_id: string
+          sort_order: number | null
+          subtotal: number | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          color_hex?: string | null
+          color_name?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          product_image_url?: string | null
+          product_name: string
+          product_sku?: string | null
+          quantity?: number
+          quote_id: string
+          sort_order?: number | null
+          subtotal?: number | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          color_hex?: string | null
+          color_name?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string | null
+          product_image_url?: string | null
+          product_name?: string
+          product_sku?: string | null
+          quantity?: number
+          quote_id?: string
+          sort_order?: number | null
+          subtotal?: number | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          bitrix_deal_id: string | null
+          bitrix_quote_id: string | null
+          client_id: string | null
+          created_at: string
+          discount_amount: number | null
+          discount_percent: number | null
+          id: string
+          internal_notes: string | null
+          notes: string | null
+          quote_number: string
+          seller_id: string | null
+          status: Database["public"]["Enums"]["quote_status"]
+          subtotal: number | null
+          synced_at: string | null
+          synced_to_bitrix: boolean | null
+          total: number | null
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          bitrix_deal_id?: string | null
+          bitrix_quote_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          quote_number: string
+          seller_id?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number | null
+          synced_at?: string | null
+          synced_to_bitrix?: boolean | null
+          total?: number | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          bitrix_deal_id?: string | null
+          bitrix_quote_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          quote_number?: string
+          seller_id?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number | null
+          synced_at?: string | null
+          synced_to_bitrix?: boolean | null
+          total?: number | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "bitrix_clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -216,6 +448,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "vendedor"
+      quote_status:
+        | "draft"
+        | "pending"
+        | "sent"
+        | "approved"
+        | "rejected"
+        | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -344,6 +583,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "vendedor"],
+      quote_status: [
+        "draft",
+        "pending",
+        "sent",
+        "approved",
+        "rejected",
+        "expired",
+      ],
     },
   },
 } as const
