@@ -1,5 +1,6 @@
 import { ProductCard } from "./ProductCard";
 import type { Product } from "@/data/mockData";
+import { useEffect, useState, useRef } from "react";
 
 export interface ProductGridProps {
   products: Product[];
@@ -15,6 +16,45 @@ export interface ProductGridProps {
   highlightColors?: string[];
 }
 
+function ProductCardWrapper({ 
+  product, 
+  index, 
+  isVisible,
+  ...props 
+}: { 
+  product: Product; 
+  index: number; 
+  isVisible: boolean;
+} & Omit<React.ComponentProps<typeof ProductCard>, 'product'>) {
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isVisible && !hasAnimated) {
+      const timer = setTimeout(() => {
+        setHasAnimated(true);
+      }, index * 80); // Stagger delay
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, hasAnimated, index]);
+
+  return (
+    <div
+      ref={ref}
+      className={`transition-all duration-500 ease-out ${
+        hasAnimated 
+          ? 'opacity-100 translate-y-0 scale-100' 
+          : 'opacity-0 translate-y-8 scale-95'
+      }`}
+      style={{
+        transitionDelay: hasAnimated ? '0ms' : `${index * 80}ms`,
+      }}
+    >
+      <ProductCard product={product} {...props} />
+    </div>
+  );
+}
+
 export function ProductGrid({ 
   products,
   onProductClick,
@@ -28,9 +68,19 @@ export function ProductGrid({
   canAddToCompare = true,
   highlightColors,
 }: ProductGridProps) {
+  const [isGridVisible, setIsGridVisible] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Reset animation state when products change
+    setIsGridVisible(false);
+    const timer = setTimeout(() => setIsGridVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, [products]);
+
   if (products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
           <span className="text-3xl">📦</span>
         </div>
@@ -45,27 +95,27 @@ export function ProductGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+    <div 
+      ref={gridRef}
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6"
+    >
       {products.map((product, index) => (
-        <div
+        <ProductCardWrapper
           key={product.id}
-          className="animate-fade-in"
-          style={{ animationDelay: `${index * 50}ms` }}
-        >
-          <ProductCard
-            product={product}
-            onClick={onProductClick ? () => onProductClick(product.id) : undefined}
-            onView={onViewProduct}
-            onShare={onShareProduct}
-            onFavorite={onFavoriteProduct}
-            isFavorited={isFavorite ? isFavorite(product.id) : false}
-            onToggleFavorite={onToggleFavorite}
-            isInCompare={isInCompare ? isInCompare(product.id) : false}
-            onToggleCompare={onToggleCompare}
-            canAddToCompare={canAddToCompare}
-            highlightColors={highlightColors}
-          />
-        </div>
+          product={product}
+          index={index}
+          isVisible={isGridVisible}
+          onClick={onProductClick ? () => onProductClick(product.id) : undefined}
+          onView={onViewProduct}
+          onShare={onShareProduct}
+          onFavorite={onFavoriteProduct}
+          isFavorited={isFavorite ? isFavorite(product.id) : false}
+          onToggleFavorite={onToggleFavorite}
+          isInCompare={isInCompare ? isInCompare(product.id) : false}
+          onToggleCompare={onToggleCompare}
+          canAddToCompare={canAddToCompare}
+          highlightColors={highlightColors}
+        />
       ))}
     </div>
   );
