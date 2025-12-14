@@ -1,8 +1,7 @@
-import { Search, User, Menu, Sparkles, Sun, Moon, Heart, GitCompare } from "lucide-react";
+import { User, Menu, Sparkles, Sun, Moon, Heart, GitCompare, Search } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
 import { useComparisonContext } from "@/contexts/ComparisonContext";
+import { AdvancedSearch } from "@/components/search/AdvancedSearch";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -61,18 +61,9 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
           </div>
         </div>
 
-        {/* Center section - Search */}
+        {/* Center section - Advanced Search */}
         <div className="flex-1 max-w-xl mx-4 hidden md:block">
-          <div className="search-bar">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar produtos, categorias, fornecedores..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
-            />
-          </div>
+          <AdvancedSearch onSearch={onSearchChange} />
         </div>
 
         {/* Right section */}
