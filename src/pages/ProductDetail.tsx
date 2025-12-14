@@ -20,6 +20,7 @@ import { KitComposition } from "@/components/products/KitComposition";
 import { ShareActions } from "@/components/products/ShareActions";
 import { RelatedProducts, RecommendedProducts } from "@/components/products/RelatedProducts";
 import { ProductCustomizationOptions } from "@/components/products/ProductCustomizationOptions";
+import { ProductPersonalizationRules } from "@/components/products/ProductPersonalizationRules";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -300,6 +301,12 @@ export default function ProductDetail() {
 
             {/* Customization Options */}
             <ProductCustomizationOptions 
+              productId={id || ""} 
+              productSku={product.sku} 
+            />
+
+            {/* Personalization Rules */}
+            <ProductPersonalizationRules 
               productId={id || ""} 
               productSku={product.sku} 
             />
