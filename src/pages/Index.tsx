@@ -1,9 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List, User, X, Palette, Sparkles } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { ProductList } from "@/components/products/ProductList";
+import { ProductGridSkeleton } from "@/components/products/ProductCardSkeleton";
+import { ProductListSkeleton } from "@/components/products/ProductListItemSkeleton";
 import { FilterPanel, FilterState, defaultFilters } from "@/components/filters/FilterPanel";
 import { QuickFiltersBar, QuickFilter } from "@/components/filters/QuickFiltersBar";
 import { ClientFilterModal } from "@/components/clients/ClientFilterModal";
@@ -34,8 +36,14 @@ export default function Index() {
   const [clientModalOpen, setClientModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeQuickFilterId, setActiveQuickFilterId] = useState<string | undefined>();
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Calcular contagem de filtros ativos
+  // Simular carregamento inicial
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (filters.colors.length) count += filters.colors.length;
@@ -498,7 +506,13 @@ export default function Index() {
             )}
 
             {/* Product grid or list */}
-            {viewMode === 'grid' ? (
+            {isLoading ? (
+              viewMode === 'grid' ? (
+                <ProductGridSkeleton count={8} />
+              ) : (
+                <ProductListSkeleton count={6} />
+              )
+            ) : viewMode === 'grid' ? (
               <ProductGrid
                 products={filteredProducts}
                 onProductClick={(productId) => navigate(`/produto/${productId}`)}
