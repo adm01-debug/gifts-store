@@ -4,10 +4,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ComparisonProvider } from "@/contexts/ComparisonContext";
 import { CollectionsProvider } from "@/contexts/CollectionsContext";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { CompareBar } from "@/components/compare/CompareBar";
+import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import ProductDetail from "./pages/ProductDetail";
 import ClientDetail from "./pages/ClientDetail";
@@ -24,32 +27,75 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <FavoritesProvider>
-        <ComparisonProvider>
-          <CollectionsProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/produto/:id" element={<ProductDetail />} />
-                  <Route path="/clientes" element={<ClientList />} />
-                  <Route path="/cliente/:id" element={<ClientDetail />} />
-                  <Route path="/filtros" element={<FiltersPage />} />
-                  <Route path="/favoritos" element={<FavoritesPage />} />
-                  <Route path="/comparar" element={<ComparePage />} />
-                  <Route path="/colecoes" element={<CollectionsPage />} />
-                  <Route path="/colecao/:id" element={<CollectionDetailPage />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <CompareBar />
-              </BrowserRouter>
-            </TooltipProvider>
-          </CollectionsProvider>
-        </ComparisonProvider>
-      </FavoritesProvider>
+      <AuthProvider>
+        <FavoritesProvider>
+          <ComparisonProvider>
+            <CollectionsProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    {/* Public route */}
+                    <Route path="/auth" element={<Auth />} />
+                    
+                    {/* Protected routes */}
+                    <Route path="/" element={
+                      <ProtectedRoute>
+                        <Index />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/produto/:id" element={
+                      <ProtectedRoute>
+                        <ProductDetail />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/clientes" element={
+                      <ProtectedRoute>
+                        <ClientList />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/cliente/:id" element={
+                      <ProtectedRoute>
+                        <ClientDetail />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/filtros" element={
+                      <ProtectedRoute>
+                        <FiltersPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/favoritos" element={
+                      <ProtectedRoute>
+                        <FavoritesPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/comparar" element={
+                      <ProtectedRoute>
+                        <ComparePage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/colecoes" element={
+                      <ProtectedRoute>
+                        <CollectionsPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/colecao/:id" element={
+                      <ProtectedRoute>
+                        <CollectionDetailPage />
+                      </ProtectedRoute>
+                    } />
+                    
+                    {/* Catch-all */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                  <CompareBar />
+                </BrowserRouter>
+              </TooltipProvider>
+            </CollectionsProvider>
+          </ComparisonProvider>
+        </FavoritesProvider>
+      </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

@@ -1,4 +1,4 @@
-import { User, Menu, Sparkles, Sun, Moon, Heart, GitCompare, Search } from "lucide-react";
+import { User, Menu, Sparkles, Sun, Moon, Heart, GitCompare, Search, LogOut, Settings, HelpCircle, Shield } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
 import { useComparisonContext } from "@/contexts/ComparisonContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { AdvancedSearch } from "@/components/search/AdvancedSearch";
+import { useToast } from "@/hooks/use-toast";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -25,12 +27,27 @@ interface HeaderProps {
 export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { favoriteCount } = useFavoritesContext();
   const { compareCount } = useComparisonContext();
+  const { user, profile, role, isAdmin, signOut } = useAuth();
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Até logo!",
+      description: "Você saiu da sua conta",
+    });
+    navigate("/auth");
+  };
+
+  const displayName = profile?.full_name || user?.email?.split("@")[0] || "Usuário";
+  const roleLabel = role === "admin" ? "Administrador" : "Vendedor";
+
 
   return (
     <header className="sticky top-0 z-40 glass-strong border-b border-border">
@@ -135,23 +152,47 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-4 w-4 text-primary" />
+                  {profile?.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={displayName}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-4 w-4 text-primary" />
+                  )}
                 </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col">
-                  <span className="font-medium">João Silva</span>
-                  <span className="text-xs text-muted-foreground">Vendedor</span>
+                  <span className="font-medium">{displayName}</span>
+                  <div className="flex items-center gap-1.5">
+                    {isAdmin && <Shield className="h-3 w-3 text-primary" />}
+                    <span className="text-xs text-muted-foreground">{roleLabel}</span>
+                  </div>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Meu Perfil</DropdownMenuItem>
-              <DropdownMenuItem>Configurações</DropdownMenuItem>
-              <DropdownMenuItem>Ajuda</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/perfil")}>
+                <User className="h-4 w-4 mr-2" />
+                Meu Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/configuracoes")}>
+                <Settings className="h-4 w-4 mr-2" />
+                Configurações
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Ajuda
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive"
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
                 Sair
               </DropdownMenuItem>
             </DropdownMenuContent>
