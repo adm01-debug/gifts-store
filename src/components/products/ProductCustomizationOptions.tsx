@@ -68,8 +68,25 @@ export function ProductCustomizationOptions({ productId, productSku }: ProductCu
   const [expandedComponents, setExpandedComponents] = useState<string[]>([]);
 
   const { data: components, isLoading, error } = useQuery({
-    queryKey: ["product-components", productId],
+    queryKey: ["product-components", productId, productSku],
     queryFn: async () => {
+      // Primeiro, tentar encontrar o produto no banco pelo ID ou SKU
+      let dbProductId = productId;
+      
+      // Se o productId não é um UUID válido, tentar buscar pelo SKU
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(productId) && productSku) {
+        const { data: productData } = await supabase
+          .from("products")
+          .select("id")
+          .eq("sku", productSku)
+          .maybeSingle();
+        
+        if (productData) {
+          dbProductId = productData.id;
+        }
+      }
+
       // Buscar componentes do produto
       const { data: componentsData, error: componentsError } = await supabase
         .from("product_components")
@@ -81,7 +98,7 @@ export function ProductCustomizationOptions({ productId, productSku }: ProductCu
           image_url,
           sort_order
         `)
-        .eq("product_id", productId)
+        .eq("product_id", dbProductId)
         .eq("is_active", true)
         .order("sort_order");
 
