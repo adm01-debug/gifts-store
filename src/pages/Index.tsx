@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List, User, X, Palette } from "lucide-react";
+import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List, User, X, Palette, Sparkles } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { FilterPanel, FilterState, defaultFilters } from "@/components/filters/FilterPanel";
+import { QuickFiltersBar, QuickFilter } from "@/components/filters/QuickFiltersBar";
 import { ClientFilterModal } from "@/components/clients/ClientFilterModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,8 @@ export default function Index() {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [clientModalOpen, setClientModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeQuickFilterId, setActiveQuickFilterId] = useState<string | undefined>();
 
   // Calcular contagem de filtros ativos
   const activeFiltersCount = useMemo(() => {
@@ -67,6 +70,18 @@ export default function Index() {
   // Filtrar e ordenar produtos
   const filteredProducts = useMemo(() => {
     let result = [...PRODUCTS];
+
+    // Text search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter((p) =>
+        p.name.toLowerCase().includes(query) ||
+        p.category.name.toLowerCase().includes(query) ||
+        p.materials.some((m) => m.toLowerCase().includes(query)) ||
+        p.tags.datasComemorativas.some((d) => d.toLowerCase().includes(query)) ||
+        p.tags.publicoAlvo.some((pa) => pa.toLowerCase().includes(query))
+      );
+    }
 
     // Aplicar filtros
     if (filters.colors.length) {
@@ -134,7 +149,49 @@ export default function Index() {
     }
 
     return result;
-  }, [filters, sortBy, selectedClient]);
+  }, [filters, sortBy, selectedClient, searchQuery]);
+
+  // Apply quick filter
+  const handleApplyQuickFilter = (quickFilter: QuickFilter["filter"]) => {
+    const newFilters = { ...defaultFilters };
+    
+    if (quickFilter.datasComemorativas) {
+      newFilters.datasComemorativas = quickFilter.datasComemorativas;
+    }
+    if (quickFilter.nichos) {
+      newFilters.nichos = quickFilter.nichos;
+    }
+    if (quickFilter.publicoAlvo) {
+      newFilters.publicoAlvo = quickFilter.publicoAlvo;
+    }
+    if (quickFilter.priceRange) {
+      newFilters.priceRange = quickFilter.priceRange;
+    }
+    if (quickFilter.featured) {
+      newFilters.featured = quickFilter.featured;
+    }
+    if (quickFilter.isKit) {
+      newFilters.isKit = quickFilter.isKit;
+    }
+    
+    setFilters(newFilters);
+    // Find the quick filter id for highlighting
+    const quickFilters = [
+      { id: "fim-de-ano", filter: { datasComemorativas: ["Natal", "Ano Novo", "Confraternização"] } },
+      { id: "dia-das-maes", filter: { datasComemorativas: ["Dia das Mães"], publicoAlvo: ["Mulheres"] } },
+      { id: "eventos-corporativos", filter: { nichos: ["Eventos", "Corporativo"], publicoAlvo: ["Executivos"] } },
+      { id: "onboarding", filter: { isKit: true, nichos: ["RH", "Onboarding"] } },
+      { id: "destaques", filter: { featured: true } },
+      { id: "ate-50", filter: { priceRange: [0, 50] } },
+    ];
+    const matched = quickFilters.find(qf => JSON.stringify(qf.filter) === JSON.stringify(quickFilter));
+    setActiveQuickFilterId(matched?.id);
+  };
+
+  const handleClearQuickFilter = () => {
+    setFilters(defaultFilters);
+    setActiveQuickFilterId(undefined);
+  };
 
   const handleViewProduct = (product: Product) => {
     navigate(`/produto/${product.id}`);
@@ -156,6 +213,8 @@ export default function Index() {
 
   const resetFilters = () => {
     setFilters(defaultFilters);
+    setActiveQuickFilterId(undefined);
+    setSearchQuery("");
   };
 
   // Stats
@@ -230,6 +289,15 @@ export default function Index() {
             </Badge>
           </div>
         </div>
+
+        {/* Quick Filters Bar */}
+        <QuickFiltersBar
+          onApplyFilter={handleApplyQuickFilter}
+          activeFilterId={activeQuickFilterId}
+          onClearFilter={handleClearQuickFilter}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
