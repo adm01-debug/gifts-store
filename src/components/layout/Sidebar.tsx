@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { 
-  LayoutGrid, 
   Package, 
   Users, 
   Filter, 
   Heart, 
   Share2, 
-  BarChart3, 
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -23,13 +21,11 @@ interface SidebarProps {
 }
 
 const mainNavItems = [
-  { icon: LayoutGrid, label: "Dashboard", href: "/" },
-  { icon: Package, label: "Produtos", href: "/produtos" },
+  { icon: Package, label: "Produtos", href: "/" },
   { icon: Users, label: "Clientes", href: "/clientes" },
   { icon: Filter, label: "Filtros", href: "/filtros" },
   { icon: Heart, label: "Favoritos", href: "/favoritos" },
-  { icon: Share2, label: "Compartilhados", href: "/compartilhados" },
-  { icon: BarChart3, label: "Relatórios", href: "/relatorios" },
+  { icon: Share2, label: "Comparar", href: "/comparar" },
 ];
 
 const bottomNavItems = [

@@ -1,4 +1,4 @@
-import { Search, User, Menu, Sparkles, Sun, Moon, Heart, FileText } from "lucide-react";
+import { Search, User, Menu, Sparkles, Sun, Moon, Heart, GitCompare } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
-import { useQuoteContext } from "@/contexts/QuoteContext";
-import { NotificationPanel } from "@/components/notifications/NotificationPanel";
+import { useComparisonContext } from "@/contexts/ComparisonContext";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -27,7 +26,7 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { favoriteCount } = useFavoritesContext();
-  const { itemCount: quoteCount } = useQuoteContext();
+  const { compareCount } = useComparisonContext();
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -56,7 +55,7 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
                 PROMO BRINDES
               </h1>
               <p className="text-xs text-muted-foreground -mt-0.5">
-                Sistema de Recomendação
+                Catálogo de Produtos
               </p>
             </div>
           </div>
@@ -118,30 +117,27 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
             <TooltipContent>Meus Favoritos</TooltipContent>
           </Tooltip>
 
-          {/* Quote */}
+          {/* Compare */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
                 className="relative"
-                onClick={() => navigate("/orcamento")}
+                onClick={() => navigate("/comparar")}
               >
-                <FileText className="h-5 w-5" />
-                {quoteCount > 0 && (
+                <GitCompare className="h-5 w-5" />
+                {compareCount > 0 && (
                   <Badge 
-                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-success text-success-foreground"
+                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-primary text-primary-foreground"
                   >
-                    {quoteCount > 99 ? "99+" : quoteCount}
+                    {compareCount > 4 ? "4" : compareCount}
                   </Badge>
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Orçamento</TooltipContent>
+            <TooltipContent>Comparar Produtos</TooltipContent>
           </Tooltip>
-
-          {/* Notifications */}
-          <NotificationPanel />
 
           {/* User menu */}
           <DropdownMenu>

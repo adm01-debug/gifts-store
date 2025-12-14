@@ -12,8 +12,6 @@ export interface ProductGridProps {
   isInCompare?: (productId: string) => boolean;
   onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean };
   canAddToCompare?: boolean;
-  isInQuote?: (productId: string) => boolean;
-  onAddToQuote?: (productId: string) => void;
 }
 
 export function ProductGrid({ 
@@ -27,8 +25,6 @@ export function ProductGrid({
   isInCompare,
   onToggleCompare,
   canAddToCompare = true,
-  isInQuote,
-  onAddToQuote
 }: ProductGridProps) {
   if (products.length === 0) {
     return (
@@ -65,8 +61,6 @@ export function ProductGrid({
             isInCompare={isInCompare ? isInCompare(product.id) : false}
             onToggleCompare={onToggleCompare}
             canAddToCompare={canAddToCompare}
-            isInQuote={isInQuote ? isInQuote(product.id) : false}
-            onAddToQuote={onAddToQuote}
           />
         </div>
       ))}

@@ -4,10 +4,9 @@ import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, Li
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { FilterPanel, FilterState, defaultFilters } from "@/components/filters/FilterPanel";
-import { StatsCard } from "@/components/dashboard/StatsCard";
-import { QuickActions } from "@/components/dashboard/QuickActions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
@@ -15,7 +14,6 @@ import { PRODUCTS, CATEGORIES, SUPPLIERS, type Product } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
 import { useComparisonContext } from "@/contexts/ComparisonContext";
-import { useQuoteContext } from "@/contexts/QuoteContext";
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'name' | 'price-asc' | 'price-desc' | 'stock' | 'newest';
@@ -25,7 +23,6 @@ export default function Index() {
   const { toast } = useToast();
   const { isFavorite, toggleFavorite, favoriteCount } = useFavoritesContext();
   const { isInCompare, toggleCompare, canAddMore } = useComparisonContext();
-  const { isInQuote, addItem: addToQuote } = useQuoteContext();
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('name');
@@ -136,13 +133,6 @@ export default function Index() {
     });
   };
 
-  const handleQuickAction = (actionId: string) => {
-    toast({
-      title: "Ação Rápida",
-      description: `Executando: ${actionId}`,
-    });
-  };
-
   const resetFilters = () => {
     setFilters(defaultFilters);
   };
@@ -178,37 +168,51 @@ export default function Index() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatsCard
-            title="Total de Produtos"
-            value={stats.totalProducts.toLocaleString('pt-BR')}
-            description="No catálogo"
-            icon={Package}
-            variant="primary"
-          />
-          <StatsCard
-            title="Em Estoque"
-            value={stats.inStock.toLocaleString('pt-BR')}
-            description="Disponíveis"
-            icon={TrendingUp}
-            trend={{ value: 12, isPositive: true }}
-            variant="success"
-          />
-          <StatsCard
-            title="Categorias"
-            value={stats.categories}
-            description="Organizadas"
-            icon={Layers}
-          />
-          <StatsCard
-            title="Fornecedores"
-            value={stats.suppliers}
-            description="Parceiros"
-            icon={Users}
-          />
+          <Card className="card-interactive">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Package className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{stats.totalProducts}</p>
+                <p className="text-sm text-muted-foreground">Total de Produtos</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-interactive">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-success/10 flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-success" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{stats.inStock}</p>
+                <p className="text-sm text-muted-foreground">Em Estoque</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-interactive">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center">
+                <Layers className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{stats.categories}</p>
+                <p className="text-sm text-muted-foreground">Categorias</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-interactive">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center">
+                <Users className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{stats.suppliers}</p>
+                <p className="text-sm text-muted-foreground">Fornecedores</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-
-        {/* Quick Actions */}
-        <QuickActions onActionClick={handleQuickAction} />
 
         {/* Main content */}
         <div className="flex gap-6">
@@ -368,8 +372,6 @@ export default function Index() {
               isInCompare={isInCompare}
               onToggleCompare={toggleCompare}
               canAddToCompare={canAddMore}
-              isInQuote={isInQuote}
-              onAddToQuote={(productId) => addToQuote(productId)}
             />
           </div>
         </div>
