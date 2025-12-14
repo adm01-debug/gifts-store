@@ -32,10 +32,12 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
+import { useComparisonContext } from "@/contexts/ComparisonContext";
 
 export default function FiltersPage() {
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite } = useFavoritesContext();
+  const { isInCompare, toggleCompare, canAddMore } = useComparisonContext();
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [activePresetId, setActivePresetId] = useState<string | undefined>();
   const [sortBy, setSortBy] = useState<string>("name");
@@ -363,6 +365,9 @@ export default function FiltersPage() {
                 onProductClick={(productId) => navigate(`/produto/${productId}`)}
                 isFavorite={isFavorite}
                 onToggleFavorite={toggleFavorite}
+                isInCompare={isInCompare}
+                onToggleCompare={toggleCompare}
+                canAddToCompare={canAddMore}
               />
             ) : (
               <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">

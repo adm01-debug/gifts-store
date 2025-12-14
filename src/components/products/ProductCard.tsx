@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, Share2, Eye, Package, Layers } from "lucide-react";
+import { Heart, Share2, Eye, Package, Layers, GitCompare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -16,6 +16,9 @@ export interface ProductCardProps {
   highlightColors?: string[];
   isFavorited?: boolean;
   onToggleFavorite?: (productId: string) => void;
+  isInCompare?: boolean;
+  onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean };
+  canAddToCompare?: boolean;
 }
 
 export function ProductCard({ 
@@ -26,7 +29,10 @@ export function ProductCard({
   onFavorite, 
   highlightColors,
   isFavorited = false,
-  onToggleFavorite
+  onToggleFavorite,
+  isInCompare = false,
+  onToggleCompare,
+  canAddToCompare = true
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -41,6 +47,22 @@ export function ProductCard({
       );
     } else {
       onFavorite?.(product);
+    }
+  };
+
+  const handleCompare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleCompare) {
+      const result = onToggleCompare(product.id);
+      if (result.isFull) {
+        toast.error("Limite de 4 produtos para comparação atingido");
+      } else {
+        toast.success(
+          result.added
+            ? `"${product.name}" adicionado à comparação`
+            : `"${product.name}" removido da comparação`
+        );
+      }
     }
   };
 
@@ -157,8 +179,36 @@ export function ProductCard({
               <Button
                 variant="secondary"
                 size="icon"
+                className={cn(
+                  "h-8 w-8 bg-card/90 backdrop-blur-sm hover:bg-card",
+                  isInCompare && "bg-primary/20 hover:bg-primary/30"
+                )}
+                onClick={handleCompare}
+                disabled={!isInCompare && !canAddToCompare}
+              >
+                <GitCompare
+                  className={cn(
+                    "h-4 w-4 transition-colors",
+                    isInCompare && "text-primary"
+                  )}
+                />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isInCompare ? "Remover da comparação" : "Adicionar à comparação"}
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
                 className="h-8 w-8 bg-card/90 backdrop-blur-sm hover:bg-card"
-                onClick={() => onShare?.(product)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShare?.(product);
+                }}
               >
                 <Share2 className="h-4 w-4" />
               </Button>
@@ -172,7 +222,10 @@ export function ProductCard({
                 variant="secondary"
                 size="icon"
                 className="h-8 w-8 bg-card/90 backdrop-blur-sm hover:bg-card"
-                onClick={() => onView?.(product)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onView?.(product);
+                }}
               >
                 <Eye className="h-4 w-4" />
               </Button>

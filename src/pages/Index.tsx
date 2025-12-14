@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { PRODUCTS, CATEGORIES, SUPPLIERS, type Product } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
+import { useComparisonContext } from "@/contexts/ComparisonContext";
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'name' | 'price-asc' | 'price-desc' | 'stock' | 'newest';
@@ -22,6 +23,7 @@ export default function Index() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isFavorite, toggleFavorite, favoriteCount } = useFavoritesContext();
+  const { isInCompare, toggleCompare, canAddMore } = useComparisonContext();
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('name');
@@ -361,6 +363,9 @@ export default function Index() {
               onFavoriteProduct={handleFavoriteProduct}
               isFavorite={isFavorite}
               onToggleFavorite={toggleFavorite}
+              isInCompare={isInCompare}
+              onToggleCompare={toggleCompare}
+              canAddToCompare={canAddMore}
             />
           </div>
         </div>

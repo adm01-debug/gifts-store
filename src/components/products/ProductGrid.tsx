@@ -9,6 +9,9 @@ export interface ProductGridProps {
   onFavoriteProduct?: (product: Product) => void;
   isFavorite?: (productId: string) => boolean;
   onToggleFavorite?: (productId: string) => void;
+  isInCompare?: (productId: string) => boolean;
+  onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean };
+  canAddToCompare?: boolean;
 }
 
 export function ProductGrid({ 
@@ -18,7 +21,10 @@ export function ProductGrid({
   onShareProduct, 
   onFavoriteProduct,
   isFavorite,
-  onToggleFavorite
+  onToggleFavorite,
+  isInCompare,
+  onToggleCompare,
+  canAddToCompare = true
 }: ProductGridProps) {
   if (products.length === 0) {
     return (
@@ -52,6 +58,9 @@ export function ProductGrid({
             onFavorite={onFavoriteProduct}
             isFavorited={isFavorite ? isFavorite(product.id) : false}
             onToggleFavorite={onToggleFavorite}
+            isInCompare={isInCompare ? isInCompare(product.id) : false}
+            onToggleCompare={onToggleCompare}
+            canAddToCompare={canAddToCompare}
           />
         </div>
       ))}
