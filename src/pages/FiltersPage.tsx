@@ -1,0 +1,382 @@
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { FilterPanel, FilterState, defaultFilters } from "@/components/filters/FilterPanel";
+import { PresetManager } from "@/components/filters/PresetManager";
+import { ProductGrid } from "@/components/products/ProductGrid";
+import { PRODUCTS } from "@/data/mockData";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { 
+  Filter, 
+  SlidersHorizontal, 
+  LayoutGrid, 
+  List,
+  ArrowUpDown,
+  X
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+
+export default function FiltersPage() {
+  const navigate = useNavigate();
+  const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  const [activePresetId, setActivePresetId] = useState<string | undefined>();
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  const handleApplyPreset = (presetFilters: FilterState, presetId?: string) => {
+    setFilters(presetFilters);
+    setActivePresetId(presetId);
+  };
+
+  const handleFilterChange = (newFilters: FilterState) => {
+    setFilters(newFilters);
+    setActivePresetId(undefined);
+  };
+
+  const handleReset = () => {
+    setFilters(defaultFilters);
+    setActivePresetId(undefined);
+  };
+
+  // Contar filtros ativos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.colors.length > 0) count++;
+    if (filters.categories.length > 0) count++;
+    if (filters.suppliers.length > 0) count++;
+    if (filters.publicoAlvo.length > 0) count++;
+    if (filters.datasComemorativas.length > 0) count++;
+    if (filters.endomarketing.length > 0) count++;
+    if (filters.nichos.length > 0) count++;
+    if (filters.materiais.length > 0) count++;
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 500) count++;
+    if (filters.inStock) count++;
+    if (filters.isKit) count++;
+    if (filters.featured) count++;
+    return count;
+  }, [filters]);
+
+  // Aplicar filtros nos produtos
+  const filteredProducts = useMemo(() => {
+    let result = [...PRODUCTS];
+
+    // Filtro por cores
+    if (filters.colors.length > 0) {
+      result = result.filter((product) =>
+        product.colors.some((color) => filters.colors.includes(color.name))
+      );
+    }
+
+    // Filtro por categorias
+    if (filters.categories.length > 0) {
+      result = result.filter((product) =>
+        filters.categories.includes(product.category.id)
+      );
+    }
+
+    // Filtro por fornecedores
+    if (filters.suppliers.length > 0) {
+      result = result.filter((product) =>
+        filters.suppliers.includes(product.supplier.id)
+      );
+    }
+
+    // Filtro por público-alvo
+    if (filters.publicoAlvo.length > 0) {
+      result = result.filter((product) =>
+        product.tags.publicoAlvo.some((p) => filters.publicoAlvo.includes(p))
+      );
+    }
+
+    // Filtro por datas comemorativas
+    if (filters.datasComemorativas.length > 0) {
+      result = result.filter((product) =>
+        product.tags.datasComemorativas.some((d) =>
+          filters.datasComemorativas.includes(d)
+        )
+      );
+    }
+
+    // Filtro por endomarketing
+    if (filters.endomarketing.length > 0) {
+      result = result.filter((product) =>
+        product.tags.endomarketing.some((e) => filters.endomarketing.includes(e))
+      );
+    }
+
+    // Filtro por nichos
+    if (filters.nichos.length > 0) {
+      result = result.filter((product) =>
+        product.tags.nicho.some((n) => filters.nichos.includes(n))
+      );
+    }
+
+    // Filtro por materiais
+    if (filters.materiais.length > 0) {
+      result = result.filter((product) =>
+        product.materials.some((m) => filters.materiais.includes(m))
+      );
+    }
+
+    // Filtro por faixa de preço
+    result = result.filter(
+      (product) =>
+        product.price >= filters.priceRange[0] &&
+        product.price <= filters.priceRange[1]
+    );
+
+    // Filtro por estoque
+    if (filters.inStock) {
+      result = result.filter((product) => product.stockStatus !== "out-of-stock");
+    }
+
+    // Filtro por KIT
+    if (filters.isKit) {
+      result = result.filter((product) => product.isKit);
+    }
+
+    // Filtro por destaque
+    if (filters.featured) {
+      result = result.filter((product) => product.featured);
+    }
+
+    // Ordenação
+    switch (sortBy) {
+      case "name":
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "price-asc":
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case "price-desc":
+        result.sort((a, b) => b.price - a.price);
+        break;
+      case "stock":
+        result.sort((a, b) => b.stock - a.stock);
+        break;
+    }
+
+    return result;
+  }, [filters, sortBy]);
+
+  // Resumo dos filtros ativos para exibição
+  const activeFiltersSummary = useMemo(() => {
+    const summary: { label: string; value: string; key: keyof FilterState }[] = [];
+
+    if (filters.colors.length > 0) {
+      summary.push({
+        label: "Cores",
+        value: filters.colors.slice(0, 2).join(", ") + (filters.colors.length > 2 ? ` +${filters.colors.length - 2}` : ""),
+        key: "colors",
+      });
+    }
+    if (filters.categories.length > 0) {
+      summary.push({
+        label: "Categorias",
+        value: `${filters.categories.length} selecionadas`,
+        key: "categories",
+      });
+    }
+    if (filters.datasComemorativas.length > 0) {
+      summary.push({
+        label: "Datas",
+        value: filters.datasComemorativas[0],
+        key: "datasComemorativas",
+      });
+    }
+    if (filters.endomarketing.length > 0) {
+      summary.push({
+        label: "Endomarketing",
+        value: filters.endomarketing[0],
+        key: "endomarketing",
+      });
+    }
+
+    return summary;
+  }, [filters]);
+
+  const clearSingleFilter = (key: keyof FilterState) => {
+    if (Array.isArray(filters[key])) {
+      setFilters({ ...filters, [key]: [] });
+    } else if (typeof filters[key] === "boolean") {
+      setFilters({ ...filters, [key]: false });
+    }
+    setActivePresetId(undefined);
+  };
+
+  return (
+    <MainLayout>
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-display font-bold text-foreground">
+                Filtros Avançados
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {filteredProducts.length} produtos encontrados
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* View mode toggle */}
+              <div className="flex border border-border rounded-lg p-1">
+                <Button
+                  variant={viewMode === "grid" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setViewMode("grid")}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Sort */}
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[180px]">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Nome</SelectItem>
+                  <SelectItem value="price-asc">Menor preço</SelectItem>
+                  <SelectItem value="price-desc">Maior preço</SelectItem>
+                  <SelectItem value="stock">Maior estoque</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Mobile filter button */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="lg:hidden">
+                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                    Filtros
+                    {activeFiltersCount > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {activeFiltersCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80 overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>Filtros</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6 space-y-6">
+                    <PresetManager
+                      currentFilters={filters}
+                      onApplyPreset={(f) => handleApplyPreset(f)}
+                      activePresetId={activePresetId}
+                    />
+                    <Separator />
+                    <FilterPanel
+                      filters={filters}
+                      onFilterChange={handleFilterChange}
+                      onReset={handleReset}
+                      activeFiltersCount={activeFiltersCount}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
+
+          {/* Active filters summary */}
+          {activeFiltersSummary.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground">Filtros ativos:</span>
+              {activeFiltersSummary.map((filter) => (
+                <Badge
+                  key={filter.key}
+                  variant="secondary"
+                  className="gap-1 cursor-pointer hover:bg-destructive/20"
+                  onClick={() => clearSingleFilter(filter.key)}
+                >
+                  {filter.label}: {filter.value}
+                  <X className="h-3 w-3" />
+                </Badge>
+              ))}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReset}
+                className="text-muted-foreground"
+              >
+                Limpar todos
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Main content */}
+        <div className="flex gap-6">
+          {/* Sidebar - Desktop */}
+          <aside className="hidden lg:block w-80 shrink-0">
+            <div className="sticky top-20 space-y-6 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin pr-2">
+              <PresetManager
+                currentFilters={filters}
+                onApplyPreset={(f) => handleApplyPreset(f)}
+                activePresetId={activePresetId}
+              />
+              <Separator />
+              <FilterPanel
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onReset={handleReset}
+                activeFiltersCount={activeFiltersCount}
+              />
+            </div>
+          </aside>
+
+          {/* Products grid */}
+          <div className="flex-1">
+            {filteredProducts.length > 0 ? (
+              <ProductGrid
+                products={filteredProducts}
+                onProductClick={(productId) => navigate(`/produto/${productId}`)}
+              />
+            ) : (
+              <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
+                <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground">
+                  Nenhum produto encontrado
+                </h3>
+                <p className="text-muted-foreground mt-1 mb-4">
+                  Tente ajustar os filtros para ver mais resultados
+                </p>
+                <Button variant="outline" onClick={handleReset}>
+                  Limpar filtros
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </MainLayout>
+  );
+}
