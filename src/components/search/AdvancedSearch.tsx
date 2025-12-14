@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { SoundWaveIndicator } from "@/components/ui/sound-wave-indicator";
 import { cn } from "@/lib/utils";
 import { useSearch, SearchResult } from "@/hooks/useSearch";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
@@ -194,13 +195,16 @@ export function AdvancedSearch({ onSearch, className }: AdvancedSearchProps) {
                     variant="ghost"
                     size="icon"
                     className={cn(
-                      "h-8 w-8 transition-all",
-                      isListening && "text-primary bg-primary/10 animate-pulse"
+                      "h-8 w-8 transition-all relative",
+                      isListening && "text-primary bg-primary/10"
                     )}
                     onClick={handleVoiceSearch}
                   >
                     {isListening ? (
-                      <MicOff className="h-4 w-4" />
+                      <div className="flex items-center justify-center">
+                        <SoundWaveIndicator isActive={true} className="absolute" />
+                        <MicOff className="h-4 w-4 opacity-0" />
+                      </div>
                     ) : (
                       <Mic className="h-4 w-4" />
                     )}
