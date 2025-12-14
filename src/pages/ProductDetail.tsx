@@ -18,6 +18,7 @@ import { ProductGallery } from "@/components/products/ProductGallery";
 import { ProductVariations } from "@/components/products/ProductVariations";
 import { KitComposition } from "@/components/products/KitComposition";
 import { ShareActions } from "@/components/products/ShareActions";
+import { RelatedProducts, RecommendedProducts } from "@/components/products/RelatedProducts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -355,6 +356,21 @@ export default function ProductDetail() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Related & Recommended Products */}
+        <div className="space-y-12 pt-8 border-t border-border">
+          <RelatedProducts 
+            currentProduct={product} 
+            allProducts={PRODUCTS} 
+            maxItems={4} 
+          />
+          
+          <RecommendedProducts 
+            currentProduct={product} 
+            allProducts={PRODUCTS} 
+            maxItems={4} 
+          />
         </div>
       </div>
     </MainLayout>
