@@ -73,6 +73,7 @@ import {
   Copy,
   Link,
   Unlink,
+  Search,
 } from "lucide-react";
 import { InlineEditField } from "./InlineEditField";
 import { ImageUploadButton } from "./ImageUploadButton";
@@ -140,6 +141,7 @@ interface LocationTechnique {
 export function ProductPersonalizationManager() {
   const queryClient = useQueryClient();
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isAddComponentOpen, setIsAddComponentOpen] = useState(false);
   const [isAddLocationOpen, setIsAddLocationOpen] = useState(false);
   const [isAddTechniqueOpen, setIsAddTechniqueOpen] = useState(false);
@@ -170,6 +172,50 @@ export function ProductPersonalizationManager() {
       return data as Product[];
     },
   });
+
+  // Fetch product groups for search
+  const { data: productGroups } = useQuery({
+    queryKey: ["admin-product-groups-search"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_groups")
+        .select("id, group_code, group_name")
+        .eq("is_active", true);
+      if (error) throw error;
+      return data as ProductGroup[];
+    },
+  });
+
+  // Fetch all group memberships for search
+  const { data: allMemberships } = useQuery({
+    queryKey: ["admin-all-memberships"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_group_members")
+        .select("product_id, product_group_id");
+      if (error) throw error;
+      return data as { product_id: string; product_group_id: string }[];
+    },
+  });
+
+  // Filter products based on search query
+  const filteredProducts = products?.filter((product) => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const matchesName = product.name.toLowerCase().includes(query);
+    const matchesSku = product.sku.toLowerCase().includes(query);
+    
+    // Check if product belongs to a group that matches search
+    const membership = allMemberships?.find((m) => m.product_id === product.id);
+    const group = membership 
+      ? productGroups?.find((g) => g.id === membership.product_group_id)
+      : null;
+    const matchesGroup = group?.group_name.toLowerCase().includes(query) || 
+                         group?.group_code.toLowerCase().includes(query);
+    
+    return matchesName || matchesSku || matchesGroup;
+  }) || [];
 
   // Fetch product group membership
   const { data: productMembership } = useQuery({
@@ -594,25 +640,64 @@ export function ProductPersonalizationManager() {
             Configure regras específicas de personalização para cada produto
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Search input */}
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, SKU ou grupo..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Product selector */}
           <Select value={selectedProduct || ""} onValueChange={setSelectedProduct}>
             <SelectTrigger className="w-full max-w-md">
               <SelectValue placeholder="Selecione um produto..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-80">
               {productsLoading ? (
                 <div className="flex items-center justify-center p-4">
                   <Loader2 className="h-4 w-4 animate-spin" />
                 </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  Nenhum produto encontrado
+                </div>
               ) : (
-                products?.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.name} ({product.sku})
-                  </SelectItem>
-                ))
+                filteredProducts.map((product) => {
+                  const membership = allMemberships?.find((m) => m.product_id === product.id);
+                  const group = membership 
+                    ? productGroups?.find((g) => g.id === membership.product_group_id)
+                    : null;
+                  
+                  return (
+                    <SelectItem key={product.id} value={product.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{product.name}</span>
+                        <span className="text-xs text-muted-foreground font-mono">
+                          ({product.sku})
+                        </span>
+                        {group && (
+                          <Badge variant="outline" className="text-xs ml-1">
+                            {group.group_code}
+                          </Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                  );
+                })
               )}
             </SelectContent>
           </Select>
+
+          {searchQuery && (
+            <p className="text-xs text-muted-foreground">
+              {filteredProducts.length} de {products?.length || 0} produtos
+            </p>
+          )}
         </CardContent>
       </Card>
 
