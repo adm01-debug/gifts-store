@@ -1,0 +1,355 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+
+export interface QuoteItem {
+  id?: string;
+  quote_id?: string;
+  product_id: string;
+  product_name: string;
+  product_sku?: string;
+  product_image_url?: string;
+  quantity: number;
+  unit_price: number;
+  subtotal?: number;
+  color_name?: string;
+  color_hex?: string;
+  notes?: string;
+  sort_order?: number;
+  personalizations?: QuoteItemPersonalization[];
+}
+
+export interface QuoteItemPersonalization {
+  id?: string;
+  quote_item_id?: string;
+  technique_id: string;
+  technique_name?: string;
+  colors_count?: number;
+  positions_count?: number;
+  area_cm2?: number;
+  setup_cost?: number;
+  unit_cost?: number;
+  total_cost?: number;
+  notes?: string;
+}
+
+export interface Quote {
+  id?: string;
+  quote_number?: string;
+  client_id?: string;
+  client_name?: string;
+  seller_id?: string;
+  status: "draft" | "pending" | "sent" | "approved" | "rejected" | "expired";
+  subtotal: number;
+  discount_percent: number;
+  discount_amount: number;
+  total: number;
+  notes?: string;
+  internal_notes?: string;
+  valid_until?: string;
+  bitrix_deal_id?: string;
+  bitrix_quote_id?: string;
+  synced_to_bitrix?: boolean;
+  synced_at?: string;
+  created_at?: string;
+  updated_at?: string;
+  items?: QuoteItem[];
+}
+
+export interface PersonalizationTechnique {
+  id: string;
+  name: string;
+  description?: string;
+  code?: string;
+  min_quantity?: number;
+  setup_cost?: number;
+  unit_cost?: number;
+  estimated_days?: number;
+  is_active?: boolean;
+}
+
+export function useQuotes() {
+  const { user } = useAuth();
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [techniques, setTechniques] = useState<PersonalizationTechnique[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch all quotes for current user
+  const fetchQuotes = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from("quotes")
+        .select(`
+          *,
+          bitrix_clients (
+            id,
+            name,
+            email,
+            phone
+          )
+        `)
+        .order("created_at", { ascending: false });
+
+      if (fetchError) throw fetchError;
+
+      const formattedQuotes = data?.map((q: any) => ({
+        ...q,
+        client_name: q.bitrix_clients?.name,
+      })) || [];
+
+      setQuotes(formattedQuotes);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao buscar orçamentos";
+      setError(message);
+      toast.error("Erro ao carregar orçamentos", { description: message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch single quote with items
+  const fetchQuote = async (quoteId: string): Promise<Quote | null> => {
+    setIsLoading(true);
+
+    try {
+      const { data: quoteData, error: quoteError } = await supabase
+        .from("quotes")
+        .select(`
+          *,
+          bitrix_clients (
+            id,
+            name,
+            email,
+            phone
+          )
+        `)
+        .eq("id", quoteId)
+        .maybeSingle();
+
+      if (quoteError) throw quoteError;
+      if (!quoteData) return null;
+
+      const { data: itemsData, error: itemsError } = await supabase
+        .from("quote_items")
+        .select(`
+          *,
+          quote_item_personalizations (
+            *,
+            personalization_techniques (
+              id,
+              name,
+              code
+            )
+          )
+        `)
+        .eq("quote_id", quoteId)
+        .order("sort_order");
+
+      if (itemsError) throw itemsError;
+
+      const items: QuoteItem[] = itemsData?.map((item: any) => ({
+        ...item,
+        personalizations: item.quote_item_personalizations?.map((p: any) => ({
+          ...p,
+          technique_name: p.personalization_techniques?.name,
+        })),
+      })) || [];
+
+      return {
+        ...quoteData,
+        client_name: quoteData.bitrix_clients?.name,
+        items,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao buscar orçamento";
+      toast.error("Erro ao carregar orçamento", { description: message });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Create new quote
+  const createQuote = async (quote: Partial<Quote>, items: QuoteItem[]): Promise<Quote | null> => {
+    if (!user) {
+      toast.error("Usuário não autenticado");
+      return null;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Calculate totals
+      const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+      const discountAmount = quote.discount_percent 
+        ? subtotal * (quote.discount_percent / 100) 
+        : (quote.discount_amount || 0);
+      const total = subtotal - discountAmount;
+
+      // Insert quote - quote_number is auto-generated by trigger
+      const { data: newQuote, error: quoteError } = await supabase
+        .from("quotes")
+        .insert({
+          quote_number: `ORC-${Date.now()}`, // Temporary, will be overwritten by trigger
+          client_id: quote.client_id || null,
+          seller_id: user.id,
+          status: quote.status || "draft",
+          subtotal,
+          discount_percent: quote.discount_percent || 0,
+          discount_amount: discountAmount,
+          total,
+          notes: quote.notes || null,
+          internal_notes: quote.internal_notes || null,
+          valid_until: quote.valid_until || null,
+        } as any)
+        .select()
+        .single();
+
+      if (quoteError) throw quoteError;
+
+      // Insert items
+      if (items.length > 0) {
+        const itemsToInsert = items.map((item, index) => ({
+          quote_id: newQuote.id,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          product_sku: item.product_sku,
+          product_image_url: item.product_image_url,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          color_name: item.color_name,
+          color_hex: item.color_hex,
+          notes: item.notes,
+          sort_order: index,
+        }));
+
+        const { data: insertedItems, error: itemsError } = await supabase
+          .from("quote_items")
+          .insert(itemsToInsert)
+          .select();
+
+        if (itemsError) throw itemsError;
+
+        // Insert personalizations for each item
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          const insertedItem = insertedItems?.[i];
+
+          if (item.personalizations?.length && insertedItem) {
+            const personalizationsToInsert = item.personalizations.map(p => ({
+              quote_item_id: insertedItem.id,
+              technique_id: p.technique_id,
+              colors_count: p.colors_count || 1,
+              positions_count: p.positions_count || 1,
+              area_cm2: p.area_cm2,
+              setup_cost: p.setup_cost || 0,
+              unit_cost: p.unit_cost || 0,
+              total_cost: p.total_cost || 0,
+              notes: p.notes,
+            }));
+
+            const { error: persError } = await supabase
+              .from("quote_item_personalizations")
+              .insert(personalizationsToInsert);
+
+            if (persError) throw persError;
+          }
+        }
+      }
+
+      toast.success("Orçamento criado com sucesso!", {
+        description: `Número: ${newQuote.quote_number}`,
+      });
+
+      await fetchQuotes();
+      return newQuote;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao criar orçamento";
+      toast.error("Erro ao criar orçamento", { description: message });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update quote status
+  const updateQuoteStatus = async (quoteId: string, status: Quote["status"]): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from("quotes")
+        .update({ status })
+        .eq("id", quoteId);
+
+      if (error) throw error;
+
+      toast.success("Status atualizado");
+      await fetchQuotes();
+      return true;
+    } catch (err) {
+      toast.error("Erro ao atualizar status");
+      return false;
+    }
+  };
+
+  // Delete quote
+  const deleteQuote = async (quoteId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from("quotes")
+        .delete()
+        .eq("id", quoteId);
+
+      if (error) throw error;
+
+      toast.success("Orçamento excluído");
+      await fetchQuotes();
+      return true;
+    } catch (err) {
+      toast.error("Erro ao excluir orçamento");
+      return false;
+    }
+  };
+
+  // Fetch personalization techniques
+  const fetchTechniques = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("personalization_techniques")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      setTechniques(data || []);
+    } catch (err) {
+      console.error("Error fetching techniques:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchQuotes();
+      fetchTechniques();
+    }
+  }, [user]);
+
+  return {
+    quotes,
+    techniques,
+    isLoading,
+    error,
+    fetchQuotes,
+    fetchQuote,
+    createQuote,
+    updateQuoteStatus,
+    deleteQuote,
+    fetchTechniques,
+  };
+}
