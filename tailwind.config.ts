@@ -169,6 +169,10 @@ export default {
           "0%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(360deg)" },
         },
+        "sound-wave": {
+          "0%, 100%": { height: "4px" },
+          "50%": { height: "16px" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -182,6 +186,7 @@ export default {
         "fade-in": "fade-in 0.3s ease-out",
         "scale-in": "scale-in 0.2s ease-out",
         "spin-slow": "spin-slow 3s linear infinite",
+        "sound-wave": "sound-wave 0.5s ease-in-out infinite",
       },
     },
   },
