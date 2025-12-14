@@ -146,6 +146,80 @@ export type Database = {
         }
         Relationships: []
       }
+      personalization_locations: {
+        Row: {
+          code: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          location_name: string
+          product_type: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          location_name: string
+          product_type: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          location_name?: string
+          product_type?: string
+        }
+        Relationships: []
+      }
+      personalization_sizes: {
+        Row: {
+          area_cm2: number | null
+          created_at: string
+          height_cm: number | null
+          id: string
+          is_active: boolean | null
+          price_modifier: number | null
+          size_label: string
+          technique_code: string | null
+          technique_id: string | null
+          width_cm: number | null
+        }
+        Insert: {
+          area_cm2?: number | null
+          created_at?: string
+          height_cm?: number | null
+          id?: string
+          is_active?: boolean | null
+          price_modifier?: number | null
+          size_label: string
+          technique_code?: string | null
+          technique_id?: string | null
+          width_cm?: number | null
+        }
+        Update: {
+          area_cm2?: number | null
+          created_at?: string
+          height_cm?: number | null
+          id?: string
+          is_active?: boolean | null
+          price_modifier?: number | null
+          size_label?: string
+          technique_code?: string | null
+          technique_id?: string | null
+          width_cm?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personalization_sizes_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "personalization_techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       personalization_techniques: {
         Row: {
           code: string | null
