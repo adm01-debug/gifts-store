@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List, User, X, Palette, Sparkles } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
+import { ProductList } from "@/components/products/ProductList";
 import { FilterPanel, FilterState, defaultFilters } from "@/components/filters/FilterPanel";
 import { QuickFiltersBar, QuickFilter } from "@/components/filters/QuickFiltersBar";
 import { ClientFilterModal } from "@/components/clients/ClientFilterModal";
@@ -496,20 +497,36 @@ export default function Index() {
               </div>
             )}
 
-            {/* Product grid */}
-            <ProductGrid
-              products={filteredProducts}
-              onProductClick={(productId) => navigate(`/produto/${productId}`)}
-              onViewProduct={handleViewProduct}
-              onShareProduct={handleShareProduct}
-              onFavoriteProduct={handleFavoriteProduct}
-              isFavorite={isFavorite}
-              onToggleFavorite={toggleFavorite}
-              isInCompare={isInCompare}
-              onToggleCompare={toggleCompare}
-              canAddToCompare={canAddMore}
-              highlightColors={clientColorGroups}
-            />
+            {/* Product grid or list */}
+            {viewMode === 'grid' ? (
+              <ProductGrid
+                products={filteredProducts}
+                onProductClick={(productId) => navigate(`/produto/${productId}`)}
+                onViewProduct={handleViewProduct}
+                onShareProduct={handleShareProduct}
+                onFavoriteProduct={handleFavoriteProduct}
+                isFavorite={isFavorite}
+                onToggleFavorite={toggleFavorite}
+                isInCompare={isInCompare}
+                onToggleCompare={toggleCompare}
+                canAddToCompare={canAddMore}
+                highlightColors={clientColorGroups}
+              />
+            ) : (
+              <ProductList
+                products={filteredProducts}
+                onProductClick={(productId) => navigate(`/produto/${productId}`)}
+                onViewProduct={handleViewProduct}
+                onShareProduct={handleShareProduct}
+                onFavoriteProduct={handleFavoriteProduct}
+                isFavorite={isFavorite}
+                onToggleFavorite={toggleFavorite}
+                isInCompare={isInCompare}
+                onToggleCompare={toggleCompare}
+                canAddToCompare={canAddMore}
+                highlightColors={clientColorGroups}
+              />
+            )}
           </div>
         </div>
       </div>
