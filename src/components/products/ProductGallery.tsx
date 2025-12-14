@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from "react";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Play, Maximize2, X, Move } from "lucide-react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Play, Maximize2, X, Move, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
@@ -26,20 +26,31 @@ export function ProductGallery({
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const [isAnimating, setIsAnimating] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0 });
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const allMedia = video ? [...images, video] : images;
   const isVideo = (index: number) => video && index === allMedia.length - 1;
 
+  // Reset loading state when image changes
+  useEffect(() => {
+    setIsImageLoading(true);
+  }, [selectedIndex]);
+
   const goToPrevious = useCallback(() => {
+    setIsAnimating(true);
     setSelectedIndex((prev) => (prev === 0 ? allMedia.length - 1 : prev - 1));
     resetZoom();
+    setTimeout(() => setIsAnimating(false), 400);
   }, [allMedia.length]);
 
   const goToNext = useCallback(() => {
+    setIsAnimating(true);
     setSelectedIndex((prev) => (prev === allMedia.length - 1 ? 0 : prev + 1));
     resetZoom();
+    setTimeout(() => setIsAnimating(false), 400);
   }, [allMedia.length]);
 
   const resetZoom = () => {
@@ -115,8 +126,10 @@ export function ProductGallery({
     <div
       ref={imageContainerRef}
       className={cn(
-        "relative overflow-hidden bg-secondary/30",
-        inDialog ? "w-full h-full" : "aspect-square rounded-2xl"
+        "relative overflow-hidden",
+        inDialog 
+          ? "w-full h-full bg-background/50" 
+          : "aspect-square rounded-2xl bg-gradient-to-br from-secondary/30 via-muted/20 to-secondary/30"
       )}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -124,11 +137,16 @@ export function ProductGallery({
       onMouseLeave={handleMouseUp}
       onWheel={handleWheel}
     >
+      {/* Loading shimmer */}
+      {isImageLoading && !isVideo(selectedIndex) && (
+        <div className="absolute inset-0 animate-shimmer z-10" />
+      )}
+
       {isVideo(selectedIndex) ? (
         <video
           src={allMedia[selectedIndex]}
           controls
-          className="w-full h-full object-contain"
+          className="w-full h-full object-contain animate-fade-in"
           poster={images[0]}
         />
       ) : (
@@ -136,14 +154,17 @@ export function ProductGallery({
           src={allMedia[selectedIndex]}
           alt={`${productName} - Imagem ${selectedIndex + 1}`}
           className={cn(
-            "w-full h-full object-contain transition-transform duration-200",
+            "w-full h-full object-contain transition-all duration-500 ease-out",
             zoom > 1 && "cursor-grab",
-            isPanning && "cursor-grabbing"
+            isPanning && "cursor-grabbing",
+            isAnimating && "scale-95 opacity-80",
+            isImageLoading ? "opacity-0" : "opacity-100"
           )}
           style={{
             transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
           }}
           draggable={false}
+          onLoad={() => setIsImageLoading(false)}
         />
       )}
     </div>
@@ -153,62 +174,98 @@ export function ProductGallery({
     <div className="space-y-4" onKeyDown={handleKeyDown} tabIndex={0}>
       {/* Main image */}
       <div className="relative group">
-        <ImageView />
+        {/* Decorative background glow */}
+        <div className="absolute -inset-4 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+        
+        <div className="relative rounded-2xl overflow-hidden shadow-lg border border-border/50 group-hover:shadow-2xl group-hover:border-primary/20 transition-all duration-500">
+          <ImageView />
 
-        {/* Navigation arrows */}
-        {allMedia.length > 1 && (
-          <>
+          {/* Navigation arrows */}
+          {allMedia.length > 1 && (
+            <>
+              <Button
+                variant="secondary"
+                size="icon"
+                className={cn(
+                  "absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full",
+                  "bg-card/95 backdrop-blur-md shadow-xl border border-border/50",
+                  "opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0",
+                  "hover:bg-card hover:scale-110 hover:shadow-2xl",
+                  "transition-all duration-300"
+                )}
+                onClick={goToPrevious}
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className={cn(
+                  "absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full",
+                  "bg-card/95 backdrop-blur-md shadow-xl border border-border/50",
+                  "opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0",
+                  "hover:bg-card hover:scale-110 hover:shadow-2xl",
+                  "transition-all duration-300"
+                )}
+                onClick={goToNext}
+              >
+                <ChevronRight className="h-6 w-6" />
+              </Button>
+            </>
+          )}
+
+          {/* Controls */}
+          <div className={cn(
+            "absolute bottom-4 right-4 flex gap-2",
+            "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0",
+            "transition-all duration-300 delay-100"
+          )}>
             <Button
               variant="secondary"
               size="icon"
-              className="absolute left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-card/90 backdrop-blur-sm shadow-lg"
-              onClick={goToPrevious}
+              className="h-10 w-10 rounded-full bg-card/95 backdrop-blur-md shadow-xl border border-border/50 hover:bg-card hover:scale-110 transition-all duration-200"
+              onClick={() => setIsFullscreen(true)}
             >
-              <ChevronLeft className="h-5 w-5" />
+              <Maximize2 className="h-4 w-4" />
             </Button>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-card/90 backdrop-blur-sm shadow-lg"
-              onClick={goToNext}
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </>
-        )}
+          </div>
 
-        {/* Controls */}
-        <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="secondary"
-            size="icon"
-            className="bg-card/90 backdrop-blur-sm shadow-lg"
-            onClick={() => setIsFullscreen(true)}
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Image counter */}
-        <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-card/90 backdrop-blur-sm text-xs font-medium shadow-lg">
-          {selectedIndex + 1} / {allMedia.length}
+          {/* Image counter with progress bar */}
+          <div className={cn(
+            "absolute bottom-4 left-4",
+            "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0",
+            "transition-all duration-300"
+          )}>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-card/95 backdrop-blur-md shadow-xl border border-border/50">
+              <span className="text-sm font-medium">
+                {selectedIndex + 1} / {allMedia.length}
+              </span>
+              <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary rounded-full transition-all duration-300"
+                  style={{ width: `${((selectedIndex + 1) / allMedia.length) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Color navigation */}
       {colors && colors.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3 animate-fade-in">
           <span className="text-sm font-medium text-muted-foreground">Cores disponíveis</span>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-3 flex-wrap">
             {colors.map((color, index) => (
               <button
                 key={color.name}
                 onClick={() => handleColorClick(index)}
                 className={cn(
-                  "group relative w-10 h-10 rounded-lg overflow-hidden transition-all duration-200 ring-offset-background",
+                  "group/color relative w-14 h-14 rounded-xl overflow-hidden transition-all duration-300",
+                  "ring-offset-background shadow-md hover:shadow-xl hover:-translate-y-1",
                   selectedColorIndex === index
-                    ? "ring-2 ring-primary ring-offset-2"
-                    : "hover:ring-2 hover:ring-muted-foreground/50 hover:ring-offset-1"
+                    ? "ring-2 ring-primary ring-offset-2 scale-105"
+                    : "hover:ring-2 hover:ring-muted-foreground/50 hover:ring-offset-2"
                 )}
                 title={color.name}
               >
@@ -216,7 +273,7 @@ export function ProductGallery({
                   <img 
                     src={color.image} 
                     alt={color.name} 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover/color:scale-110"
                   />
                 ) : (
                   <div 
@@ -224,7 +281,7 @@ export function ProductGallery({
                     style={{ backgroundColor: color.hex }}
                   />
                 )}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 group-hover/color:opacity-100 transition-opacity duration-300" />
               </button>
             ))}
           </div>
@@ -233,24 +290,29 @@ export function ProductGallery({
 
       {/* Thumbnails */}
       {allMedia.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin animate-fade-in" style={{ animationDelay: '100ms' }}>
           {allMedia.map((media, index) => (
             <button
               key={index}
               onClick={() => {
+                setIsAnimating(true);
                 setSelectedIndex(index);
                 resetZoom();
+                setTimeout(() => setIsAnimating(false), 400);
               }}
               className={cn(
-                "relative shrink-0 w-16 h-16 rounded-lg overflow-hidden transition-all duration-200",
+                "relative shrink-0 w-20 h-20 rounded-xl overflow-hidden transition-all duration-300",
+                "shadow-md hover:shadow-lg hover:-translate-y-1",
                 selectedIndex === index
-                  ? "ring-2 ring-primary ring-offset-2"
-                  : "opacity-70 hover:opacity-100"
+                  ? "ring-2 ring-primary ring-offset-2 scale-105"
+                  : "opacity-60 hover:opacity-100"
               )}
             >
               {isVideo(index) ? (
-                <div className="w-full h-full bg-secondary flex items-center justify-center">
-                  <Play className="h-6 w-6 text-muted-foreground" />
+                <div className="w-full h-full bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-card/80 flex items-center justify-center">
+                    <Play className="h-5 w-5 text-foreground ml-0.5" />
+                  </div>
                 </div>
               ) : (
                 <img
@@ -258,6 +320,9 @@ export function ProductGallery({
                   alt={`${productName} - Thumbnail ${index + 1}`}
                   className="w-full h-full object-cover"
                 />
+              )}
+              {selectedIndex === index && (
+                <div className="absolute inset-0 border-2 border-primary rounded-xl pointer-events-none" />
               )}
             </button>
           ))}
@@ -267,21 +332,29 @@ export function ProductGallery({
       {/* Fullscreen Dialog */}
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
         <DialogContent 
-          className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 bg-background/95 backdrop-blur-xl border-none"
+          className="max-w-[98vw] max-h-[98vh] w-full h-full p-0 bg-background/98 backdrop-blur-2xl border-none"
           onKeyDown={handleKeyDown}
         >
           <div className="relative w-full h-full flex flex-col">
             {/* Fullscreen header */}
-            <div className="absolute top-4 left-4 right-4 z-50 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1.5 rounded-full bg-card/90 backdrop-blur-sm text-sm font-medium shadow-lg">
-                  {selectedIndex + 1} / {allMedia.length}
-                </span>
-                {zoom > 1 && (
-                  <span className="px-3 py-1.5 rounded-full bg-card/90 backdrop-blur-sm text-sm font-medium shadow-lg flex items-center gap-1">
-                    <Move className="h-3 w-3" />
-                    {Math.round(zoom * 100)}%
+            <div className="absolute top-6 left-6 right-6 z-50 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-card/95 backdrop-blur-md shadow-xl border border-border/50">
+                  <span className="text-sm font-semibold">
+                    {selectedIndex + 1} / {allMedia.length}
                   </span>
+                  <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary rounded-full transition-all duration-300"
+                      style={{ width: `${((selectedIndex + 1) / allMedia.length) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                {zoom > 1 && (
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-card/95 backdrop-blur-md shadow-xl border border-border/50 animate-fade-in">
+                    <Move className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold">{Math.round(zoom * 100)}%</span>
+                  </div>
                 )}
               </div>
               
@@ -291,39 +364,49 @@ export function ProductGallery({
                     <Button
                       variant="secondary"
                       size="icon"
-                      className="bg-card/90 backdrop-blur-sm shadow-lg"
+                      className="h-11 w-11 rounded-full bg-card/95 backdrop-blur-md shadow-xl border border-border/50 hover:bg-card hover:scale-105 transition-all duration-200"
                       onClick={handleZoomOut}
                       disabled={zoom <= 1}
                     >
-                      <ZoomOut className="h-4 w-4" />
+                      <ZoomOut className="h-5 w-5" />
                     </Button>
                     <Button
                       variant="secondary"
                       size="icon"
-                      className="bg-card/90 backdrop-blur-sm shadow-lg"
+                      className="h-11 w-11 rounded-full bg-card/95 backdrop-blur-md shadow-xl border border-border/50 hover:bg-card hover:scale-105 transition-all duration-200"
                       onClick={handleZoomIn}
                       disabled={zoom >= 4}
                     >
-                      <ZoomIn className="h-4 w-4" />
+                      <ZoomIn className="h-5 w-5" />
                     </Button>
+                    {zoom > 1 && (
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="h-11 w-11 rounded-full bg-card/95 backdrop-blur-md shadow-xl border border-border/50 hover:bg-card hover:scale-105 transition-all duration-200 animate-fade-in"
+                        onClick={resetZoom}
+                      >
+                        <RotateCcw className="h-5 w-5" />
+                      </Button>
+                    )}
                   </>
                 )}
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="bg-card/90 backdrop-blur-sm shadow-lg"
+                  className="h-11 w-11 rounded-full bg-card/95 backdrop-blur-md shadow-xl border border-border/50 hover:bg-destructive/10 hover:border-destructive/30 hover:scale-105 transition-all duration-200"
                   onClick={() => {
                     setIsFullscreen(false);
                     resetZoom();
                   }}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-5 w-5" />
                 </Button>
               </div>
             </div>
 
             {/* Fullscreen image */}
-            <div className="flex-1 flex items-center justify-center p-16">
+            <div className="flex-1 flex items-center justify-center p-20">
               <ImageView inDialog />
             </div>
 
@@ -333,41 +416,43 @@ export function ProductGallery({
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 bg-card/90 backdrop-blur-sm shadow-lg"
+                  className="absolute left-6 top-1/2 -translate-y-1/2 h-14 w-14 rounded-full bg-card/95 backdrop-blur-md shadow-xl border border-border/50 hover:bg-card hover:scale-110 transition-all duration-200"
                   onClick={goToPrevious}
                 >
-                  <ChevronLeft className="h-6 w-6" />
+                  <ChevronLeft className="h-7 w-7" />
                 </Button>
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 bg-card/90 backdrop-blur-sm shadow-lg"
+                  className="absolute right-6 top-1/2 -translate-y-1/2 h-14 w-14 rounded-full bg-card/95 backdrop-blur-md shadow-xl border border-border/50 hover:bg-card hover:scale-110 transition-all duration-200"
                   onClick={goToNext}
                 >
-                  <ChevronRight className="h-6 w-6" />
+                  <ChevronRight className="h-7 w-7" />
                 </Button>
               </>
             )}
 
             {/* Fullscreen thumbnails */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 rounded-xl bg-card/90 backdrop-blur-sm shadow-lg max-w-[80vw] overflow-x-auto">
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 p-3 rounded-2xl bg-card/95 backdrop-blur-md shadow-2xl border border-border/50 max-w-[85vw] overflow-x-auto scrollbar-thin">
               {allMedia.map((media, index) => (
                 <button
                   key={index}
                   onClick={() => {
+                    setIsAnimating(true);
                     setSelectedIndex(index);
                     resetZoom();
+                    setTimeout(() => setIsAnimating(false), 400);
                   }}
                   className={cn(
-                    "relative shrink-0 w-14 h-14 rounded-lg overflow-hidden transition-all duration-200",
+                    "relative shrink-0 w-16 h-16 rounded-xl overflow-hidden transition-all duration-300",
                     selectedIndex === index
-                      ? "ring-2 ring-primary ring-offset-2 ring-offset-card"
-                      : "opacity-60 hover:opacity-100"
+                      ? "ring-2 ring-primary ring-offset-2 ring-offset-card scale-105"
+                      : "opacity-50 hover:opacity-100 hover:scale-105"
                   )}
                 >
                   {isVideo(index) ? (
-                    <div className="w-full h-full bg-secondary flex items-center justify-center">
-                      <Play className="h-5 w-5 text-muted-foreground" />
+                    <div className="w-full h-full bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
+                      <Play className="h-5 w-5 text-foreground" />
                     </div>
                   ) : (
                     <img
