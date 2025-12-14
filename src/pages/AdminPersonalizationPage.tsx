@@ -1,9 +1,10 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Palette, FolderOpen, Layers, Package } from "lucide-react";
+import { Palette, FolderOpen, Layers, Package, Settings } from "lucide-react";
 import { ProductGroupsManager } from "@/components/admin/ProductGroupsManager";
 import { GroupPersonalizationManager } from "@/components/admin/GroupPersonalizationManager";
 import { TechniquesManager } from "@/components/admin/TechniquesManager";
+import { ProductPersonalizationManager } from "@/components/admin/ProductPersonalizationManager";
 
 export default function AdminPersonalizationPage() {
   return (
@@ -22,17 +23,21 @@ export default function AdminPersonalizationPage() {
         </div>
 
         <Tabs defaultValue="groups" className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+          <TabsList className="grid w-full max-w-3xl grid-cols-4">
             <TabsTrigger value="groups" className="flex items-center gap-2">
               <FolderOpen className="h-4 w-4" />
               Grupos
             </TabsTrigger>
-            <TabsTrigger value="personalization" className="flex items-center gap-2">
+            <TabsTrigger value="group-rules" className="flex items-center gap-2">
               <Layers className="h-4 w-4" />
-              Regras por Grupo
+              Regras Grupo
+            </TabsTrigger>
+            <TabsTrigger value="products" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Por Produto
             </TabsTrigger>
             <TabsTrigger value="techniques" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
+              <Settings className="h-4 w-4" />
               Técnicas
             </TabsTrigger>
           </TabsList>
@@ -41,8 +46,12 @@ export default function AdminPersonalizationPage() {
             <ProductGroupsManager />
           </TabsContent>
 
-          <TabsContent value="personalization">
+          <TabsContent value="group-rules">
             <GroupPersonalizationManager />
+          </TabsContent>
+
+          <TabsContent value="products">
+            <ProductPersonalizationManager />
           </TabsContent>
 
           <TabsContent value="techniques">
