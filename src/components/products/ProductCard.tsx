@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/data/mockData";
+import { toast } from "sonner";
 
 export interface ProductCardProps {
   product: Product;
@@ -13,15 +14,34 @@ export interface ProductCardProps {
   onShare?: (product: Product) => void;
   onFavorite?: (product: Product) => void;
   highlightColors?: string[];
+  isFavorited?: boolean;
+  onToggleFavorite?: (productId: string) => void;
 }
 
-export function ProductCard({ product, onClick, onView, onShare, onFavorite, highlightColors }: ProductCardProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
+export function ProductCard({ 
+  product, 
+  onClick, 
+  onView, 
+  onShare, 
+  onFavorite, 
+  highlightColors,
+  isFavorited = false,
+  onToggleFavorite
+}: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
-  const handleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    onFavorite?.(product);
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleFavorite) {
+      onToggleFavorite(product.id);
+      toast.success(
+        isFavorited 
+          ? `"${product.name}" removido dos favoritos` 
+          : `"${product.name}" adicionado aos favoritos`
+      );
+    } else {
+      onFavorite?.(product);
+    }
   };
 
   const formatPrice = (price: number) => {
@@ -124,12 +144,12 @@ export function ProductCard({ product, onClick, onView, onShare, onFavorite, hig
                 <Heart
                   className={cn(
                     "h-4 w-4 transition-colors",
-                    isFavorite && "fill-destructive text-destructive"
+                    isFavorited && "fill-destructive text-destructive"
                   )}
                 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Favoritar</TooltipContent>
+            <TooltipContent>{isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}</TooltipContent>
           </Tooltip>
 
           <Tooltip>

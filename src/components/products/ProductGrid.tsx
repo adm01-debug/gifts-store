@@ -7,6 +7,8 @@ export interface ProductGridProps {
   onViewProduct?: (product: Product) => void;
   onShareProduct?: (product: Product) => void;
   onFavoriteProduct?: (product: Product) => void;
+  isFavorite?: (productId: string) => boolean;
+  onToggleFavorite?: (productId: string) => void;
 }
 
 export function ProductGrid({ 
@@ -14,7 +16,9 @@ export function ProductGrid({
   onProductClick,
   onViewProduct, 
   onShareProduct, 
-  onFavoriteProduct 
+  onFavoriteProduct,
+  isFavorite,
+  onToggleFavorite
 }: ProductGridProps) {
   if (products.length === 0) {
     return (
@@ -46,6 +50,8 @@ export function ProductGrid({
             onView={onViewProduct}
             onShare={onShareProduct}
             onFavorite={onFavoriteProduct}
+            isFavorited={isFavorite ? isFavorite(product.id) : false}
+            onToggleFavorite={onToggleFavorite}
           />
         </div>
       ))}
