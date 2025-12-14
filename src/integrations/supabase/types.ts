@@ -262,6 +262,151 @@ export type Database = {
         }
         Relationships: []
       }
+      product_component_location_techniques: {
+        Row: {
+          component_location_id: string
+          composed_code: string
+          composed_location_image_url: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          technique_id: string
+        }
+        Insert: {
+          component_location_id: string
+          composed_code: string
+          composed_location_image_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          technique_id: string
+        }
+        Update: {
+          component_location_id?: string
+          composed_code?: string
+          composed_location_image_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          technique_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_component_location_technique_component_location_id_fkey"
+            columns: ["component_location_id"]
+            isOneToOne: false
+            referencedRelation: "product_component_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_component_location_techniques_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "personalization_techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_component_locations: {
+        Row: {
+          area_image_url: string | null
+          component_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          location_code: string
+          location_name: string
+          max_area_cm2: number | null
+          max_height_cm: number | null
+          max_width_cm: number | null
+          printing_lines_image_url: string | null
+        }
+        Insert: {
+          area_image_url?: string | null
+          component_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          location_code: string
+          location_name: string
+          max_area_cm2?: number | null
+          max_height_cm?: number | null
+          max_width_cm?: number | null
+          printing_lines_image_url?: string | null
+        }
+        Update: {
+          area_image_url?: string | null
+          component_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          location_code?: string
+          location_name?: string
+          max_area_cm2?: number | null
+          max_height_cm?: number | null
+          max_width_cm?: number | null
+          printing_lines_image_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_component_locations_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "product_components"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_components: {
+        Row: {
+          component_code: string
+          component_name: string
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          is_personalizable: boolean | null
+          product_id: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          component_code: string
+          component_name: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_personalizable?: boolean | null
+          product_id: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          component_code?: string
+          component_name?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_personalizable?: boolean | null
+          product_id?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_components_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_sync_logs: {
         Row: {
           completed_at: string | null
