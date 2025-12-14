@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List, User, X, Palette, Sparkles, ChevronDown, Loader2 } from "lucide-react";
+import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List, User, X, Palette, Sparkles, Loader2 } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { ProductList } from "@/components/products/ProductList";
@@ -53,6 +53,38 @@ export default function Index() {
   useEffect(() => {
     setDisplayCount(ITEMS_PER_PAGE);
   }, [filters, sortBy, searchQuery, selectedClient]);
+
+  // Infinite scroll with Intersection Observer
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  const loadMore = useCallback(() => {
+    if (isLoadingMore) return;
+    setIsLoadingMore(true);
+    setTimeout(() => {
+      setDisplayCount(prev => prev + ITEMS_PER_PAGE);
+      setIsLoadingMore(false);
+    }, 300);
+  }, [isLoadingMore]);
+
+  useEffect(() => {
+    const currentRef = loadMoreRef.current;
+    if (!currentRef) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && !isLoading && !isLoadingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    observer.observe(currentRef);
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
+  }, [isLoading, isLoadingMore, loadMore]);
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (filters.colors.length) count += filters.colors.length;
@@ -176,14 +208,7 @@ export default function Index() {
 
   const hasMoreProducts = displayCount < filteredProducts.length;
 
-  const handleLoadMore = () => {
-    setIsLoadingMore(true);
-    // Simulate loading delay
-    setTimeout(() => {
-      setDisplayCount(prev => prev + ITEMS_PER_PAGE);
-      setIsLoadingMore(false);
-    }, 400);
-  };
+  // Apply quick filter
   const handleApplyQuickFilter = (quickFilter: QuickFilter["filter"]) => {
     const newFilters = { ...defaultFilters };
     
@@ -565,31 +590,18 @@ export default function Index() {
               />
             )}
 
-            {/* Load more button */}
+            {/* Infinite scroll trigger */}
             {!isLoading && hasMoreProducts && (
-              <div className="flex flex-col items-center gap-3 pt-8">
+              <div ref={loadMoreRef} className="flex flex-col items-center gap-3 pt-8 pb-4">
                 <p className="text-sm text-muted-foreground">
                   Mostrando {paginatedProducts.length} de {filteredProducts.length} produtos
                 </p>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={handleLoadMore}
-                  disabled={isLoadingMore}
-                  className="rounded-full px-8 gap-2"
-                >
-                  {isLoadingMore ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Carregando...
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-4 w-4" />
-                      Carregar mais produtos
-                    </>
-                  )}
-                </Button>
+                {isLoadingMore && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-sm">Carregando mais produtos...</span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -597,7 +609,7 @@ export default function Index() {
             {!isLoading && !hasMoreProducts && filteredProducts.length > ITEMS_PER_PAGE && (
               <div className="flex justify-center pt-8">
                 <p className="text-sm text-muted-foreground">
-                  Todos os {filteredProducts.length} produtos foram carregados
+                  Todos os {filteredProducts.length} produtos foram carregados ✓
                 </p>
               </div>
             )}
