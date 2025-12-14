@@ -1,4 +1,5 @@
-import { Search, Bell, User, Menu, Sparkles } from "lucide-react";
+import { Search, Bell, User, Menu, Sparkles, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,6 +19,12 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProps) {
+  const { theme, setTheme } = useTheme();
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
   return (
     <header className="sticky top-0 z-40 glass-strong border-b border-border">
       <div className="flex items-center justify-between h-16 px-4 lg:px-6">
@@ -66,6 +73,18 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
           {/* Mobile search */}
           <Button variant="ghost" size="icon" className="md:hidden">
             <Search className="h-5 w-5" />
+          </Button>
+
+          {/* Theme toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="relative"
+          >
+            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Alternar tema</span>
           </Button>
 
           {/* Notifications */}
