@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, X, Clock, TrendingUp, ArrowRight } from "lucide-react";
+import { Search, X, Clock, TrendingUp, ArrowRight, Mic, MicOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useSearch, SearchResult } from "@/hooks/useSearch";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useToast } from "@/hooks/use-toast";
 
 interface AdvancedSearchProps {
   onSearch?: (query: string) => void;
@@ -14,6 +17,7 @@ interface AdvancedSearchProps {
 
 export function AdvancedSearch({ onSearch, className }: AdvancedSearchProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const {
     query,
     setQuery,
@@ -29,6 +33,40 @@ export function AdvancedSearch({ onSearch, className }: AdvancedSearchProps) {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Voice search
+  const {
+    isListening,
+    isSupported: isVoiceSupported,
+    transcript,
+    startListening,
+    stopListening,
+    error: voiceError,
+  } = useSpeechRecognition({
+    onResult: (text) => {
+      setQuery(text);
+      onSearch?.(text);
+      toast({
+        title: "Busca por voz",
+        description: `Buscando: "${text}"`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro na busca por voz",
+        description: error,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleVoiceSearch = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -118,8 +156,8 @@ export function AdvancedSearch({ onSearch, className }: AdvancedSearchProps) {
           <Input
             ref={inputRef}
             type="search"
-            placeholder="Buscar produtos, categorias, fornecedores..."
-            value={query}
+            placeholder={isListening ? "Ouvindo..." : "Buscar produtos, categorias, fornecedores..."}
+            value={isListening ? transcript : query}
             onChange={(e) => {
               setQuery(e.target.value);
               setIsOpen(true);
@@ -127,22 +165,53 @@ export function AdvancedSearch({ onSearch, className }: AdvancedSearchProps) {
             }}
             onFocus={() => setIsOpen(true)}
             onKeyDown={handleKeyDown}
-            className="pl-10 pr-10 h-10 bg-secondary/50 border-border/50 focus:bg-background transition-colors"
+            className={cn(
+              "pl-10 h-10 bg-secondary/50 border-border/50 focus:bg-background transition-colors",
+              isVoiceSupported ? "pr-20" : "pr-10",
+              isListening && "border-primary ring-2 ring-primary/20"
+            )}
           />
-          {query && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 h-8 w-8"
-              onClick={() => {
-                setQuery("");
-                inputRef.current?.focus();
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
+          <div className="absolute right-1 flex items-center gap-0.5">
+            {query && !isListening && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  setQuery("");
+                  inputRef.current?.focus();
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+            {isVoiceSupported && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-8 w-8 transition-all",
+                      isListening && "text-primary bg-primary/10 animate-pulse"
+                    )}
+                    onClick={handleVoiceSearch}
+                  >
+                    {isListening ? (
+                      <MicOff className="h-4 w-4" />
+                    ) : (
+                      <Mic className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isListening ? "Parar gravação" : "Buscar por voz"}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </div>
       </form>
 
