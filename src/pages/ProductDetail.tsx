@@ -19,6 +19,7 @@ import { ProductVariations } from "@/components/products/ProductVariations";
 import { KitComposition } from "@/components/products/KitComposition";
 import { ShareActions } from "@/components/products/ShareActions";
 import { RelatedProducts, RecommendedProducts } from "@/components/products/RelatedProducts";
+import { ProductCustomizationOptions } from "@/components/products/ProductCustomizationOptions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -296,6 +297,12 @@ export default function ProductDetail() {
                 onSelectItems={setSelectedKitItems}
               />
             )}
+
+            {/* Customization Options */}
+            <ProductCustomizationOptions 
+              productId={id || ""} 
+              productSku={product.sku} 
+            />
 
             {/* Actions */}
             <div className="flex items-center gap-3 pt-4 border-t border-border">
