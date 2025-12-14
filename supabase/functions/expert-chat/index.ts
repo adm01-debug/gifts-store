@@ -105,7 +105,7 @@ ${clientDeals.length > 0
     // Fetch available products for context
     const { data: products, error: productsError } = await supabase
       .from("products")
-      .select("id, name, category_name, subcategory, price, colors, materials, tags")
+      .select("id, name, sku, category_name, subcategory, price, colors, materials, tags")
       .eq("is_active", true)
       .limit(100);
 
@@ -114,8 +114,8 @@ ${clientDeals.length > 0
     }
 
     const productsContext = products && products.length > 0
-      ? `\nPRODUTOS DISPONÍVEIS (amostra de ${products.length}):
-${products.slice(0, 30).map(p => `- ${p.name} (${p.category_name || "Sem categoria"}) - R$ ${p.price?.toFixed(2) || "N/A"}`).join("\n")}`
+      ? `\nPRODUTOS DISPONÍVEIS (use o formato [[PRODUTO:id:nome]] para criar links clicáveis):
+${products.slice(0, 50).map(p => `- ID: ${p.id} | ${p.name} (${p.category_name || "Sem categoria"}) - R$ ${p.price?.toFixed(2) || "N/A"}`).join("\n")}`
       : "";
 
     const systemPrompt = `Você é o EXPERT, um consultor especializado em produtos promocionais e brindes corporativos da Promo Brindes.
@@ -127,6 +127,12 @@ SEU PAPEL:
 - Sugere produtos que combinam com as cores da marca do cliente
 - Considera o histórico de compras para sugerir produtos complementares ou similares
 
+FORMATO DE LINKS DE PRODUTOS:
+Quando recomendar produtos, SEMPRE use este formato para criar links clicáveis:
+[[PRODUTO:id_do_produto:Nome do Produto]]
+
+Exemplo: "Recomendo o [[PRODUTO:abc123:Caderno Executivo Premium]] que combina perfeitamente com as cores da marca."
+
 DIRETRIZES:
 1. Seja proativo e sugira produtos baseado no contexto do cliente
 2. Sempre explique POR QUE está recomendando cada produto
@@ -136,11 +142,12 @@ DIRETRIZES:
 6. Seja conciso mas informativo
 7. Use linguagem profissional mas acessível
 8. Se não souber algo, seja honesto
+9. SEMPRE use o formato [[PRODUTO:id:nome]] ao mencionar produtos específicos
 
 ${clientContext}
 ${productsContext}
 
-IMPORTANTE: Você tem acesso em tempo real aos dados do cliente e histórico de compras do Bitrix24. Use essas informações para fazer recomendações precisas e personalizadas.`;
+IMPORTANTE: Você tem acesso em tempo real aos dados do cliente e histórico de compras do Bitrix24. Use essas informações para fazer recomendações precisas e personalizadas. Lembre-se de usar o formato [[PRODUTO:id:nome]] para tornar os produtos clicáveis.`;
 
     const apiMessages: Message[] = [
       { role: "system", content: systemPrompt },
