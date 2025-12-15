@@ -180,7 +180,7 @@ export function RecommendedProducts({ currentProduct, allProducts, maxItems = 4 
       .slice(0, maxItems)
       .map(item => item.product);
 
-    return recommendedProducts;
+    return scored;
   }, [currentProduct, allProducts, maxItems]);
 
   if (recommendedProducts.length === 0) return null;

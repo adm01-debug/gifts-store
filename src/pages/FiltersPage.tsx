@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { FilterPanel, FilterState, defaultFilters } from "@/components/filters/FilterPanel";
 import { PresetManager } from "@/components/filters/PresetManager";
-import { ProductGrid } from "@/components/products/ProductGrid";
+import { VirtualizedProductGrid } from "@/components/products/VirtualizedProductGrid";
+import { ProductList } from "@/components/products/ProductList";
 import { PRODUCTS } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -358,17 +359,29 @@ export default function FiltersPage() {
           </aside>
 
           {/* Products grid */}
-          <div className="flex-1">
+          <div className="flex-1 min-h-[600px]">
             {filteredProducts.length > 0 ? (
-              <ProductGrid
-                products={filteredProducts}
-                onProductClick={(productId) => navigate(`/produto/${productId}`)}
-                isFavorite={isFavorite}
-                onToggleFavorite={toggleFavorite}
-                isInCompare={isInCompare}
-                onToggleCompare={toggleCompare}
-                canAddToCompare={canAddMore}
-              />
+              viewMode === "grid" ? (
+                <VirtualizedProductGrid
+                  products={filteredProducts}
+                  onProductClick={(product) => navigate(`/produto/${product.id}`)}
+                  isFavorited={isFavorite}
+                  onToggleFavorite={toggleFavorite}
+                  isInCompare={isInCompare}
+                  onToggleCompare={toggleCompare}
+                  canAddToCompare={canAddMore}
+                />
+              ) : (
+                <ProductList
+                  products={filteredProducts}
+                  onProductClick={(productId) => navigate(`/produto/${productId}`)}
+                  isFavorite={isFavorite}
+                  onToggleFavorite={toggleFavorite}
+                  isInCompare={isInCompare}
+                  onToggleCompare={toggleCompare}
+                  canAddToCompare={canAddMore}
+                />
+              )
             ) : (
               <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
                 <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
