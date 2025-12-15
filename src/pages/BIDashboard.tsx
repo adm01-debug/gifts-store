@@ -4,16 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Users, 
-  Briefcase, 
-  FileText, 
-  Wand2, 
-  Calculator, 
+  Package, 
+  Palette, 
+  Layers, 
+  Tag, 
   TrendingUp,
   DollarSign,
-  Building2,
-  Calendar,
-  ArrowUpRight,
+  Star,
+  Sparkles,
+  Percent,
+  Box,
+  Factory,
+  FolderOpen,
 } from "lucide-react";
 import { 
   BarChart, 
@@ -26,8 +28,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
   Legend,
 } from "recharts";
 import { useNavigate } from "react-router-dom";
@@ -41,61 +41,35 @@ const COLORS = [
   "hsl(var(--chart-3))",
   "hsl(var(--chart-4))",
   "hsl(var(--chart-5))",
+  "#8884d8",
+  "#82ca9d",
+  "#ffc658",
+  "#ff7300",
 ];
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Rascunho",
-  pending: "Pendente",
-  sent: "Enviado",
-  approved: "Aprovado",
-  rejected: "Rejeitado",
-  expired: "Expirado",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-muted text-muted-foreground",
-  pending: "bg-yellow-500/20 text-yellow-600",
-  sent: "bg-blue-500/20 text-blue-600",
-  approved: "bg-green-500/20 text-green-600",
-  rejected: "bg-red-500/20 text-red-600",
-  expired: "bg-gray-500/20 text-gray-600",
+const STOCK_STATUS_LABELS: Record<string, string> = {
+  "in-stock": "Em Estoque",
+  "low-stock": "Estoque Baixo",
+  "out-of-stock": "Sem Estoque",
+  "pre-order": "Pré-venda",
 };
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(value);
-}
-
-function formatMonth(monthStr: string) {
-  const [year, month] = monthStr.split("-");
-  const date = new Date(parseInt(year), parseInt(month) - 1);
-  return format(date, "MMM", { locale: ptBR });
 }
 
 export default function BIDashboard() {
   const { data: metrics, isLoading } = useBIMetrics();
   const navigate = useNavigate();
 
-  const quoteStatusData = metrics
-    ? Object.entries(metrics.quotesByStatus).map(([status, count]) => ({
-        name: STATUS_LABELS[status] || status,
-        value: count,
-        status,
-      }))
-    : [];
-
-  const dealsByMonthData = metrics?.dealsByMonth.map((d) => ({
-    ...d,
-    monthLabel: formatMonth(d.month),
-  })) || [];
-
-  const quotesByMonthData = metrics?.quotesByMonth.map((d) => ({
-    ...d,
-    monthLabel: formatMonth(d.month),
+  const stockStatusData = metrics?.productsByStockStatus.map((item) => ({
+    name: STOCK_STATUS_LABELS[item.status] || item.status,
+    value: item.count,
   })) || [];
 
   return (
@@ -103,133 +77,128 @@ export default function BIDashboard() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard BI</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard de Produtos</h1>
           <p className="text-muted-foreground mt-1">
-            Visão geral de métricas e performance
+            Visão geral do catálogo de produtos
           </p>
         </div>
 
         {/* Main KPIs */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <MetricCard
-            title="Clientes"
-            value={metrics?.totalClients}
-            icon={Users}
+            title="Total de Produtos"
+            value={metrics?.totalProducts}
+            icon={Package}
             isLoading={isLoading}
-            onClick={() => navigate("/clientes")}
+            onClick={() => navigate("/")}
           />
           <MetricCard
-            title="Negócios"
-            value={metrics?.totalDeals}
-            icon={Briefcase}
-            subtitle={metrics ? formatCurrency(metrics.totalDealsValue) : undefined}
-            isLoading={isLoading}
-          />
-          <MetricCard
-            title="Cotações"
-            value={metrics?.totalQuotes}
-            icon={FileText}
+            title="Produtos Ativos"
+            value={metrics?.totalActiveProducts}
+            icon={Box}
             isLoading={isLoading}
           />
           <MetricCard
-            title="Mockups Gerados"
-            value={metrics?.totalMockups}
-            icon={Wand2}
+            title="Kits"
+            value={metrics?.totalKits}
+            icon={Layers}
             isLoading={isLoading}
-            onClick={() => navigate("/mockup")}
+          />
+          <MetricCard
+            title="Preço Médio"
+            value={metrics ? formatCurrency(metrics.averagePrice) : undefined}
+            icon={DollarSign}
+            isLoading={isLoading}
+            isText
           />
         </div>
 
         {/* Secondary KPIs */}
         <div className="grid gap-4 md:grid-cols-3">
           <MetricCard
-            title="Simulações"
-            value={metrics?.totalSimulations}
-            icon={Calculator}
+            title="Destaques"
+            value={metrics?.featuredCount}
+            icon={Star}
             isLoading={isLoading}
-            onClick={() => navigate("/simulador")}
           />
           <MetricCard
-            title="Ticket Médio"
-            value={
-              metrics && metrics.totalDeals > 0
-                ? formatCurrency(metrics.totalDealsValue / metrics.totalDeals)
-                : "R$ 0"
-            }
-            icon={DollarSign}
+            title="Novidades"
+            value={metrics?.newArrivalCount}
+            icon={Sparkles}
             isLoading={isLoading}
-            isText
           />
           <MetricCard
-            title="Taxa de Conversão"
-            value={
-              metrics && metrics.totalQuotes > 0
-                ? `${Math.round(
-                    ((metrics.quotesByStatus.approved || 0) / metrics.totalQuotes) * 100
-                  )}%`
-                : "0%"
-            }
-            icon={TrendingUp}
+            title="Em Promoção"
+            value={metrics?.onSaleCount}
+            icon={Percent}
             isLoading={isLoading}
-            isText
           />
         </div>
 
         {/* Charts Row */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Deals by Month */}
+          {/* Products by Category */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Negócios por Mês</CardTitle>
-              <CardDescription>Evolução dos últimos 6 meses</CardDescription>
+              <CardTitle className="text-lg">Produtos por Categoria</CardTitle>
+              <CardDescription>Top 10 categorias</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <Skeleton className="h-[250px] w-full" />
-              ) : (
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={dealsByMonthData}>
+                <Skeleton className="h-[300px] w-full" />
+              ) : metrics?.productsByCategory.length ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={metrics.productsByCategory} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="monthLabel" className="text-xs" />
-                    <YAxis className="text-xs" tickFormatter={(v) => formatCurrency(v)} />
+                    <XAxis type="number" className="text-xs" />
+                    <YAxis 
+                      type="category" 
+                      dataKey="category" 
+                      className="text-xs" 
+                      width={120}
+                      tick={{ fontSize: 11 }}
+                    />
                     <Tooltip
-                      formatter={(value: number) => [formatCurrency(value), "Valor"]}
-                      labelFormatter={(label) => `Mês: ${label}`}
+                      formatter={(value: number) => [value, "Produtos"]}
                       contentStyle={{
                         backgroundColor: "hsl(var(--popover))",
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "8px",
                       }}
                     />
-                    <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  Nenhum dado disponível
+                </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Quotes by Status */}
+          {/* Products by Stock Status */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Cotações por Status</CardTitle>
-              <CardDescription>Distribuição atual</CardDescription>
+              <CardTitle className="text-lg">Status de Estoque</CardTitle>
+              <CardDescription>Distribuição por disponibilidade</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <Skeleton className="h-[250px] w-full" />
-              ) : quoteStatusData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}>
+                <Skeleton className="h-[300px] w-full" />
+              ) : stockStatusData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={quoteStatusData}
+                      data={stockStatusData}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
-                      outerRadius={90}
+                      outerRadius={100}
                       paddingAngle={2}
                       dataKey="value"
                     >
-                      {quoteStatusData.map((entry, index) => (
+                      {stockStatusData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -245,206 +214,253 @@ export default function BIDashboard() {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                  Nenhuma cotação registrada
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  Nenhum dado disponível
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Quotes Trend */}
+        {/* Price Ranges Chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Evolução de Cotações</CardTitle>
-            <CardDescription>Quantidade e valor total por mês</CardDescription>
+            <CardTitle className="text-lg">Distribuição por Faixa de Preço</CardTitle>
+            <CardDescription>Quantidade de produtos por faixa</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-[250px] w-full" />
-            ) : (
+            ) : metrics?.priceRanges.length ? (
               <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={quotesByMonthData}>
+                <BarChart data={metrics.priceRanges}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="monthLabel" className="text-xs" />
-                  <YAxis yAxisId="left" className="text-xs" />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    className="text-xs"
-                    tickFormatter={(v) => formatCurrency(v)}
-                  />
+                  <XAxis dataKey="range" className="text-xs" />
+                  <YAxis className="text-xs" />
                   <Tooltip
-                    formatter={(value: number, name: string) => [
-                      name === "total" ? formatCurrency(value) : value,
-                      name === "total" ? "Valor Total" : "Quantidade",
-                    ]}
+                    formatter={(value: number) => [value, "Produtos"]}
                     contentStyle={{
                       backgroundColor: "hsl(var(--popover))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
                     }}
                   />
-                  <Legend formatter={(value) => (value === "total" ? "Valor Total" : "Quantidade")} />
-                  <Line
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="count"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(var(--primary))" }}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="total"
-                    stroke="hsl(var(--chart-2))"
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(var(--chart-2))" }}
-                  />
-                </LineChart>
+                  <Bar dataKey="count" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                Nenhum dado disponível
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Colors Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Palette className="h-5 w-5" />
+              Produtos por Cor
+            </CardTitle>
+            <CardDescription>Top 15 cores mais frequentes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                {[...Array(10)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : metrics?.productsByColor.length ? (
+              <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                {metrics.productsByColor.map((item) => (
+                  <div
+                    key={item.color}
+                    className="flex flex-col items-center p-3 rounded-lg border bg-card hover:shadow-md transition-shadow"
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full border-2 border-border shadow-sm mb-2"
+                      style={{ backgroundColor: item.hex }}
+                    />
+                    <span className="text-xs font-medium text-center truncate w-full">
+                      {item.color}
+                    </span>
+                    <Badge variant="secondary" className="mt-1 text-xs">
+                      {item.count}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">Nenhuma cor registrada</p>
             )}
           </CardContent>
         </Card>
 
         {/* Bottom Section */}
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Clients by Ramo */}
+          {/* Products by Group */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Clientes por Ramo
+                <FolderOpen className="h-5 w-5" />
+                Produtos por Grupo
               </CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="space-y-3">
-                  {[1, 2, 3, 4].map((i) => (
+                  {[1, 2, 3, 4, 5].map((i) => (
                     <Skeleton key={i} className="h-8 w-full" />
                   ))}
                 </div>
-              ) : metrics?.clientsByRamo.length ? (
+              ) : metrics?.productsByGroup.length ? (
                 <div className="space-y-3">
-                  {metrics.clientsByRamo.map((item, index) => (
-                    <div key={item.ramo} className="flex items-center justify-between">
+                  {metrics.productsByGroup.map((item, index) => (
+                    <div key={item.groupName} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: COLORS[index % COLORS.length] }}
                         />
-                        <span className="text-sm truncate max-w-[150px]">{item.ramo}</span>
+                        <span className="text-sm truncate max-w-[150px]">{item.groupName}</span>
                       </div>
                       <Badge variant="secondary">{item.count}</Badge>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm">Nenhum dado disponível</p>
+                <p className="text-muted-foreground text-sm">Nenhum grupo configurado</p>
               )}
             </CardContent>
           </Card>
 
-          {/* Top Clients */}
+          {/* Products by Material */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Top Clientes
+                <Tag className="h-5 w-5" />
+                Produtos por Material
               </CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Skeleton key={i} className="h-10 w-full" />
+                    <Skeleton key={i} className="h-8 w-full" />
                   ))}
                 </div>
-              ) : metrics?.topClients.length ? (
+              ) : metrics?.productsByMaterial.length ? (
                 <div className="space-y-3">
-                  {metrics.topClients.map((client, index) => (
-                    <div
-                      key={client.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/cliente/${client.id}`)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg font-bold text-muted-foreground">
-                          #{index + 1}
-                        </span>
-                        <div>
-                          <p className="font-medium text-sm truncate max-w-[120px]">
-                            {client.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {client.deals_count} negócios
-                          </p>
-                        </div>
+                  {metrics.productsByMaterial.map((item, index) => (
+                    <div key={item.material} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <span className="text-sm truncate max-w-[150px]">{item.material}</span>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-sm text-primary">
-                          {formatCurrency(client.total_spent || 0)}
-                        </p>
-                      </div>
+                      <Badge variant="secondary">{item.count}</Badge>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm">Nenhum cliente encontrado</p>
+                <p className="text-muted-foreground text-sm">Nenhum material registrado</p>
               )}
             </CardContent>
           </Card>
 
-          {/* Recent Deals */}
+          {/* Products by Supplier */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Negócios Recentes
+                <Factory className="h-5 w-5" />
+                Produtos por Fornecedor
               </CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Skeleton key={i} className="h-10 w-full" />
+                    <Skeleton key={i} className="h-8 w-full" />
                   ))}
                 </div>
-              ) : metrics?.recentDeals.length ? (
+              ) : metrics?.productsBySupplier.length ? (
                 <div className="space-y-3">
-                  {metrics.recentDeals.map((deal) => (
-                    <div
-                      key={deal.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{deal.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {deal.created_at_bitrix
-                            ? format(parseISO(deal.created_at_bitrix), "dd/MM/yyyy", {
-                                locale: ptBR,
-                              })
-                            : "-"}
-                        </p>
+                  {metrics.productsBySupplier.map((item, index) => (
+                    <div key={item.supplier} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <span className="text-sm truncate max-w-[150px]">{item.supplier}</span>
                       </div>
-                      <div className="text-right flex items-center gap-2">
-                        <span className="font-semibold text-sm">
-                          {formatCurrency(deal.value || 0)}
-                        </span>
-                        <Badge variant="outline" className="text-xs">
-                          {deal.stage || "N/A"}
-                        </Badge>
-                      </div>
+                      <Badge variant="secondary">{item.count}</Badge>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm">Nenhum negócio recente</p>
+                <p className="text-muted-foreground text-sm">Nenhum fornecedor registrado</p>
               )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Recent Products */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Produtos Recentes
+            </CardTitle>
+            <CardDescription>Últimos produtos adicionados ao catálogo</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : metrics?.recentProducts.length ? (
+              <div className="space-y-3">
+                {metrics.recentProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors border"
+                    onClick={() => navigate(`/produto/${product.sku}`)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{product.name}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>SKU: {product.sku}</span>
+                        {product.category_name && (
+                          <>
+                            <span>•</span>
+                            <span>{product.category_name}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right flex items-center gap-3">
+                      <span className="font-semibold text-sm text-primary">
+                        {formatCurrency(product.price)}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {format(parseISO(product.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">Nenhum produto encontrado</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );
@@ -493,12 +509,6 @@ function MetricCard({
             <Icon className="h-6 w-6 text-primary" />
           </div>
         </div>
-        {onClick && (
-          <div className="mt-3 flex items-center text-xs text-primary">
-            <span>Ver detalhes</span>
-            <ArrowUpRight className="h-3 w-3 ml-1" />
-          </div>
-        )}
       </CardContent>
     </Card>
   );

@@ -1,215 +1,230 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 
-export interface BIMetrics {
-  totalClients: number;
-  totalDeals: number;
-  totalDealsValue: number;
-  totalQuotes: number;
-  quotesByStatus: Record<string, number>;
-  totalMockups: number;
-  totalSimulations: number;
-  recentClients: Array<{
+interface ColorInfo {
+  name?: string;
+  hex?: string;
+  color_name?: string;
+  color_hex?: string;
+}
+
+export interface ProductBIMetrics {
+  totalProducts: number;
+  totalActiveProducts: number;
+  totalKits: number;
+  averagePrice: number;
+  productsByCategory: Array<{
+    category: string;
+    count: number;
+  }>;
+  productsBySubcategory: Array<{
+    subcategory: string;
+    count: number;
+  }>;
+  productsByColor: Array<{
+    color: string;
+    hex: string;
+    count: number;
+  }>;
+  productsByMaterial: Array<{
+    material: string;
+    count: number;
+  }>;
+  productsBySupplier: Array<{
+    supplier: string;
+    count: number;
+  }>;
+  productsByStockStatus: Array<{
+    status: string;
+    count: number;
+  }>;
+  productsByGroup: Array<{
+    groupName: string;
+    count: number;
+  }>;
+  priceRanges: Array<{
+    range: string;
+    count: number;
+  }>;
+  recentProducts: Array<{
     id: string;
     name: string;
-    ramo: string | null;
-    total_spent: number | null;
-    last_purchase_date: string | null;
+    sku: string;
+    price: number;
+    category_name: string | null;
+    created_at: string;
   }>;
-  recentDeals: Array<{
-    id: string;
-    title: string;
-    value: number | null;
-    stage: string | null;
-    created_at_bitrix: string | null;
-  }>;
-  topClients: Array<{
-    id: string;
-    name: string;
-    total_spent: number | null;
-    deals_count: number;
-  }>;
-  dealsByMonth: Array<{
-    month: string;
-    value: number;
-    count: number;
-  }>;
-  quotesByMonth: Array<{
-    month: string;
-    count: number;
-    total: number;
-  }>;
-  clientsByRamo: Array<{
-    ramo: string;
-    count: number;
-  }>;
+  featuredCount: number;
+  newArrivalCount: number;
+  onSaleCount: number;
 }
 
 export function useBIMetrics() {
-  const { user, isAdmin } = useAuth();
-
   return useQuery({
-    queryKey: ["bi-metrics", user?.id, isAdmin],
-    queryFn: async (): Promise<BIMetrics> => {
-      // Fetch all data in parallel
-      const [
-        clientsResult,
-        dealsResult,
-        quotesResult,
-        mockupsResult,
-        simulationsResult,
-      ] = await Promise.all([
-        supabase.from("bitrix_clients").select("*"),
-        supabase.from("bitrix_deals").select("*"),
-        isAdmin
-          ? supabase.from("quotes").select("*")
-          : supabase.from("quotes").select("*").eq("seller_id", user?.id),
-        isAdmin
-          ? supabase.from("generated_mockups").select("*")
-          : supabase.from("generated_mockups").select("*").eq("seller_id", user?.id),
-        isAdmin
-          ? supabase.from("personalization_simulations").select("*")
-          : supabase.from("personalization_simulations").select("*").eq("seller_id", user?.id),
+    queryKey: ["product-bi-metrics"],
+    queryFn: async (): Promise<ProductBIMetrics> => {
+      // Fetch products and groups in parallel
+      const [productsResult, groupMembersResult, groupsResult] = await Promise.all([
+        supabase.from("products").select("*"),
+        supabase.from("product_group_members").select("product_id, product_group_id"),
+        supabase.from("product_groups").select("id, group_name"),
       ]);
 
-      const clients = clientsResult.data || [];
-      const deals = dealsResult.data || [];
-      const quotes = quotesResult.data || [];
-      const mockups = mockupsResult.data || [];
-      const simulations = simulationsResult.data || [];
+      const products = productsResult.data || [];
+      const groupMembers = groupMembersResult.data || [];
+      const groups = groupsResult.data || [];
 
-      // Calculate metrics
-      const totalDealsValue = deals.reduce((sum, deal) => sum + (deal.value || 0), 0);
+      // Basic counts
+      const totalProducts = products.length;
+      const totalActiveProducts = products.filter((p) => p.is_active).length;
+      const totalKits = products.filter((p) => p.is_kit).length;
+      const featuredCount = products.filter((p) => p.featured).length;
+      const newArrivalCount = products.filter((p) => p.new_arrival).length;
+      const onSaleCount = products.filter((p) => p.on_sale).length;
 
-      // Quotes by status
-      const quotesByStatus: Record<string, number> = {};
-      quotes.forEach((quote) => {
-        const status = quote.status || "unknown";
-        quotesByStatus[status] = (quotesByStatus[status] || 0) + 1;
+      // Average price
+      const totalPrice = products.reduce((sum, p) => sum + (p.price || 0), 0);
+      const averagePrice = totalProducts > 0 ? totalPrice / totalProducts : 0;
+
+      // Products by category
+      const categoryMap = new Map<string, number>();
+      products.forEach((p) => {
+        const category = p.category_name || "Sem categoria";
+        categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
       });
-
-      // Recent clients (last 5)
-      const recentClients = [...clients]
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 5)
-        .map((c) => ({
-          id: c.id,
-          name: c.name,
-          ramo: c.ramo,
-          total_spent: c.total_spent,
-          last_purchase_date: c.last_purchase_date,
-        }));
-
-      // Recent deals (last 5)
-      const recentDeals = [...deals]
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 5)
-        .map((d) => ({
-          id: d.id,
-          title: d.title,
-          value: d.value,
-          stage: d.stage,
-          created_at_bitrix: d.created_at_bitrix,
-        }));
-
-      // Top clients by total spent
-      const clientDealsMap = new Map<string, { count: number }>();
-      deals.forEach((deal) => {
-        const clientId = deal.bitrix_client_id;
-        const existing = clientDealsMap.get(clientId) || { count: 0 };
-        existing.count += 1;
-        clientDealsMap.set(clientId, existing);
-      });
-
-      const topClients = [...clients]
-        .sort((a, b) => (b.total_spent || 0) - (a.total_spent || 0))
-        .slice(0, 5)
-        .map((c) => ({
-          id: c.id,
-          name: c.name,
-          total_spent: c.total_spent,
-          deals_count: clientDealsMap.get(c.bitrix_id)?.count || 0,
-        }));
-
-      // Deals by month (last 6 months)
-      const dealsByMonthMap = new Map<string, { value: number; count: number }>();
-      const now = new Date();
-      for (let i = 5; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        dealsByMonthMap.set(key, { value: 0, count: 0 });
-      }
-
-      deals.forEach((deal) => {
-        const date = new Date(deal.created_at_bitrix || deal.created_at);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        if (dealsByMonthMap.has(key)) {
-          const existing = dealsByMonthMap.get(key)!;
-          existing.value += deal.value || 0;
-          existing.count += 1;
-        }
-      });
-
-      const dealsByMonth = Array.from(dealsByMonthMap.entries()).map(([month, data]) => ({
-        month,
-        value: data.value,
-        count: data.count,
-      }));
-
-      // Quotes by month (last 6 months)
-      const quotesByMonthMap = new Map<string, { count: number; total: number }>();
-      for (let i = 5; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        quotesByMonthMap.set(key, { count: 0, total: 0 });
-      }
-
-      quotes.forEach((quote) => {
-        const date = new Date(quote.created_at);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        if (quotesByMonthMap.has(key)) {
-          const existing = quotesByMonthMap.get(key)!;
-          existing.count += 1;
-          existing.total += quote.total || 0;
-        }
-      });
-
-      const quotesByMonth = Array.from(quotesByMonthMap.entries()).map(([month, data]) => ({
-        month,
-        count: data.count,
-        total: data.total,
-      }));
-
-      // Clients by ramo
-      const ramoMap = new Map<string, number>();
-      clients.forEach((client) => {
-        const ramo = client.ramo || "Não informado";
-        ramoMap.set(ramo, (ramoMap.get(ramo) || 0) + 1);
-      });
-
-      const clientsByRamo = Array.from(ramoMap.entries())
-        .map(([ramo, count]) => ({ ramo, count }))
+      const productsByCategory = Array.from(categoryMap.entries())
+        .map(([category, count]) => ({ category, count }))
         .sort((a, b) => b.count - a.count)
-        .slice(0, 8);
+        .slice(0, 10);
+
+      // Products by subcategory
+      const subcategoryMap = new Map<string, number>();
+      products.forEach((p) => {
+        if (p.subcategory) {
+          subcategoryMap.set(p.subcategory, (subcategoryMap.get(p.subcategory) || 0) + 1);
+        }
+      });
+      const productsBySubcategory = Array.from(subcategoryMap.entries())
+        .map(([subcategory, count]) => ({ subcategory, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      // Products by color
+      const colorMap = new Map<string, { hex: string; count: number }>();
+      products.forEach((p) => {
+        if (p.colors && Array.isArray(p.colors)) {
+          (p.colors as ColorInfo[]).forEach((color) => {
+            const colorName = color.name || color.color_name || "Desconhecida";
+            const colorHex = color.hex || color.color_hex || "#CCCCCC";
+            const existing = colorMap.get(colorName) || { hex: colorHex, count: 0 };
+            existing.count += 1;
+            colorMap.set(colorName, existing);
+          });
+        }
+      });
+      const productsByColor = Array.from(colorMap.entries())
+        .map(([color, data]) => ({ color, hex: data.hex, count: data.count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 15);
+
+      // Products by material
+      const materialMap = new Map<string, number>();
+      products.forEach((p) => {
+        if (p.materials && Array.isArray(p.materials)) {
+          p.materials.forEach((material: string) => {
+            materialMap.set(material, (materialMap.get(material) || 0) + 1);
+          });
+        }
+      });
+      const productsByMaterial = Array.from(materialMap.entries())
+        .map(([material, count]) => ({ material, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      // Products by supplier
+      const supplierMap = new Map<string, number>();
+      products.forEach((p) => {
+        const supplier = p.supplier_name || "Sem fornecedor";
+        supplierMap.set(supplier, (supplierMap.get(supplier) || 0) + 1);
+      });
+      const productsBySupplier = Array.from(supplierMap.entries())
+        .map(([supplier, count]) => ({ supplier, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      // Products by stock status
+      const stockStatusMap = new Map<string, number>();
+      products.forEach((p) => {
+        const status = p.stock_status || "in-stock";
+        stockStatusMap.set(status, (stockStatusMap.get(status) || 0) + 1);
+      });
+      const productsByStockStatus = Array.from(stockStatusMap.entries())
+        .map(([status, count]) => ({ status, count }))
+        .sort((a, b) => b.count - a.count);
+
+      // Products by group
+      const groupIdToName = new Map<string, string>();
+      groups.forEach((g) => {
+        groupIdToName.set(g.id, g.group_name);
+      });
+
+      const groupCountMap = new Map<string, number>();
+      groupMembers.forEach((gm) => {
+        const groupName = groupIdToName.get(gm.product_group_id) || "Desconhecido";
+        groupCountMap.set(groupName, (groupCountMap.get(groupName) || 0) + 1);
+      });
+      const productsByGroup = Array.from(groupCountMap.entries())
+        .map(([groupName, count]) => ({ groupName, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      // Price ranges
+      const priceRangesConfig = [
+        { label: "R$ 0-10", min: 0, max: 10 },
+        { label: "R$ 10-25", min: 10, max: 25 },
+        { label: "R$ 25-50", min: 25, max: 50 },
+        { label: "R$ 50-100", min: 50, max: 100 },
+        { label: "R$ 100-200", min: 100, max: 200 },
+        { label: "R$ 200+", min: 200, max: Infinity },
+      ];
+
+      const priceRanges = priceRangesConfig.map((range) => ({
+        range: range.label,
+        count: products.filter((p) => p.price >= range.min && p.price < range.max).length,
+      }));
+
+      // Recent products
+      const recentProducts = [...products]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          price: p.price,
+          category_name: p.category_name,
+          created_at: p.created_at,
+        }));
 
       return {
-        totalClients: clients.length,
-        totalDeals: deals.length,
-        totalDealsValue,
-        totalQuotes: quotes.length,
-        quotesByStatus,
-        totalMockups: mockups.length,
-        totalSimulations: simulations.length,
-        recentClients,
-        recentDeals,
-        topClients,
-        dealsByMonth,
-        quotesByMonth,
-        clientsByRamo,
+        totalProducts,
+        totalActiveProducts,
+        totalKits,
+        averagePrice,
+        productsByCategory,
+        productsBySubcategory,
+        productsByColor,
+        productsByMaterial,
+        productsBySupplier,
+        productsByStockStatus,
+        productsByGroup,
+        priceRanges,
+        recentProducts,
+        featuredCount,
+        newArrivalCount,
+        onSaleCount,
       };
     },
-    enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
