@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Product, PRODUCTS } from "@/data/mockData";
+import { useProductAnalytics } from "@/hooks/useProductAnalytics";
 
 const STORAGE_KEY = "product-favorites";
 
@@ -16,11 +17,14 @@ export function useFavorites(options?: UseFavoritesOptions) {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const onFavoriteAddedRef = useRef(options?.onFavoriteAdded);
+  const { trackProductView } = useProductAnalytics();
+  const trackProductViewRef = useRef(trackProductView);
 
-  // Keep ref updated
+  // Keep refs updated
   useEffect(() => {
     onFavoriteAddedRef.current = options?.onFavoriteAdded;
-  }, [options?.onFavoriteAdded]);
+    trackProductViewRef.current = trackProductView;
+  }, [options?.onFavoriteAdded, trackProductView]);
 
   // Load favorites from localStorage on mount
   useEffect(() => {
@@ -49,6 +53,16 @@ export function useFavorites(options?: UseFavoritesOptions) {
       }
       // Call the callback for gamification
       onFavoriteAddedRef.current?.();
+      // Track analytics
+      const product = PRODUCTS.find((p) => p.id === productId);
+      if (product) {
+        trackProductViewRef.current({
+          productId: product.id,
+          productSku: product.sku,
+          productName: product.name,
+          viewType: "favorite",
+        });
+      }
       return [
         ...prev,
         {
@@ -71,6 +85,16 @@ export function useFavorites(options?: UseFavoritesOptions) {
       }
       // Call the callback for gamification when adding
       onFavoriteAddedRef.current?.();
+      // Track analytics when adding
+      const product = PRODUCTS.find((p) => p.id === productId);
+      if (product) {
+        trackProductViewRef.current({
+          productId: product.id,
+          productSku: product.sku,
+          productName: product.name,
+          viewType: "favorite",
+        });
+      }
       return [
         ...prev,
         {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Product, PRODUCTS } from "@/data/mockData";
+import { useProductAnalytics } from "@/hooks/useProductAnalytics";
 
 const STORAGE_KEY = "product-comparison";
 const MAX_COMPARE_ITEMS = 4;
@@ -12,11 +13,14 @@ export function useComparison(options?: UseComparisonOptions) {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const onProductAddedRef = useRef(options?.onProductAdded);
+  const { trackProductView } = useProductAnalytics();
+  const trackProductViewRef = useRef(trackProductView);
 
-  // Keep ref updated
+  // Keep refs updated
   useEffect(() => {
     onProductAddedRef.current = options?.onProductAdded;
-  }, [options?.onProductAdded]);
+    trackProductViewRef.current = trackProductView;
+  }, [options?.onProductAdded, trackProductView]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -50,6 +54,16 @@ export function useComparison(options?: UseComparisonOptions) {
       added = true;
       // Call the callback for gamification
       onProductAddedRef.current?.();
+      // Track analytics
+      const product = PRODUCTS.find((p) => p.id === productId);
+      if (product) {
+        trackProductViewRef.current({
+          productId: product.id,
+          productSku: product.sku,
+          productName: product.name,
+          viewType: "compare",
+        });
+      }
       return [...prev, productId];
     });
     return added;
@@ -74,6 +88,16 @@ export function useComparison(options?: UseComparisonOptions) {
       result = { added: true, isFull: false };
       // Call the callback for gamification when adding
       onProductAddedRef.current?.();
+      // Track analytics when adding
+      const product = PRODUCTS.find((p) => p.id === productId);
+      if (product) {
+        trackProductViewRef.current({
+          productId: product.id,
+          productSku: product.sku,
+          productName: product.name,
+          viewType: "compare",
+        });
+      }
       return [...prev, productId];
     });
     
