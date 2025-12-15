@@ -14,6 +14,7 @@ interface StatCardProps {
     label?: string;
   };
   className?: string;
+  onClick?: () => void;
 }
 
 const variantStyles: Record<StatVariant, { bg: string; icon: string; glow: string }> = {
@@ -57,14 +58,17 @@ export function StatCard({
   variant = "default",
   trend,
   className,
+  onClick,
 }: StatCardProps) {
   const styles = variantStyles[variant];
 
   return (
     <div
+      onClick={onClick}
       className={cn(
         "relative overflow-hidden rounded-xl border border-border bg-card p-5 transition-all duration-300",
         "hover:border-border/80 hover:shadow-lg",
+        onClick && "cursor-pointer",
         className
       )}
     >
