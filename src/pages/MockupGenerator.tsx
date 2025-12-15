@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Loader2, Upload, Image as ImageIcon, Download, RefreshCw, Wand2, History, Trash2, Clock } from "lucide-react";
+import { Loader2, Upload, Image as ImageIcon, Download, RefreshCw, Wand2, History, Trash2, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
@@ -97,6 +97,10 @@ export default function MockupGenerator() {
   const [filterClient, setFilterClient] = useState<string>("all");
   const [filterProduct, setFilterProduct] = useState<string>("");
   const [filterTechnique, setFilterTechnique] = useState<string>("all");
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     fetchData();
@@ -153,8 +157,7 @@ export default function MockupGenerator() {
           client_id,
           bitrix_clients(name)
         `)
-        .order("created_at", { ascending: false })
-        .limit(50);
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setMockupHistory(data || []);
@@ -662,7 +665,7 @@ export default function MockupGenerator() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Cliente</Label>
-                    <Select value={filterClient} onValueChange={setFilterClient}>
+                    <Select value={filterClient} onValueChange={(v) => { setFilterClient(v); setCurrentPage(1); }}>
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder="Todos os clientes" />
                       </SelectTrigger>
@@ -682,13 +685,13 @@ export default function MockupGenerator() {
                     <Input
                       placeholder="Buscar por nome do produto..."
                       value={filterProduct}
-                      onChange={(e) => setFilterProduct(e.target.value)}
+                      onChange={(e) => { setFilterProduct(e.target.value); setCurrentPage(1); }}
                       className="h-9"
                     />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Técnica</Label>
-                    <Select value={filterTechnique} onValueChange={setFilterTechnique}>
+                    <Select value={filterTechnique} onValueChange={(v) => { setFilterTechnique(v); setCurrentPage(1); }}>
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder="Todas as técnicas" />
                       </SelectTrigger>
@@ -714,6 +717,7 @@ export default function MockupGenerator() {
                         setFilterClient("all");
                         setFilterProduct("");
                         setFilterTechnique("all");
+                        setCurrentPage(1);
                       }}
                     >
                       <RefreshCw className="h-4 w-4 mr-1" />
@@ -743,6 +747,16 @@ export default function MockupGenerator() {
                     return true;
                   });
 
+                  // Pagination
+                  const totalPages = Math.ceil(filteredMockups.length / ITEMS_PER_PAGE);
+                  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+                  const paginatedMockups = filteredMockups.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+                  // Reset to page 1 if current page is out of bounds
+                  if (currentPage > totalPages && totalPages > 0) {
+                    setCurrentPage(1);
+                  }
+
                   if (mockupHistory.length === 0) {
                     return (
                       <div className="text-center py-12 text-muted-foreground">
@@ -764,63 +778,141 @@ export default function MockupGenerator() {
                   }
 
                   return (
-                  <ScrollArea className="h-[600px]">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {filteredMockups.map((mockup) => (
-                        <div
-                          key={mockup.id}
-                          className="group relative border rounded-lg overflow-hidden hover:ring-2 hover:ring-primary/30 transition-all"
-                        >
-                          <div className="aspect-square bg-muted/30">
-                            <img
-                              src={mockup.mockup_url}
-                              alt={mockup.product_name}
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                          <div className="p-3 space-y-1">
-                            <p className="font-medium text-sm truncate">{mockup.product_name}</p>
-                            <p className="text-xs text-muted-foreground">{mockup.technique_name}</p>
-                            {mockup.bitrix_clients?.name && (
-                              <p className="text-xs text-primary truncate">
-                                {mockup.bitrix_clients.name}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              {formatDistanceToNow(new Date(mockup.created_at), {
-                                addSuffix: true,
-                                locale: ptBR
-                              })}
+                    <div className="space-y-4">
+                      {/* Results count */}
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <span>
+                          Mostrando {startIndex + 1}-{Math.min(startIndex + ITEMS_PER_PAGE, filteredMockups.length)} de {filteredMockups.length} mockups
+                        </span>
+                        <span>Página {currentPage} de {totalPages}</span>
+                      </div>
+
+                      {/* Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {paginatedMockups.map((mockup) => (
+                          <div
+                            key={mockup.id}
+                            className="group relative border rounded-lg overflow-hidden hover:ring-2 hover:ring-primary/30 transition-all"
+                          >
+                            <div className="aspect-square bg-muted/30">
+                              <img
+                                src={mockup.mockup_url}
+                                alt={mockup.product_name}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                            <div className="p-3 space-y-1">
+                              <p className="font-medium text-sm truncate">{mockup.product_name}</p>
+                              <p className="text-xs text-muted-foreground">{mockup.technique_name}</p>
+                              {mockup.bitrix_clients?.name && (
+                                <p className="text-xs text-primary truncate">
+                                  {mockup.bitrix_clients.name}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                {formatDistanceToNow(new Date(mockup.created_at), {
+                                  addSuffix: true,
+                                  locale: ptBR
+                                })}
+                              </div>
+                            </div>
+                            
+                            {/* Overlay actions */}
+                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                size="icon"
+                                variant="secondary"
+                                className="h-8 w-8"
+                                onClick={() => downloadMockup(mockup.mockup_url)}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="destructive"
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  setMockupToDelete(mockup.id);
+                                  setDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
+                        ))}
+                      </div>
+
+                      {/* Pagination controls */}
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 pt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(1)}
+                            disabled={currentPage === 1}
+                          >
+                            Primeira
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
                           
-                          {/* Overlay actions */}
-                          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              size="icon"
-                              variant="secondary"
-                              className="h-8 w-8"
-                              onClick={() => downloadMockup(mockup.mockup_url)}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="destructive"
-                              className="h-8 w-8"
-                              onClick={() => {
-                                setMockupToDelete(mockup.id);
-                                setDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          {/* Page numbers */}
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                              let pageNum: number;
+                              if (totalPages <= 5) {
+                                pageNum = i + 1;
+                              } else if (currentPage <= 3) {
+                                pageNum = i + 1;
+                              } else if (currentPage >= totalPages - 2) {
+                                pageNum = totalPages - 4 + i;
+                              } else {
+                                pageNum = currentPage - 2 + i;
+                              }
+                              
+                              return (
+                                <Button
+                                  key={pageNum}
+                                  variant={currentPage === pageNum ? "default" : "outline"}
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => setCurrentPage(pageNum)}
+                                >
+                                  {pageNum}
+                                </Button>
+                              );
+                            })}
                           </div>
+                          
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(totalPages)}
+                            disabled={currentPage === totalPages}
+                          >
+                            Última
+                          </Button>
                         </div>
-                      ))}
+                      )}
                     </div>
-                  </ScrollArea>
                   );
                 })()}
               </CardContent>
