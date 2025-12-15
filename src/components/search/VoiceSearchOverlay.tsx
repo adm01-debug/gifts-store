@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,16 +8,20 @@ interface VoiceSearchOverlayProps {
   isOpen: boolean;
   isListening: boolean;
   transcript: string;
+  error?: string | null;
   onClose: () => void;
   onToggleListening: () => void;
+  commandAction?: string | null;
 }
 
 export function VoiceSearchOverlay({
   isOpen,
   isListening,
   transcript,
+  error,
   onClose,
   onToggleListening,
+  commandAction,
 }: VoiceSearchOverlayProps) {
   // Close on escape key
   useEffect(() => {
@@ -55,7 +59,7 @@ export function VoiceSearchOverlay({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative z-10 flex flex-col items-center gap-8 p-8"
+            className="relative z-10 flex flex-col items-center gap-6 p-8 max-w-lg w-full mx-4"
           >
             {/* Close button */}
             <Button
@@ -66,6 +70,22 @@ export function VoiceSearchOverlay({
             >
               <X className="h-5 w-5" />
             </Button>
+
+            {/* Status text */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center"
+            >
+              <h2 className="text-2xl font-display font-bold text-foreground mb-2">
+                {isListening ? "Ouvindo..." : "Busca por Voz"}
+              </h2>
+              <p className="text-muted-foreground">
+                {isListening
+                  ? "Diga um comando ou pesquise por produtos"
+                  : "Clique no microfone para começar"}
+              </p>
+            </motion.div>
 
             {/* Microphone button with ripple effect */}
             <div className="relative">
@@ -99,56 +119,19 @@ export function VoiceSearchOverlay({
                 whileTap={{ scale: 0.95 }}
                 onClick={onToggleListening}
                 className={cn(
-                  "relative z-10 flex items-center justify-center w-32 h-32 rounded-full transition-all duration-300",
+                  "relative z-10 flex items-center justify-center w-28 h-28 rounded-full transition-all duration-300",
                   isListening
                     ? "bg-primary text-primary-foreground shadow-[0_0_60px_rgba(var(--primary),0.5)]"
                     : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 )}
               >
                 {isListening ? (
-                  <MicOff className="h-12 w-12" />
+                  <MicOff className="h-10 w-10" />
                 ) : (
-                  <Mic className="h-12 w-12" />
+                  <Mic className="h-10 w-10" />
                 )}
               </motion.button>
             </div>
-
-            {/* Status text */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center"
-            >
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                {isListening ? "Ouvindo..." : "Busca por Voz"}
-              </h2>
-              <p className="text-muted-foreground">
-                {isListening
-                  ? "Fale o nome do produto que você procura"
-                  : "Clique no microfone para começar"}
-              </p>
-            </motion.div>
-
-            {/* Transcript display */}
-            <AnimatePresence mode="wait">
-              {transcript && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, y: -10, height: 0 }}
-                  className="w-full max-w-md"
-                >
-                  <div className="bg-card border border-border rounded-xl p-4 shadow-lg">
-                    <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">
-                      Você disse:
-                    </p>
-                    <p className="text-lg font-medium text-foreground">
-                      "{transcript}"
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             {/* Sound wave visualization */}
             {isListening && (
@@ -175,6 +158,84 @@ export function VoiceSearchOverlay({
                 ))}
               </motion.div>
             )}
+
+            {/* Command suggestions */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="space-y-3 text-center w-full"
+            >
+              <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+                Comandos suportados
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {[
+                  "Filtrar por cor azul",
+                  "Ordenar por preço",
+                  "Mostrar kits",
+                  "Até 50 reais",
+                  "Limpar filtros",
+                ].map((cmd) => (
+                  <span
+                    key={cmd}
+                    className="px-3 py-1.5 bg-muted/50 rounded-full text-xs text-muted-foreground border border-border/50"
+                  >
+                    "{cmd}"
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Transcript display */}
+            <AnimatePresence mode="wait">
+              {transcript && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, y: -10, height: 0 }}
+                  className="w-full"
+                >
+                  <div className="bg-card border border-border rounded-xl p-4 shadow-lg">
+                    <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">
+                      Você disse:
+                    </p>
+                    <p className="text-lg font-medium text-foreground">
+                      "{transcript}"
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Command action feedback */}
+            <AnimatePresence mode="wait">
+              {commandAction && (
+                <motion.div
+                  key="action"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="w-full bg-primary/10 text-primary rounded-xl p-4 border border-primary/20 text-center"
+                >
+                  <p className="font-medium">{commandAction}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Error display */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="w-full bg-destructive/10 text-destructive rounded-xl p-4 border border-destructive/20 text-center"
+                >
+                  <p className="text-sm">{error}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Instructions */}
             <motion.p
