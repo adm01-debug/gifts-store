@@ -23,6 +23,7 @@ import CollectionDetailPage from "./pages/CollectionDetailPage";
 import AdminPanel from "./pages/AdminPanel";
 import AdminPersonalizationPage from "./pages/AdminPersonalizationPage";
 import PersonalizationSimulator from "./pages/PersonalizationSimulator";
+import MockupGenerator from "./pages/MockupGenerator";
 import ProfilePage from "./pages/ProfilePage";
 import BitrixSyncPage from "./pages/BitrixSyncPage";
 import NotFound from "./pages/NotFound";
@@ -108,6 +109,11 @@ const App = () => (
                     <Route path="/simulador" element={
                       <ProtectedRoute>
                         <PersonalizationSimulator />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/mockup" element={
+                      <ProtectedRoute>
+                        <MockupGenerator />
                       </ProtectedRoute>
                     } />
                     
