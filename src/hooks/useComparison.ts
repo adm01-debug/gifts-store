@@ -1,12 +1,22 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Product, PRODUCTS } from "@/data/mockData";
 
 const STORAGE_KEY = "product-comparison";
 const MAX_COMPARE_ITEMS = 4;
 
-export function useComparison() {
+interface UseComparisonOptions {
+  onProductAdded?: () => void;
+}
+
+export function useComparison(options?: UseComparisonOptions) {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const onProductAddedRef = useRef(options?.onProductAdded);
+
+  // Keep ref updated
+  useEffect(() => {
+    onProductAddedRef.current = options?.onProductAdded;
+  }, [options?.onProductAdded]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -38,6 +48,8 @@ export function useComparison() {
         return prev;
       }
       added = true;
+      // Call the callback for gamification
+      onProductAddedRef.current?.();
       return [...prev, productId];
     });
     return added;
@@ -60,6 +72,8 @@ export function useComparison() {
         return prev;
       }
       result = { added: true, isFull: false };
+      // Call the callback for gamification when adding
+      onProductAddedRef.current?.();
       return [...prev, productId];
     });
     

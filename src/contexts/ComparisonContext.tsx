@@ -1,5 +1,6 @@
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode, useCallback, useRef } from "react";
 import { useComparison } from "@/hooks/useComparison";
+import { useGamification } from "@/hooks/useGamification";
 import { Product } from "@/data/mockData";
 
 interface ComparisonContextType {
@@ -19,7 +20,17 @@ interface ComparisonContextType {
 const ComparisonContext = createContext<ComparisonContextType | undefined>(undefined);
 
 export function ComparisonProvider({ children }: { children: ReactNode }) {
-  const comparisonHook = useComparison();
+  const { addXp } = useGamification();
+  const addXpRef = useRef(addXp);
+  addXpRef.current = addXp;
+
+  const handleProductAdded = useCallback(() => {
+    addXpRef.current(10);
+  }, []);
+
+  const comparisonHook = useComparison({
+    onProductAdded: handleProductAdded,
+  });
 
   return (
     <ComparisonContext.Provider value={comparisonHook}>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Product, PRODUCTS } from "@/data/mockData";
 
 const STORAGE_KEY = "product-favorites";
@@ -8,9 +8,19 @@ export interface FavoriteItem {
   addedAt: string;
 }
 
-export function useFavorites() {
+interface UseFavoritesOptions {
+  onFavoriteAdded?: () => void;
+}
+
+export function useFavorites(options?: UseFavoritesOptions) {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const onFavoriteAddedRef = useRef(options?.onFavoriteAdded);
+
+  // Keep ref updated
+  useEffect(() => {
+    onFavoriteAddedRef.current = options?.onFavoriteAdded;
+  }, [options?.onFavoriteAdded]);
 
   // Load favorites from localStorage on mount
   useEffect(() => {
@@ -37,6 +47,8 @@ export function useFavorites() {
       if (prev.some((f) => f.productId === productId)) {
         return prev;
       }
+      // Call the callback for gamification
+      onFavoriteAddedRef.current?.();
       return [
         ...prev,
         {
@@ -57,6 +69,8 @@ export function useFavorites() {
       if (exists) {
         return prev.filter((f) => f.productId !== productId);
       }
+      // Call the callback for gamification when adding
+      onFavoriteAddedRef.current?.();
       return [
         ...prev,
         {
