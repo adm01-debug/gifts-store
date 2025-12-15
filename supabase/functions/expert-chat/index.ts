@@ -68,7 +68,8 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, clientId } = await req.json();
+    const { messages, clientId, categoryFilter } = await req.json();
+    console.log("Category filter:", categoryFilter);
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -155,17 +156,26 @@ ${clientDeals.length > 0
       if (semanticError) {
         console.error("Semantic search error:", semanticError);
       } else {
-        semanticResults = semanticProducts || [];
-        console.log("Semantic search found:", semanticResults.length, "products");
+        // Apply category filter if set
+        semanticResults = categoryFilter
+          ? (semanticProducts || []).filter((p: any) => p.category_name === categoryFilter)
+          : (semanticProducts || []);
+        console.log("Semantic search found:", semanticResults.length, "products (after category filter)");
       }
     }
 
     // Also fetch general products for broader context
-    const { data: products, error: productsError } = await supabase
+    let productsQuery = supabase
       .from("products")
       .select("id, name, sku, category_name, subcategory, description, price, colors, materials, tags")
-      .eq("is_active", true)
-      .limit(50);
+      .eq("is_active", true);
+    
+    // Apply category filter if set
+    if (categoryFilter) {
+      productsQuery = productsQuery.eq("category_name", categoryFilter);
+    }
+    
+    const { data: products, error: productsError } = await productsQuery.limit(50);
 
     if (productsError) {
       console.error("Error fetching products:", productsError);
@@ -212,9 +222,11 @@ ${generalProducts.map(p => buildProductDescription(p)).join("\n\n")}
       }
     }
 
+    const categoryInfo = categoryFilter ? `\nFILTRO DE CATEGORIA ATIVO: ${categoryFilter}\nAPENAS mostre produtos da categoria "${categoryFilter}". NÃO sugira produtos de outras categorias.` : "";
+
     if (productsContext) {
       productsContext = `
-CATÁLOGO DE PRODUTOS (use o formato [[PRODUTO:id:nome]] para criar links clicáveis):
+CATÁLOGO DE PRODUTOS (use o formato [[PRODUTO:id:nome]] para criar links clicáveis):${categoryInfo}
 ${productsContext}`;
     }
 
