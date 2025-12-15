@@ -189,7 +189,7 @@ export default function Auth() {
                 return (
                   <div 
                     key={i} 
-                    className="p-4 rounded-xl bg-white dark:bg-card border border-orange/30 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_hsl(var(--orange)/0.25),0_0_20px_hsl(var(--orange)/0.15)] hover:border-orange/60 hover:scale-[1.02] transition-all duration-300 group opacity-0"
+                    className="shimmer-hover p-4 rounded-xl bg-white dark:bg-card border border-orange/30 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_hsl(var(--orange)/0.25),0_0_20px_hsl(var(--orange)/0.15)] hover:border-orange/60 hover:scale-[1.02] transition-all duration-300 group opacity-0"
                     style={{ 
                       animation: `scale-fade-in 0.5s ease-out ${300 + i * 150}ms forwards`
                     }}

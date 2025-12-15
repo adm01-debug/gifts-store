@@ -652,6 +652,34 @@
     box-shadow: 0 0 20px hsl(var(--success) / 0.4);
   }
 
+  /* Shimmer Hover Effect */
+  .shimmer-hover {
+    @apply relative overflow-hidden;
+  }
+  .shimmer-hover::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--orange) / 0.15),
+      hsl(var(--orange) / 0.3),
+      hsl(var(--orange) / 0.15),
+      transparent
+    );
+    transition: left 0s;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .shimmer-hover:hover::before {
+    left: 100%;
+    transition: left 0.6s ease-in-out;
+  }
+
   /* Press Effects */
   .press-scale {
     @apply transition-transform duration-100 active:scale-95;
