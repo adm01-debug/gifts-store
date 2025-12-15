@@ -30,6 +30,38 @@ interface DealData {
   created_at_bitrix?: string;
 }
 
+// Extract search terms from the last user message
+function extractSearchTerms(messages: Message[]): string[] {
+  const lastUserMessage = [...messages].reverse().find(m => m.role === "user");
+  if (!lastUserMessage) return [];
+  
+  const content = lastUserMessage.content.toLowerCase();
+  
+  // Remove common words and extract meaningful terms
+  const stopWords = new Set([
+    "o", "a", "os", "as", "um", "uma", "uns", "umas", "de", "da", "do", "das", "dos",
+    "em", "na", "no", "nas", "nos", "por", "para", "com", "sem", "que", "qual", "quais",
+    "como", "onde", "quando", "porque", "se", "ou", "e", "mas", "mais", "menos",
+    "muito", "muita", "muitos", "muitas", "pouco", "pouca", "poucos", "poucas",
+    "esse", "essa", "esses", "essas", "este", "esta", "estes", "estas", "aquele", "aquela",
+    "isso", "isto", "aquilo", "meu", "minha", "seu", "sua", "nosso", "nossa",
+    "algum", "alguma", "alguns", "algumas", "nenhum", "nenhuma", "todo", "toda", "todos", "todas",
+    "outro", "outra", "outros", "outras", "mesmo", "mesma", "próprio", "própria",
+    "você", "vocês", "ele", "ela", "eles", "elas", "nós", "eu", "me", "te", "lhe", "nos",
+    "preciso", "quero", "gostaria", "poderia", "pode", "tem", "tenho", "ter", "haver",
+    "ser", "estar", "fazer", "dar", "ver", "ir", "vir", "saber", "querer", "poder",
+    "cliente", "produto", "produtos", "brinde", "brindes", "recomenda", "recomende", "sugira", "sugere",
+    "melhor", "melhores", "bom", "boa", "bons", "boas", "ótimo", "ótima", "excelente",
+  ]);
+  
+  const words = content
+    .replace(/[^\w\sàáâãéêíóôõúç]/g, " ")
+    .split(/\s+/)
+    .filter(word => word.length > 2 && !stopWords.has(word));
+  
+  return [...new Set(words)];
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -102,19 +134,45 @@ ${clientDeals.length > 0
       }
     }
 
-    // Fetch available products for context - with full description and characteristics
+    // Extract search terms from conversation
+    const searchTerms = extractSearchTerms(messages);
+    console.log("Extracted search terms:", searchTerms);
+
+    let productsContext = "";
+    let semanticResults: any[] = [];
+
+    // If we have search terms, use semantic search
+    if (searchTerms.length > 0) {
+      const searchQuery = searchTerms.join(" ");
+      console.log("Performing semantic search for:", searchQuery);
+      
+      const { data: semanticProducts, error: semanticError } = await supabase
+        .rpc("search_products_semantic", { 
+          search_query: searchQuery,
+          max_results: 30
+        });
+
+      if (semanticError) {
+        console.error("Semantic search error:", semanticError);
+      } else {
+        semanticResults = semanticProducts || [];
+        console.log("Semantic search found:", semanticResults.length, "products");
+      }
+    }
+
+    // Also fetch general products for broader context
     const { data: products, error: productsError } = await supabase
       .from("products")
-      .select("id, name, sku, category_name, subcategory, description, price, colors, materials, tags, metadata")
+      .select("id, name, sku, category_name, subcategory, description, price, colors, materials, tags")
       .eq("is_active", true)
-      .limit(200);
+      .limit(50);
 
     if (productsError) {
       console.error("Error fetching products:", productsError);
     }
 
-    // Build comprehensive product context with search-friendly descriptions
-    const buildProductDescription = (p: any): string => {
+    // Build product description helper
+    const buildProductDescription = (p: any, relevance?: number): string => {
       const parts = [
         `ID: ${p.id}`,
         `Nome: ${p.name}`,
@@ -122,21 +180,43 @@ ${clientDeals.length > 0
         p.category_name ? `Categoria: ${p.category_name}` : null,
         p.subcategory ? `Subcategoria: ${p.subcategory}` : null,
         `Preço: R$ ${p.price?.toFixed(2) || "N/A"}`,
-        p.description ? `Descrição: ${p.description.substring(0, 200)}` : null,
+        p.description ? `Descrição: ${p.description.substring(0, 150)}` : null,
         p.materials?.length ? `Materiais: ${p.materials.join(", ")}` : null,
-        p.colors ? `Cores: ${JSON.stringify(p.colors).substring(0, 100)}` : null,
-        p.tags ? `Tags: ${JSON.stringify(p.tags)}` : null,
+        relevance !== undefined ? `[Relevância: ${(relevance * 100).toFixed(0)}%]` : null,
       ].filter(Boolean);
       return parts.join(" | ");
     };
 
-    const productsContext = products && products.length > 0
-      ? `\nCATÁLOGO DE PRODUTOS DISPONÍVEIS (use o formato [[PRODUTO:id:nome]] para criar links clicáveis):
-Total de ${products.length} produtos disponíveis.
+    // Build context with semantic results prioritized
+    if (semanticResults.length > 0) {
+      productsContext = `
+PRODUTOS ENCONTRADOS POR BUSCA SEMÂNTICA (ordenados por relevância):
+Estes produtos são os mais relevantes para a busca "${searchTerms.join(" ")}":
 
-LISTA DETALHADA PARA BUSCA:
-${products.map(p => buildProductDescription(p)).join("\n\n")}`
-      : "";
+${semanticResults.map(p => buildProductDescription(p, p.relevance)).join("\n\n")}
+`;
+    }
+
+    // Add general catalog context
+    if (products && products.length > 0) {
+      const generalProducts = products.filter(
+        p => !semanticResults.some(sr => sr.id === p.id)
+      ).slice(0, 20);
+
+      if (generalProducts.length > 0) {
+        productsContext += `
+
+OUTROS PRODUTOS DO CATÁLOGO (para contexto adicional):
+${generalProducts.map(p => buildProductDescription(p)).join("\n\n")}
+`;
+      }
+    }
+
+    if (productsContext) {
+      productsContext = `
+CATÁLOGO DE PRODUTOS (use o formato [[PRODUTO:id:nome]] para criar links clicáveis):
+${productsContext}`;
+    }
 
     const systemPrompt = `Você é o EXPERT, um consultor especializado em produtos promocionais e brindes corporativos da Promo Brindes.
 
@@ -153,6 +233,11 @@ Quando recomendar produtos, SEMPRE use este formato para criar links clicáveis:
 
 Exemplo: "Recomendo o [[PRODUTO:abc123:Caderno Executivo Premium]] que combina perfeitamente com as cores da marca."
 
+BUSCA SEMÂNTICA:
+Você tem acesso a uma busca semântica avançada que encontra produtos por similaridade de texto.
+Os produtos listados em "PRODUTOS ENCONTRADOS POR BUSCA SEMÂNTICA" são os mais relevantes para a busca atual.
+PRIORIZE esses produtos nas suas recomendações, pois são os mais adequados ao que o vendedor está buscando.
+
 DIRETRIZES:
 1. Seja proativo e sugira produtos baseado no contexto do cliente
 2. Sempre explique POR QUE está recomendando cada produto
@@ -163,25 +248,20 @@ DIRETRIZES:
 7. Use linguagem profissional mas acessível
 8. Se não souber algo, seja honesto
 9. SEMPRE use o formato [[PRODUTO:id:nome]] ao mencionar produtos específicos
+10. PRIORIZE produtos da busca semântica quando disponíveis
 
-BUSCA POR CARACTERÍSTICAS:
-Quando o vendedor buscar por características específicas (ex: "produto ecológico", "squeeze térmico", "presente executivo"), analise:
-- Descrições dos produtos
-- Materiais utilizados
-- Tags e categorias
-- Subcategorias
-
-Se não encontrar correspondência exata, sugira produtos com características SIMILARES e explique a alternativa.
-Exemplos de busca que você deve conseguir resolver:
-- "produto sustentável" → buscar por materiais como bambu, papel reciclado, algodão orgânico
-- "brinde tecnológico" → carregadores, power banks, pen drives, fones
-- "item para escritório" → canetas, cadernos, organizadores, mouse pads
-- "presente premium/executivo" → kits, itens em couro, canetas metálicas
+MAPEAMENTO DE CARACTERÍSTICAS:
+- "produto sustentável/ecológico" → materiais: bambu, papel reciclado, algodão orgânico, madeira, cortiça
+- "brinde tecnológico" → carregadores, power banks, pen drives, fones, suportes celular
+- "item para escritório" → canetas, cadernos, organizadores, mouse pads, porta-canetas
+- "presente premium/executivo" → kits, itens em couro, canetas metálicas, agendas premium
+- "para eventos" → ecobags, squeezes, bonés, camisetas
+- "fim de ano" → kits natalinos, champanheiras, porta-vinhos
 
 ${clientContext}
 ${productsContext}
 
-IMPORTANTE: Você tem acesso em tempo real aos dados do cliente e histórico de compras do Bitrix24. Use essas informações para fazer recomendações precisas e personalizadas. Lembre-se de usar o formato [[PRODUTO:id:nome]] para tornar os produtos clicáveis. Quando não encontrar um produto específico, busque por características na descrição, materiais e tags dos produtos disponíveis.`;
+IMPORTANTE: Você tem acesso em tempo real aos dados do cliente e histórico de compras do Bitrix24, além de busca semântica avançada que encontra produtos por similaridade. Use essas informações para fazer recomendações precisas e personalizadas. Lembre-se de usar o formato [[PRODUTO:id:nome]] para tornar os produtos clicáveis.`;
 
     const apiMessages: Message[] = [
       { role: "system", content: systemPrompt },
@@ -189,6 +269,7 @@ IMPORTANTE: Você tem acesso em tempo real aos dados do cliente e histórico de 
     ];
 
     console.log("Calling Lovable AI with", apiMessages.length, "messages");
+    console.log("System prompt length:", systemPrompt.length);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

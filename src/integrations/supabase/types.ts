@@ -799,6 +799,7 @@ export type Database = {
           new_arrival: boolean | null
           on_sale: boolean | null
           price: number
+          search_vector: unknown
           sku: string
           stock: number | null
           stock_status: string | null
@@ -831,6 +832,7 @@ export type Database = {
           new_arrival?: boolean | null
           on_sale?: boolean | null
           price?: number
+          search_vector?: unknown
           sku: string
           stock?: number | null
           stock_status?: string | null
@@ -863,6 +865,7 @@ export type Database = {
           new_arrival?: boolean | null
           on_sale?: boolean | null
           price?: number
+          search_vector?: unknown
           sku?: string
           stock?: number | null
           stock_status?: string | null
@@ -1134,6 +1137,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      search_products_semantic: {
+        Args: { max_results?: number; search_query: string }
+        Returns: {
+          category_name: string
+          colors: Json
+          description: string
+          id: string
+          materials: string[]
+          name: string
+          price: number
+          relevance: number
+          sku: string
+          subcategory: string
+          tags: Json
+        }[]
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "admin" | "vendedor"
