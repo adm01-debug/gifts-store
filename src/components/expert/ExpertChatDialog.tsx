@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bot, X, Send, Loader2, User, Sparkles, ExternalLink, History, Plus, Trash2, MessageSquare } from "lucide-react";
+import { Bot, X, Send, Loader2, User, Sparkles, ExternalLink, History, Plus, Trash2, MessageSquare, Filter, ChevronDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,14 @@ import { cn } from "@/lib/utils";
 import { useExpertConversations, ExpertMessage, ExpertConversation } from "@/hooks/useExpertConversations";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 interface Message {
   role: "user" | "assistant";
@@ -36,6 +44,8 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
   const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -48,6 +58,26 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
     fetchMessages,
     saveMessage,
   } = useExpertConversations(clientId);
+
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("category_name")
+        .eq("is_active", true)
+        .not("category_name", "is", null);
+
+      if (!error && data) {
+        const uniqueCategories = [...new Set(data.map(p => p.category_name).filter(Boolean))] as string[];
+        setCategories(uniqueCategories.sort());
+      }
+    };
+    
+    if (isOpen) {
+      fetchCategories();
+    }
+  }, [isOpen]);
 
   // Parse product links from message content
   const parseProductLinks = (content: string): (string | ProductLink)[] => {
@@ -124,6 +154,7 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
     setMessages([]);
     setCurrentConversationId(null);
     setShowHistory(false);
+    setSelectedCategory(null);
   }, [clientId]);
 
   const startNewConversation = () => {
@@ -183,6 +214,7 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
           body: JSON.stringify({
             messages: [...messages, { role: "user", content: userMessage }],
             clientId,
+            categoryFilter: selectedCategory,
           }),
         }
       );
@@ -288,6 +320,40 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {categories.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={selectedCategory ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-8 text-xs gap-1"
+                    >
+                      <Filter className="h-3.5 w-3.5" />
+                      {selectedCategory || "Categoria"}
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="max-h-[300px] overflow-y-auto">
+                    {selectedCategory && (
+                      <>
+                        <DropdownMenuItem onClick={() => setSelectedCategory(null)}>
+                          <span className="text-muted-foreground">Todas as categorias</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    {categories.map((category) => (
+                      <DropdownMenuItem
+                        key={category}
+                        onClick={() => setSelectedCategory(category)}
+                        className={cn(selectedCategory === category && "bg-primary/10")}
+                      >
+                        {category}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {clientName && (
                 <Badge variant="secondary" className="text-xs">
                   {clientName}
