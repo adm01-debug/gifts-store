@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Loader2, Package, Mail, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Loader2, Sparkles, Mail, Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -134,206 +134,295 @@ export default function Auth() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-orange" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-6 animate-fade-in">
-        {/* Logo/Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-            <Package className="h-8 w-8 text-primary" />
+    <div className="min-h-screen flex bg-background">
+      {/* Left side - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-card via-card to-background relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 -left-20 w-80 h-80 bg-orange/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-orange/5 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-success/5 rounded-full blur-3xl" />
+        </div>
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-xl bg-orange flex items-center justify-center shadow-lg shadow-orange/30">
+                <Sparkles className="h-7 w-7 text-orange-foreground" />
+              </div>
+              <div>
+                <h1 className="font-display text-3xl font-bold text-foreground">
+                  Promo
+                </h1>
+                <p className="text-orange font-semibold uppercase tracking-widest text-sm -mt-1">
+                  Brindes
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-4 max-w-md">
+              <h2 className="text-4xl xl:text-5xl font-display font-bold text-foreground leading-tight">
+                Vitrine de Produtos para{" "}
+                <span className="text-orange">Vendedores</span>
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Encontre os melhores brindes promocionais, compare produtos e encante seus clientes.
+              </p>
+            </div>
+
+            {/* Feature highlights */}
+            <div className="grid grid-cols-2 gap-4 pt-6">
+              {[
+                { label: "15.000+", desc: "Produtos" },
+                { label: "50+", desc: "Fornecedores" },
+                { label: "Filtros", desc: "Avançados" },
+                { label: "IA", desc: "Recomendações" },
+              ].map((item, i) => (
+                <div key={i} className="p-4 rounded-xl bg-card/50 border border-border backdrop-blur-sm">
+                  <p className="text-2xl font-bold text-orange">{item.label}</p>
+                  <p className="text-sm text-muted-foreground">{item.desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <h1 className="font-display text-3xl font-bold text-foreground">
-            PROMO BRINDES
-          </h1>
-          <p className="text-muted-foreground">
-            Vitrine de Produtos para Vendedores
+        </div>
+      </div>
+
+      {/* Right side - Auth Form */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+        <div className="w-full max-w-md space-y-8 animate-fade-in">
+          {/* Mobile Logo */}
+          <div className="text-center lg:hidden space-y-3">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-orange shadow-lg shadow-orange/30">
+              <Sparkles className="h-8 w-8 text-orange-foreground" />
+            </div>
+            <div>
+              <h1 className="font-display text-2xl font-bold text-foreground">
+                Promo Brindes
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Vitrine de Produtos
+              </p>
+            </div>
+          </div>
+
+          {/* Auth Card */}
+          <Card className="border-border bg-card shadow-xl">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <CardHeader className="pb-4">
+                <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+                  <TabsTrigger 
+                    value="login" 
+                    className="data-[state=active]:bg-orange data-[state=active]:text-orange-foreground"
+                  >
+                    Entrar
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="signup"
+                    className="data-[state=active]:bg-orange data-[state=active]:text-orange-foreground"
+                  >
+                    Cadastrar
+                  </TabsTrigger>
+                </TabsList>
+              </CardHeader>
+
+              <CardContent className="pt-2">
+                {/* Login Tab */}
+                <TabsContent value="login" className="mt-0 space-y-6">
+                  <div className="text-center space-y-1">
+                    <h2 className="text-xl font-semibold text-foreground">Bem-vindo de volta</h2>
+                    <p className="text-sm text-muted-foreground">Entre com suas credenciais</p>
+                  </div>
+                  
+                  <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email" className="text-foreground">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="login-email"
+                          type="email"
+                          placeholder="seu@email.com"
+                          className="pl-10 bg-input border-border focus:border-orange focus:ring-orange"
+                          {...loginForm.register("email")}
+                        />
+                      </div>
+                      {loginForm.formState.errors.email && (
+                        <p className="text-sm text-destructive">
+                          {loginForm.formState.errors.email.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password" className="text-foreground">Senha</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="login-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="pl-10 pr-10 bg-input border-border focus:border-orange focus:ring-orange"
+                          {...loginForm.register("password")}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-orange transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      {loginForm.formState.errors.password && (
+                        <p className="text-sm text-destructive">
+                          {loginForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      variant="orange"
+                      className="w-full h-11 text-base font-semibold" 
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Entrando...
+                        </>
+                      ) : (
+                        "Entrar"
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                {/* Signup Tab */}
+                <TabsContent value="signup" className="mt-0 space-y-6">
+                  <div className="text-center space-y-1">
+                    <h2 className="text-xl font-semibold text-foreground">Criar conta</h2>
+                    <p className="text-sm text-muted-foreground">Preencha seus dados abaixo</p>
+                  </div>
+
+                  <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-name" className="text-foreground">Nome completo</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-name"
+                          type="text"
+                          placeholder="Seu nome"
+                          className="pl-10 bg-input border-border focus:border-orange focus:ring-orange"
+                          {...signupForm.register("fullName")}
+                        />
+                      </div>
+                      {signupForm.formState.errors.fullName && (
+                        <p className="text-sm text-destructive">
+                          {signupForm.formState.errors.fullName.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email" className="text-foreground">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-email"
+                          type="email"
+                          placeholder="seu@email.com"
+                          className="pl-10 bg-input border-border focus:border-orange focus:ring-orange"
+                          {...signupForm.register("email")}
+                        />
+                      </div>
+                      {signupForm.formState.errors.email && (
+                        <p className="text-sm text-destructive">
+                          {signupForm.formState.errors.email.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password" className="text-foreground">Senha</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="pl-10 pr-10 bg-input border-border focus:border-orange focus:ring-orange"
+                          {...signupForm.register("password")}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-orange transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      {signupForm.formState.errors.password && (
+                        <p className="text-sm text-destructive">
+                          {signupForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-confirm" className="text-foreground">Confirmar senha</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-confirm"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="pl-10 bg-input border-border focus:border-orange focus:ring-orange"
+                          {...signupForm.register("confirmPassword")}
+                        />
+                      </div>
+                      {signupForm.formState.errors.confirmPassword && (
+                        <p className="text-sm text-destructive">
+                          {signupForm.formState.errors.confirmPassword.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      variant="orange"
+                      className="w-full h-11 text-base font-semibold" 
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Cadastrando...
+                        </>
+                      ) : (
+                        "Criar conta"
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </CardContent>
+            </Tabs>
+          </Card>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Novos usuários são cadastrados como <span className="font-medium text-orange">Vendedores</span>.
+            <br />
+            Contate o administrador para acesso de Admin.
           </p>
         </div>
-
-        {/* Auth Card */}
-        <Card className="border-border shadow-lg">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <CardHeader className="pb-2">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Entrar</TabsTrigger>
-                <TabsTrigger value="signup">Cadastrar</TabsTrigger>
-              </TabsList>
-            </CardHeader>
-
-            <CardContent className="pt-4">
-              {/* Login Tab */}
-              <TabsContent value="login" className="mt-0">
-                <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        className="pl-10"
-                        {...loginForm.register("email")}
-                      />
-                    </div>
-                    {loginForm.formState.errors.email && (
-                      <p className="text-sm text-destructive">
-                        {loginForm.formState.errors.email.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="login-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        className="pl-10 pr-10"
-                        {...loginForm.register("password")}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    {loginForm.formState.errors.password && (
-                      <p className="text-sm text-destructive">
-                        {loginForm.formState.errors.password.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Entrando...
-                      </>
-                    ) : (
-                      "Entrar"
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              {/* Signup Tab */}
-              <TabsContent value="signup" className="mt-0">
-                <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Nome completo</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="Seu nome"
-                        className="pl-10"
-                        {...signupForm.register("fullName")}
-                      />
-                    </div>
-                    {signupForm.formState.errors.fullName && (
-                      <p className="text-sm text-destructive">
-                        {signupForm.formState.errors.fullName.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        className="pl-10"
-                        {...signupForm.register("email")}
-                      />
-                    </div>
-                    {signupForm.formState.errors.email && (
-                      <p className="text-sm text-destructive">
-                        {signupForm.formState.errors.email.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        className="pl-10 pr-10"
-                        {...signupForm.register("password")}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    {signupForm.formState.errors.password && (
-                      <p className="text-sm text-destructive">
-                        {signupForm.formState.errors.password.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm">Confirmar senha</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-confirm"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        className="pl-10"
-                        {...signupForm.register("confirmPassword")}
-                      />
-                    </div>
-                    {signupForm.formState.errors.confirmPassword && (
-                      <p className="text-sm text-destructive">
-                        {signupForm.formState.errors.confirmPassword.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Cadastrando...
-                      </>
-                    ) : (
-                      "Criar conta"
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-            </CardContent>
-          </Tabs>
-        </Card>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Novos usuários são cadastrados como <span className="font-medium text-primary">Vendedores</span>.
-          <br />
-          Contate o administrador para acesso de Admin.
-        </p>
       </div>
     </div>
   );
