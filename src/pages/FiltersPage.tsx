@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { FilterPanel, FilterState, defaultFilters } from "@/components/filters/FilterPanel";
 import { PresetManager } from "@/components/filters/PresetManager";
 import { VirtualizedProductGrid } from "@/components/products/VirtualizedProductGrid";
 import { ProductList } from "@/components/products/ProductList";
+import { VoiceSearchOverlay } from "@/components/search/VoiceSearchOverlay";
 import { PRODUCTS } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +23,8 @@ import {
   LayoutGrid, 
   List,
   ArrowUpDown,
-  X
+  X,
+  Mic
 } from "lucide-react";
 import {
   Select,
@@ -34,6 +36,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
 import { useComparisonContext } from "@/contexts/ComparisonContext";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useVoiceCommands } from "@/hooks/useVoiceCommands";
+import { toast } from "sonner";
 
 export default function FiltersPage() {
   const navigate = useNavigate();
@@ -43,6 +48,101 @@ export default function FiltersPage() {
   const [activePresetId, setActivePresetId] = useState<string | undefined>();
   const [sortBy, setSortBy] = useState<string>("name");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
+  const [commandAction, setCommandAction] = useState<string | null>(null);
+
+  const { parseCommand } = useVoiceCommands();
+
+  const handleVoiceResult = useCallback((transcript: string) => {
+    const command = parseCommand(transcript);
+    
+    switch (command.type) {
+      case "filter":
+        if (command.filterKey === "colors" && command.value) {
+          setFilters(prev => ({ ...prev, colors: [...prev.colors, ...(command.value as string[])] }));
+          setCommandAction(command.action || null);
+          toast.success(command.action || "Filtro aplicado");
+        } else if (command.filterKey === "categories" && command.value) {
+          const categoryIds = (command.value as string[]).map(v => parseInt(v)).filter(n => !isNaN(n));
+          setFilters(prev => ({ ...prev, categories: [...prev.categories, ...categoryIds] }));
+          setCommandAction(command.action || null);
+          toast.success(command.action || "Filtro aplicado");
+        } else if (command.filterKey === "materiais" && command.value) {
+          setFilters(prev => ({ ...prev, materiais: [...prev.materiais, ...(command.value as string[])] }));
+          setCommandAction(command.action || null);
+          toast.success(command.action || "Filtro aplicado");
+        } else if (command.filterKey === "priceRange" && command.value) {
+          const [min, max] = command.value as string[];
+          setFilters(prev => ({ ...prev, priceRange: [parseInt(min) || 0, parseInt(max) || 500] }));
+          setCommandAction(command.action || null);
+          toast.success(command.action || "Filtro aplicado");
+        } else if (command.filterKey === "isKit") {
+          setFilters(prev => ({ ...prev, isKit: true }));
+          setCommandAction(command.action || null);
+          toast.success(command.action || "Mostrando kits");
+        } else if (command.filterKey === "inStock") {
+          setFilters(prev => ({ ...prev, inStock: true }));
+          setCommandAction(command.action || null);
+          toast.success(command.action || "Mostrando em estoque");
+        } else if (command.filterKey === "featured") {
+          setFilters(prev => ({ ...prev, featured: true }));
+          setCommandAction(command.action || null);
+          toast.success(command.action || "Mostrando destaques");
+        }
+        setActivePresetId(undefined);
+        break;
+        
+      case "sort":
+        if (command.sortValue) {
+          setSortBy(command.sortValue);
+          setCommandAction(command.action || null);
+          toast.success(command.action || "Ordenação aplicada");
+        }
+        break;
+        
+      case "clear":
+        setFilters(defaultFilters);
+        setActivePresetId(undefined);
+        setCommandAction("Filtros limpos");
+        toast.success("Filtros limpos");
+        break;
+        
+      case "search":
+        setCommandAction(`Buscar "${command.value}"`);
+        toast.info(`Busca: "${command.value}"`);
+        break;
+        
+      default:
+        setCommandAction("Comando não reconhecido");
+        toast.warning("Comando não reconhecido");
+    }
+
+    // Clear action after 3 seconds
+    setTimeout(() => setCommandAction(null), 3000);
+    
+    // Close overlay after processing
+    setTimeout(() => setVoiceOverlayOpen(false), 1500);
+  }, [parseCommand]);
+
+  const { 
+    isListening, 
+    isSupported, 
+    transcript, 
+    startListening, 
+    stopListening, 
+    error 
+  } = useSpeechRecognition({
+    onResult: handleVoiceResult,
+    language: "pt-BR",
+  });
+
+  const handleToggleListening = useCallback(() => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  }, [isListening, startListening, stopListening]);
 
   const handleApplyPreset = (presetFilters: FilterState, presetId?: string) => {
     setFilters(presetFilters);
@@ -275,6 +375,22 @@ export default function FiltersPage() {
                 </SelectContent>
               </Select>
 
+              {/* Voice search button */}
+              {isSupported && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => {
+                    setVoiceOverlayOpen(true);
+                    startListening();
+                  }}
+                  title="Busca por voz"
+                >
+                  <Mic className="h-4 w-4" />
+                </Button>
+              )}
+
               {/* Mobile filter button */}
               <Sheet>
                 <SheetTrigger asChild>
@@ -399,6 +515,20 @@ export default function FiltersPage() {
           </div>
         </div>
       </div>
+
+      {/* Voice Search Overlay */}
+      <VoiceSearchOverlay
+        isOpen={voiceOverlayOpen}
+        isListening={isListening}
+        transcript={transcript}
+        error={error}
+        onClose={() => {
+          setVoiceOverlayOpen(false);
+          stopListening();
+        }}
+        onToggleListening={handleToggleListening}
+        commandAction={commandAction}
+      />
     </MainLayout>
   );
 }
