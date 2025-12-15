@@ -171,9 +171,12 @@ export function VoiceSearchOverlay({
               </p>
               <div className="flex flex-wrap justify-center gap-2">
                 {[
+                  "Mostrar canetas",
+                  "Apenas produtos ecológicos",
                   "Filtrar por cor azul",
+                  "Ver mochilas",
+                  "Material bambu",
                   "Ordenar por preço",
-                  "Mostrar kits",
                   "Até 50 reais",
                   "Limpar filtros",
                 ].map((cmd) => (
