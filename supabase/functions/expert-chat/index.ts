@@ -102,20 +102,40 @@ ${clientDeals.length > 0
       }
     }
 
-    // Fetch available products for context
+    // Fetch available products for context - with full description and characteristics
     const { data: products, error: productsError } = await supabase
       .from("products")
-      .select("id, name, sku, category_name, subcategory, price, colors, materials, tags")
+      .select("id, name, sku, category_name, subcategory, description, price, colors, materials, tags, metadata")
       .eq("is_active", true)
-      .limit(100);
+      .limit(200);
 
     if (productsError) {
       console.error("Error fetching products:", productsError);
     }
 
+    // Build comprehensive product context with search-friendly descriptions
+    const buildProductDescription = (p: any): string => {
+      const parts = [
+        `ID: ${p.id}`,
+        `Nome: ${p.name}`,
+        p.sku ? `SKU: ${p.sku}` : null,
+        p.category_name ? `Categoria: ${p.category_name}` : null,
+        p.subcategory ? `Subcategoria: ${p.subcategory}` : null,
+        `Preço: R$ ${p.price?.toFixed(2) || "N/A"}`,
+        p.description ? `Descrição: ${p.description.substring(0, 200)}` : null,
+        p.materials?.length ? `Materiais: ${p.materials.join(", ")}` : null,
+        p.colors ? `Cores: ${JSON.stringify(p.colors).substring(0, 100)}` : null,
+        p.tags ? `Tags: ${JSON.stringify(p.tags)}` : null,
+      ].filter(Boolean);
+      return parts.join(" | ");
+    };
+
     const productsContext = products && products.length > 0
-      ? `\nPRODUTOS DISPONÍVEIS (use o formato [[PRODUTO:id:nome]] para criar links clicáveis):
-${products.slice(0, 50).map(p => `- ID: ${p.id} | ${p.name} (${p.category_name || "Sem categoria"}) - R$ ${p.price?.toFixed(2) || "N/A"}`).join("\n")}`
+      ? `\nCATÁLOGO DE PRODUTOS DISPONÍVEIS (use o formato [[PRODUTO:id:nome]] para criar links clicáveis):
+Total de ${products.length} produtos disponíveis.
+
+LISTA DETALHADA PARA BUSCA:
+${products.map(p => buildProductDescription(p)).join("\n\n")}`
       : "";
 
     const systemPrompt = `Você é o EXPERT, um consultor especializado em produtos promocionais e brindes corporativos da Promo Brindes.
@@ -144,10 +164,24 @@ DIRETRIZES:
 8. Se não souber algo, seja honesto
 9. SEMPRE use o formato [[PRODUTO:id:nome]] ao mencionar produtos específicos
 
+BUSCA POR CARACTERÍSTICAS:
+Quando o vendedor buscar por características específicas (ex: "produto ecológico", "squeeze térmico", "presente executivo"), analise:
+- Descrições dos produtos
+- Materiais utilizados
+- Tags e categorias
+- Subcategorias
+
+Se não encontrar correspondência exata, sugira produtos com características SIMILARES e explique a alternativa.
+Exemplos de busca que você deve conseguir resolver:
+- "produto sustentável" → buscar por materiais como bambu, papel reciclado, algodão orgânico
+- "brinde tecnológico" → carregadores, power banks, pen drives, fones
+- "item para escritório" → canetas, cadernos, organizadores, mouse pads
+- "presente premium/executivo" → kits, itens em couro, canetas metálicas
+
 ${clientContext}
 ${productsContext}
 
-IMPORTANTE: Você tem acesso em tempo real aos dados do cliente e histórico de compras do Bitrix24. Use essas informações para fazer recomendações precisas e personalizadas. Lembre-se de usar o formato [[PRODUTO:id:nome]] para tornar os produtos clicáveis.`;
+IMPORTANTE: Você tem acesso em tempo real aos dados do cliente e histórico de compras do Bitrix24. Use essas informações para fazer recomendações precisas e personalizadas. Lembre-se de usar o formato [[PRODUTO:id:nome]] para tornar os produtos clicáveis. Quando não encontrar um produto específico, busque por características na descrição, materiais e tags dos produtos disponíveis.`;
 
     const apiMessages: Message[] = [
       { role: "system", content: systemPrompt },
