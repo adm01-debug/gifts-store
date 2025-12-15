@@ -92,6 +92,11 @@ export default function MockupGenerator() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mockupToDelete, setMockupToDelete] = useState<string | null>(null);
+  
+  // History filters
+  const [filterClient, setFilterClient] = useState<string>("all");
+  const [filterProduct, setFilterProduct] = useState<string>("");
+  const [filterTechnique, setFilterTechnique] = useState<string>("all");
 
   useEffect(() => {
     fetchData();
@@ -652,21 +657,116 @@ export default function MockupGenerator() {
                   Mockups gerados anteriormente
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {/* Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Cliente</Label>
+                    <Select value={filterClient} onValueChange={setFilterClient}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Todos os clientes" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os clientes</SelectItem>
+                        <SelectItem value="none">Sem cliente</SelectItem>
+                        {clients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Produto</Label>
+                    <Input
+                      placeholder="Buscar por nome do produto..."
+                      value={filterProduct}
+                      onChange={(e) => setFilterProduct(e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Técnica</Label>
+                    <Select value={filterTechnique} onValueChange={setFilterTechnique}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Todas as técnicas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as técnicas</SelectItem>
+                        {techniques.map((technique) => (
+                          <SelectItem key={technique.id} value={technique.id}>
+                            {technique.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Clear filters button */}
+                {(filterClient !== "all" || filterProduct || filterTechnique !== "all") && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setFilterClient("all");
+                        setFilterProduct("");
+                        setFilterTechnique("all");
+                      }}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Limpar filtros
+                    </Button>
+                  </div>
+                )}
+
                 {isLoadingHistory ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
-                ) : mockupHistory.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <History className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Nenhum mockup gerado ainda</p>
-                    <p className="text-sm">Gere seu primeiro mockup na aba "Gerar Mockup"</p>
-                  </div>
-                ) : (
+                ) : (() => {
+                  // Apply filters
+                  const filteredMockups = mockupHistory.filter((mockup) => {
+                    // Client filter
+                    if (filterClient === "none" && mockup.client_id !== null) return false;
+                    if (filterClient !== "all" && filterClient !== "none" && mockup.client_id !== filterClient) return false;
+                    
+                    // Product filter (text search)
+                    if (filterProduct && !mockup.product_name.toLowerCase().includes(filterProduct.toLowerCase())) return false;
+                    
+                    // Technique filter
+                    const selectedTechniqueForFilter = techniques.find(t => t.id === filterTechnique);
+                    if (filterTechnique !== "all" && selectedTechniqueForFilter && mockup.technique_name !== selectedTechniqueForFilter.name) return false;
+                    
+                    return true;
+                  });
+
+                  if (mockupHistory.length === 0) {
+                    return (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <History className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p>Nenhum mockup gerado ainda</p>
+                        <p className="text-sm">Gere seu primeiro mockup na aba "Gerar Mockup"</p>
+                      </div>
+                    );
+                  }
+
+                  if (filteredMockups.length === 0) {
+                    return (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <History className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p>Nenhum mockup encontrado</p>
+                        <p className="text-sm">Tente ajustar os filtros</p>
+                      </div>
+                    );
+                  }
+
+                  return (
                   <ScrollArea className="h-[600px]">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {mockupHistory.map((mockup) => (
+                      {filteredMockups.map((mockup) => (
                         <div
                           key={mockup.id}
                           className="group relative border rounded-lg overflow-hidden hover:ring-2 hover:ring-primary/30 transition-all"
@@ -721,7 +821,8 @@ export default function MockupGenerator() {
                       ))}
                     </div>
                   </ScrollArea>
-                )}
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
