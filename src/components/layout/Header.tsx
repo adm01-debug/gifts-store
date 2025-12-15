@@ -17,6 +17,7 @@ import { useComparisonContext } from "@/contexts/ComparisonContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdvancedSearch } from "@/components/search/AdvancedSearch";
 import { useToast } from "@/hooks/use-toast";
+import { GamificationIndicators } from "./GamificationIndicators";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -85,6 +86,9 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
 
         {/* Right section */}
         <div className="flex items-center gap-2">
+          {/* Gamification indicators */}
+          <GamificationIndicators />
+
           {/* Mobile search */}
           <Button variant="ghost" size="icon" className="md:hidden">
             <Search className="h-5 w-5" />
