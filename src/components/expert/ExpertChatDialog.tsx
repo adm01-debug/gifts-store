@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bot, X, Send, Loader2, User, Sparkles, ExternalLink } from "lucide-react";
+import { Bot, X, Send, Loader2, User, Sparkles, ExternalLink, History, Plus, Trash2, MessageSquare } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useExpertConversations, ExpertMessage, ExpertConversation } from "@/hooks/useExpertConversations";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface Message {
   role: "user" | "assistant";
@@ -31,8 +34,20 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    conversations,
+    isLoading: isLoadingConversations,
+    createConversation,
+    updateConversationTitle,
+    deleteConversation,
+    fetchMessages,
+    saveMessage,
+  } = useExpertConversations(clientId);
 
   // Parse product links from message content
   const parseProductLinks = (content: string): (string | ProductLink)[] => {
@@ -42,22 +57,17 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
     let match;
 
     while ((match = regex.exec(content)) !== null) {
-      // Add text before the match
       if (match.index > lastIndex) {
         parts.push(content.slice(lastIndex, match.index));
       }
-      
-      // Add the product link
       parts.push({
         id: match[1],
         name: match[2],
         fullMatch: match[0]
       });
-      
       lastIndex = match.index + match[0].length;
     }
     
-    // Add remaining text
     if (lastIndex < content.length) {
       parts.push(content.slice(lastIndex));
     }
@@ -70,7 +80,6 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
     navigate(`/produto/${productId}`);
   };
 
-  // Render message content with clickable product links
   const renderMessageContent = (content: string) => {
     const parts = parseProductLinks(content);
     
@@ -92,32 +101,75 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
     });
   };
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // Focus input when dialog opens
   useEffect(() => {
-    if (isOpen && inputRef.current) {
+    if (isOpen && inputRef.current && !showHistory) {
       setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isOpen, showHistory]);
+
+  // Reset state when dialog closes or client changes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowHistory(false);
     }
   }, [isOpen]);
 
-  // Reset chat when client changes
   useEffect(() => {
     setMessages([]);
+    setCurrentConversationId(null);
+    setShowHistory(false);
   }, [clientId]);
+
+  const startNewConversation = () => {
+    setMessages([]);
+    setCurrentConversationId(null);
+    setShowHistory(false);
+  };
+
+  const loadConversation = async (conversation: ExpertConversation) => {
+    const loadedMessages = await fetchMessages(conversation.id);
+    setMessages(loadedMessages.map(m => ({ role: m.role, content: m.content })));
+    setCurrentConversationId(conversation.id);
+    setShowHistory(false);
+  };
+
+  const handleDeleteConversation = async (e: React.MouseEvent, conversationId: string) => {
+    e.stopPropagation();
+    await deleteConversation(conversationId);
+    if (currentConversationId === conversationId) {
+      startNewConversation();
+    }
+  };
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
     setInput("");
+    
+    // Create new conversation if needed
+    let convId = currentConversationId;
+    if (!convId) {
+      const title = userMessage.slice(0, 50) + (userMessage.length > 50 ? "..." : "");
+      convId = await createConversation(title);
+      if (convId) {
+        setCurrentConversationId(convId);
+      }
+    }
+
     setMessages(prev => [...prev, { role: "user", content: userMessage }]);
     setIsLoading(true);
+
+    // Save user message
+    if (convId) {
+      await saveMessage(convId, "user", userMessage);
+    }
 
     try {
       const response = await fetch(
@@ -140,12 +192,10 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
         throw new Error(errorData.error || "Erro ao conectar com o Expert");
       }
 
-      // Handle streaming response
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantMessage = "";
 
-      // Add empty assistant message to start streaming into
       setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
       if (reader) {
@@ -157,7 +207,6 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
 
           buffer += decoder.decode(value, { stream: true });
           
-          // Process line by line
           let newlineIndex: number;
           while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
             let line = buffer.slice(0, newlineIndex);
@@ -184,24 +233,29 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
                 });
               }
             } catch {
-              // Incomplete JSON, put back and wait
               buffer = line + "\n" + buffer;
               break;
             }
           }
         }
       }
+
+      // Save assistant message
+      if (convId && assistantMessage) {
+        await saveMessage(convId, "assistant", assistantMessage);
+      }
+
     } catch (error) {
       console.error("Expert chat error:", error);
-      setMessages(prev => [
-        ...prev,
-        {
-          role: "assistant",
-          content: error instanceof Error 
-            ? `Desculpe, ocorreu um erro: ${error.message}` 
-            : "Desculpe, ocorreu um erro ao processar sua mensagem.",
-        },
-      ]);
+      const errorMessage = error instanceof Error 
+        ? `Desculpe, ocorreu um erro: ${error.message}` 
+        : "Desculpe, ocorreu um erro ao processar sua mensagem.";
+      
+      setMessages(prev => [...prev, { role: "assistant", content: errorMessage }]);
+      
+      if (convId) {
+        await saveMessage(convId, "assistant", errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -233,130 +287,214 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
                 </p>
               </div>
             </div>
-            {clientName && (
-              <Badge variant="secondary" className="text-xs">
-                {clientName}
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {clientName && (
+                <Badge variant="secondary" className="text-xs">
+                  {clientName}
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowHistory(!showHistory)}
+                className="h-8 w-8"
+                title={showHistory ? "Voltar ao chat" : "Ver histórico"}
+              >
+                <History className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={startNewConversation}
+                className="h-8 w-8"
+                title="Nova conversa"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-          <div className="space-y-4">
-            {messages.length === 0 && (
-              <div className="text-center py-8">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Bot className="h-8 w-8 text-primary" />
+        {showHistory ? (
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-2">
+              <h3 className="font-medium text-sm text-muted-foreground mb-3">
+                Conversas anteriores
+              </h3>
+              {isLoadingConversations ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-                <h3 className="font-medium mb-2">Olá! Sou o Expert</h3>
-                <p className="text-sm text-muted-foreground max-w-[300px] mx-auto">
-                  {clientId 
-                    ? `Posso ajudar a encontrar os melhores produtos para ${clientName || "este cliente"} com base no perfil e histórico de compras.`
-                    : "Posso ajudar a encontrar os melhores produtos para seus clientes. Selecione um cliente para recomendações personalizadas."
-                  }
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setInput("Quais produtos você recomenda para este cliente?")}
-                    className="text-xs"
-                  >
-                    Recomendações
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setInput("Sugira produtos para datas comemorativas")}
-                    className="text-xs"
-                  >
-                    Datas comemorativas
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setInput("Produtos que combinam com as cores da marca")}
-                    className="text-xs"
-                  >
-                    Cores da marca
-                  </Button>
+              ) : conversations.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Nenhuma conversa anterior</p>
                 </div>
-              </div>
-            )}
-
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "flex gap-3",
-                  message.role === "user" ? "justify-end" : "justify-start"
-                )}
-              >
-                {message.role === "assistant" && (
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0">
-                    <Bot className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                )}
-                <div
-                  className={cn(
-                    "rounded-2xl px-4 py-2.5 max-w-[80%] text-sm",
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  )}
-                >
-                  <p className="whitespace-pre-wrap">
-                    {message.role === "assistant" 
-                      ? renderMessageContent(message.content)
-                      : message.content
-                    }
-                  </p>
-                </div>
-                {message.role === "user" && (
-                  <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                    <User className="h-4 w-4" />
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {isLoading && messages[messages.length - 1]?.role === "user" && (
-              <div className="flex gap-3 justify-start">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0">
-                  <Bot className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div className="bg-muted rounded-2xl px-4 py-2.5">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                </div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-
-        <div className="p-4 border-t bg-background">
-          <div className="flex gap-2">
-            <Input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Pergunte ao Expert..."
-              disabled={isLoading}
-              className="flex-1"
-            />
-            <Button
-              onClick={sendMessage}
-              disabled={!input.trim() || isLoading}
-              size="icon"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Send className="h-4 w-4" />
+                conversations.map((conv) => (
+                  <div
+                    key={conv.id}
+                    onClick={() => loadConversation(conv)}
+                    className={cn(
+                      "p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted/50",
+                      currentConversationId === conv.id && "border-primary bg-primary/5"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{conv.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(conv.updated_at), {
+                            addSuffix: true,
+                            locale: ptBR,
+                          })}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        onClick={(e) => handleDeleteConversation(e, conv.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
               )}
-            </Button>
-          </div>
-        </div>
+            </div>
+          </ScrollArea>
+        ) : (
+          <>
+            <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+              <div className="space-y-4">
+                {messages.length === 0 && (
+                  <div className="text-center py-8">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                      <Bot className="h-8 w-8 text-primary" />
+                    </div>
+                    <h3 className="font-medium mb-2">Olá! Sou o Expert</h3>
+                    <p className="text-sm text-muted-foreground max-w-[300px] mx-auto">
+                      {clientId 
+                        ? `Posso ajudar a encontrar os melhores produtos para ${clientName || "este cliente"} com base no perfil e histórico de compras.`
+                        : "Posso ajudar a encontrar os melhores produtos para seus clientes. Selecione um cliente para recomendações personalizadas."
+                      }
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput("Quais produtos você recomenda para este cliente?")}
+                        className="text-xs"
+                      >
+                        Recomendações
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput("Sugira produtos para datas comemorativas")}
+                        className="text-xs"
+                      >
+                        Datas comemorativas
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInput("Produtos que combinam com as cores da marca")}
+                        className="text-xs"
+                      >
+                        Cores da marca
+                      </Button>
+                    </div>
+                    {conversations.length > 0 && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => setShowHistory(true)}
+                        className="mt-4 text-xs"
+                      >
+                        <History className="h-3 w-3 mr-1" />
+                        Ver conversas anteriores ({conversations.length})
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "flex gap-3",
+                      message.role === "user" ? "justify-end" : "justify-start"
+                    )}
+                  >
+                    {message.role === "assistant" && (
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0">
+                        <Bot className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                    )}
+                    <div
+                      className={cn(
+                        "rounded-2xl px-4 py-2.5 max-w-[80%] text-sm",
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                      )}
+                    >
+                      <p className="whitespace-pre-wrap">
+                        {message.role === "assistant" 
+                          ? renderMessageContent(message.content)
+                          : message.content
+                        }
+                      </p>
+                    </div>
+                    {message.role === "user" && (
+                      <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                        <User className="h-4 w-4" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {isLoading && messages[messages.length - 1]?.role === "user" && (
+                  <div className="flex gap-3 justify-start">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0">
+                      <Bot className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                    <div className="bg-muted rounded-2xl px-4 py-2.5">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+
+            <div className="p-4 border-t bg-background">
+              <div className="flex gap-2">
+                <Input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Pergunte ao Expert..."
+                  disabled={isLoading}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || isLoading}
+                  size="icon"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
