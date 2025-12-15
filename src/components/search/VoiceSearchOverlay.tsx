@@ -1,8 +1,14 @@
 import { useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, X } from "lucide-react";
+import { Mic, MicOff, X, Palette, Tag, DollarSign, Package, Sparkles, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+
+interface AppliedFilter {
+  type: "category" | "color" | "price" | "material" | "stock" | "featured" | "kit";
+  label: string;
+}
 
 interface VoiceSearchOverlayProps {
   isOpen: boolean;
@@ -12,7 +18,28 @@ interface VoiceSearchOverlayProps {
   onClose: () => void;
   onToggleListening: () => void;
   commandAction?: string | null;
+  appliedFilters?: AppliedFilter[];
 }
+
+const filterIcons: Record<AppliedFilter["type"], React.ReactNode> = {
+  category: <Tag className="h-3 w-3" />,
+  color: <Palette className="h-3 w-3" />,
+  price: <DollarSign className="h-3 w-3" />,
+  material: <Package className="h-3 w-3" />,
+  stock: <CheckCircle2 className="h-3 w-3" />,
+  featured: <Sparkles className="h-3 w-3" />,
+  kit: <Package className="h-3 w-3" />,
+};
+
+const filterColors: Record<AppliedFilter["type"], string> = {
+  category: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  color: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+  price: "bg-green-500/20 text-green-400 border-green-500/30",
+  material: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+  stock: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+  featured: "bg-pink-500/20 text-pink-400 border-pink-500/30",
+  kit: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+};
 
 export function VoiceSearchOverlay({
   isOpen,
@@ -22,6 +49,7 @@ export function VoiceSearchOverlay({
   onClose,
   onToggleListening,
   commandAction,
+  appliedFilters = [],
 }: VoiceSearchOverlayProps) {
   // Close on escape key
   useEffect(() => {
@@ -211,9 +239,52 @@ export function VoiceSearchOverlay({
               )}
             </AnimatePresence>
 
-            {/* Command action feedback */}
+            {/* Applied filters feedback - Enhanced visual */}
             <AnimatePresence mode="wait">
-              {commandAction && (
+              {appliedFilters.length > 0 && (
+                <motion.div
+                  key="filters"
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                  className="w-full space-y-3"
+                >
+                  <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <CheckCircle2 className="h-5 w-5 text-primary" />
+                      <p className="text-sm font-medium text-foreground">
+                        {appliedFilters.length} {appliedFilters.length === 1 ? "filtro aplicado" : "filtros aplicados"}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {appliedFilters.map((filter, index) => (
+                        <motion.div
+                          key={`${filter.type}-${index}`}
+                          initial={{ opacity: 0, scale: 0.8, x: -10 }}
+                          animate={{ opacity: 1, scale: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "px-3 py-1.5 text-sm font-medium flex items-center gap-1.5 border",
+                              filterColors[filter.type]
+                            )}
+                          >
+                            {filterIcons[filter.type]}
+                            {filter.label}
+                          </Badge>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Command action feedback (fallback for non-compound) */}
+            <AnimatePresence mode="wait">
+              {commandAction && appliedFilters.length === 0 && (
                 <motion.div
                   key="action"
                   initial={{ opacity: 0, scale: 0.9 }}
