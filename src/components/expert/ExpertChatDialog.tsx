@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bot, X, Send, Loader2, User, Sparkles, ExternalLink, History, Plus, Trash2, MessageSquare, Filter, ChevronDown } from "lucide-react";
+import { Bot, X, Send, Loader2, User, Sparkles, ExternalLink, History, Plus, Trash2, MessageSquare, Filter, ChevronDown, DollarSign } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
 interface Message {
@@ -29,6 +30,20 @@ interface ProductLink {
   name: string;
   fullMatch: string;
 }
+
+interface PriceRange {
+  label: string;
+  min: number | null;
+  max: number | null;
+}
+
+const PRICE_RANGES: PriceRange[] = [
+  { label: "Até R$ 20", min: null, max: 20 },
+  { label: "R$ 20 - R$ 50", min: 20, max: 50 },
+  { label: "R$ 50 - R$ 100", min: 50, max: 100 },
+  { label: "R$ 100 - R$ 200", min: 100, max: 200 },
+  { label: "Acima de R$ 200", min: 200, max: null },
+];
 
 interface ExpertChatDialogProps {
   isOpen: boolean;
@@ -45,6 +60,7 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedPriceRange, setSelectedPriceRange] = useState<PriceRange | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -155,6 +171,7 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
     setCurrentConversationId(null);
     setShowHistory(false);
     setSelectedCategory(null);
+    setSelectedPriceRange(null);
   }, [clientId]);
 
   const startNewConversation = () => {
@@ -215,6 +232,8 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
             messages: [...messages, { role: "user", content: userMessage }],
             clientId,
             categoryFilter: selectedCategory,
+            priceMin: selectedPriceRange?.min ?? null,
+            priceMax: selectedPriceRange?.max ?? null,
           }),
         }
       );
@@ -354,6 +373,38 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={selectedPriceRange ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-8 text-xs gap-1"
+                  >
+                    <DollarSign className="h-3.5 w-3.5" />
+                    {selectedPriceRange?.label || "Preço"}
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {selectedPriceRange && (
+                    <>
+                      <DropdownMenuItem onClick={() => setSelectedPriceRange(null)}>
+                        <span className="text-muted-foreground">Qualquer preço</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  {PRICE_RANGES.map((range) => (
+                    <DropdownMenuItem
+                      key={range.label}
+                      onClick={() => setSelectedPriceRange(range)}
+                      className={cn(selectedPriceRange?.label === range.label && "bg-primary/10")}
+                    >
+                      {range.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               {clientName && (
                 <Badge variant="secondary" className="text-xs">
                   {clientName}
