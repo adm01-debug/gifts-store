@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Layers, MapPin, ChevronDown, ChevronUp, Copy } from "lucide-react";
+import { Plus, Trash2, Layers, MapPin, ChevronDown, ChevronUp, Copy, LayoutTemplate, Shirt, Coffee, Backpack, PenTool, Package, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -11,6 +11,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 export interface PersonalizationArea {
   id: string;
@@ -29,6 +37,75 @@ interface MultiAreaManagerProps {
   onActiveAreaChange: (areaId: string | null) => void;
   onLogoUpload: (areaId: string, file: File) => void;
 }
+
+interface ProductTemplate {
+  id: string;
+  name: string;
+  icon: React.ElementType;
+  areas: Omit<PersonalizationArea, "id" | "logoPreview">[];
+}
+
+const PRODUCT_TEMPLATES: ProductTemplate[] = [
+  {
+    id: "camiseta",
+    name: "Camiseta",
+    icon: Shirt,
+    areas: [
+      { name: "Peito Esquerdo", positionX: 25, positionY: 25, logoWidth: 4, logoHeight: 4 },
+      { name: "Costas Superior", positionX: 50, positionY: 20, logoWidth: 8, logoHeight: 6 },
+      { name: "Costas Central", positionX: 50, positionY: 50, logoWidth: 20, logoHeight: 15 },
+      { name: "Manga Esquerda", positionX: 10, positionY: 35, logoWidth: 3, logoHeight: 3 },
+    ],
+  },
+  {
+    id: "caneca",
+    name: "Caneca",
+    icon: Coffee,
+    areas: [
+      { name: "Frente", positionX: 50, positionY: 50, logoWidth: 6, logoHeight: 5 },
+      { name: "Verso", positionX: 50, positionY: 50, logoWidth: 6, logoHeight: 5 },
+    ],
+  },
+  {
+    id: "mochila",
+    name: "Mochila",
+    icon: Backpack,
+    areas: [
+      { name: "Bolso Frontal", positionX: 50, positionY: 40, logoWidth: 8, logoHeight: 6 },
+      { name: "Corpo Principal", positionX: 50, positionY: 50, logoWidth: 12, logoHeight: 10 },
+      { name: "Alça", positionX: 50, positionY: 20, logoWidth: 3, logoHeight: 2 },
+    ],
+  },
+  {
+    id: "caneta",
+    name: "Caneta",
+    icon: PenTool,
+    areas: [
+      { name: "Corpo", positionX: 50, positionY: 50, logoWidth: 4, logoHeight: 1 },
+      { name: "Clip", positionX: 50, positionY: 15, logoWidth: 2, logoHeight: 1 },
+    ],
+  },
+  {
+    id: "squeeze",
+    name: "Squeeze/Garrafa",
+    icon: Package,
+    areas: [
+      { name: "Frente", positionX: 50, positionY: 45, logoWidth: 5, logoHeight: 6 },
+      { name: "Verso", positionX: 50, positionY: 45, logoWidth: 5, logoHeight: 6 },
+      { name: "Tampa", positionX: 50, positionY: 10, logoWidth: 2, logoHeight: 2 },
+    ],
+  },
+  {
+    id: "kit",
+    name: "Kit Presente",
+    icon: Gift,
+    areas: [
+      { name: "Caixa", positionX: 50, positionY: 50, logoWidth: 10, logoHeight: 8 },
+      { name: "Item 1", positionX: 30, positionY: 50, logoWidth: 4, logoHeight: 3 },
+      { name: "Item 2", positionX: 70, positionY: 50, logoWidth: 4, logoHeight: 3 },
+    ],
+  },
+];
 
 const DEFAULT_AREA_NAMES = [
   "Frente",
@@ -49,6 +126,17 @@ export function MultiAreaManager({
   onLogoUpload,
 }: MultiAreaManagerProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+
+  const applyTemplate = (template: ProductTemplate) => {
+    const newAreas: PersonalizationArea[] = template.areas.map((area) => ({
+      ...area,
+      id: crypto.randomUUID(),
+      logoPreview: null,
+    }));
+    onAreasChange(newAreas);
+    onActiveAreaChange(newAreas[0]?.id || null);
+    toast.success(`Template "${template.name}" aplicado com ${template.areas.length} áreas`);
+  };
 
   const addArea = () => {
     const usedNames = areas.map((a) => a.name);
@@ -224,8 +312,34 @@ export function MultiAreaManager({
               ))}
             </div>
 
-            {/* Action buttons */}
+            {/* Template selector and action buttons */}
             <div className="flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-1">
+                    <LayoutTemplate className="h-4 w-4 mr-1" />
+                    Templates
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  <DropdownMenuLabel>Tipo de Produto</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {PRODUCT_TEMPLATES.map((template) => (
+                    <DropdownMenuItem
+                      key={template.id}
+                      onClick={() => applyTemplate(template)}
+                      className="cursor-pointer"
+                    >
+                      <template.icon className="h-4 w-4 mr-2" />
+                      {template.name}
+                      <Badge variant="secondary" className="ml-auto text-[10px]">
+                        {template.areas.length}
+                      </Badge>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -233,21 +347,21 @@ export function MultiAreaManager({
                 className="flex-1"
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Adicionar Área
+                Adicionar
               </Button>
-              
-              {areas.length > 1 && activeAreaHasLogo && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={applyLogoToAllAreas}
-                  className="flex-1"
-                >
-                  <Copy className="h-4 w-4 mr-1" />
-                  Aplicar em Todas
-                </Button>
-              )}
             </div>
+            
+            {areas.length > 1 && activeAreaHasLogo && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={applyLogoToAllAreas}
+                className="w-full"
+              >
+                <Copy className="h-4 w-4 mr-1" />
+                Aplicar Logo em Todas as Áreas
+              </Button>
+            )}
 
             {/* Quick add buttons */}
             <div className="flex flex-wrap gap-1">
