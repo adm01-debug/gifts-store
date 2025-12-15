@@ -50,40 +50,57 @@ export default function FiltersPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
   const [commandAction, setCommandAction] = useState<string | null>(null);
+  const [appliedFilters, setAppliedFilters] = useState<Array<{ type: "category" | "color" | "price" | "material" | "stock" | "featured" | "kit"; label: string }>>([]);
 
   const { parseCommand } = useVoiceCommands();
 
   const handleVoiceResult = useCallback((transcript: string) => {
     const command = parseCommand(transcript);
+    setAppliedFilters([]); // Reset applied filters
     
     switch (command.type) {
       case "compound":
         // Apply multiple filters at once
         if (command.filters && command.filters.length > 0) {
+          const newAppliedFilters: typeof appliedFilters = [];
+          
           setFilters(prev => {
             const newFilters = { ...prev };
             command.filters!.forEach(filter => {
               if (filter.filterKey === "colors" && Array.isArray(filter.value)) {
                 newFilters.colors = [...prev.colors, ...(filter.value as string[])];
+                (filter.value as string[]).forEach(c => {
+                  newAppliedFilters.push({ type: "color", label: c });
+                });
               } else if (filter.filterKey === "categories" && Array.isArray(filter.value)) {
                 newFilters.categories = [...prev.categories, ...(filter.value as number[])];
+                newAppliedFilters.push({ type: "category", label: "Categoria" });
               } else if (filter.filterKey === "materiais" && Array.isArray(filter.value)) {
                 newFilters.materiais = [...prev.materiais, ...(filter.value as string[])];
+                (filter.value as string[]).forEach(m => {
+                  newAppliedFilters.push({ type: "material", label: m });
+                });
               } else if (filter.filterKey === "priceRange" && Array.isArray(filter.value)) {
                 const [min, max] = filter.value as string[];
                 newFilters.priceRange = [parseInt(min) || 0, parseInt(max) || 500];
+                newAppliedFilters.push({ type: "price", label: `Até R$${max}` });
               } else if (filter.filterKey === "isKit") {
                 newFilters.isKit = true;
+                newAppliedFilters.push({ type: "kit", label: "Kits" });
               } else if (filter.filterKey === "inStock") {
                 newFilters.inStock = true;
+                newAppliedFilters.push({ type: "stock", label: "Em estoque" });
               } else if (filter.filterKey === "featured") {
                 newFilters.featured = true;
+                newAppliedFilters.push({ type: "featured", label: "Destaques" });
               }
             });
             return newFilters;
           });
+          
+          setAppliedFilters(newAppliedFilters);
           setCommandAction(command.action || "Filtros aplicados");
-          toast.success(command.action || "Filtros compostos aplicados");
+          toast.success(`${newAppliedFilters.length} filtros aplicados`);
         }
         setActivePresetId(undefined);
         break;
@@ -149,10 +166,13 @@ export default function FiltersPage() {
     }
 
     // Clear action after 3 seconds
-    setTimeout(() => setCommandAction(null), 3000);
+    setTimeout(() => {
+      setCommandAction(null);
+      setAppliedFilters([]);
+    }, 3000);
     
     // Close overlay after processing
-    setTimeout(() => setVoiceOverlayOpen(false), 1500);
+    setTimeout(() => setVoiceOverlayOpen(false), 2000);
   }, [parseCommand]);
 
   const { 
@@ -556,9 +576,11 @@ export default function FiltersPage() {
         onClose={() => {
           setVoiceOverlayOpen(false);
           stopListening();
+          setAppliedFilters([]);
         }}
         onToggleListening={handleToggleListening}
         commandAction={commandAction}
+        appliedFilters={appliedFilters}
       />
     </MainLayout>
   );
