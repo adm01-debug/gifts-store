@@ -51,47 +51,51 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
 
 
   return (
-    <header className="sticky top-0 z-40 glass-strong border-b border-border">
-      <div className="flex items-center justify-between h-16 px-4 lg:px-6">
-        {/* Left section */}
-        <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-md border-b border-border shadow-sm">
+      <div className="flex items-center justify-between h-14 px-4 lg:px-6">
+        {/* Left section - Logo & Menu */}
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="lg:hidden hover:bg-orange/10 hover:text-orange"
             onClick={onMenuToggle}
           >
             <Menu className="h-5 w-5" />
           </Button>
 
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-primary-foreground" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-orange flex items-center justify-center shadow-md">
+              <Sparkles className="h-4 w-4 text-orange-foreground" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="font-display text-lg font-bold text-foreground">
-                PROMO BRINDES
+              <h1 className="font-display text-base font-bold text-foreground leading-tight">
+                Promo
               </h1>
-              <p className="text-xs text-muted-foreground -mt-0.5">
-                Catálogo de Produtos
+              <p className="text-[10px] text-orange font-medium uppercase tracking-wider -mt-0.5">
+                Brindes
               </p>
             </div>
           </div>
         </div>
 
-        {/* Center section - Advanced Search */}
-        <div className="flex-1 max-w-xl mx-4 hidden md:block">
+        {/* Center section - Search Bar */}
+        <div className="flex-1 max-w-2xl mx-4 hidden md:block">
           <AdvancedSearch onSearch={onSearchChange} />
         </div>
 
         {/* Right section */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Gamification indicators */}
           <GamificationIndicators />
 
           {/* Mobile search */}
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Search className="h-5 w-5" />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="md:hidden h-9 w-9 hover:bg-orange/10 hover:text-orange"
+          >
+            <Search className="h-4 w-4" />
           </Button>
 
           {/* Theme toggle */}
@@ -99,10 +103,10 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="relative"
+            className="relative h-9 w-9 hover:bg-orange/10 hover:text-orange"
           >
-            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             <span className="sr-only">Alternar tema</span>
           </Button>
 
@@ -112,21 +116,20 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative"
+                className="relative h-9 w-9 hover:bg-orange/10 hover:text-orange"
                 onClick={() => navigate("/favoritos")}
               >
-                <Heart className="h-5 w-5" />
+                <Heart className="h-4 w-4" />
                 {favoriteCount > 0 && (
                   <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
+                    className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 flex items-center justify-center text-[9px] bg-destructive text-destructive-foreground"
                   >
                     {favoriteCount > 99 ? "99+" : favoriteCount}
                   </Badge>
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Meus Favoritos</TooltipContent>
+            <TooltipContent className="bg-card border-border">Meus Favoritos</TooltipContent>
           </Tooltip>
 
           {/* Compare */}
@@ -135,27 +138,33 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative"
+                className="relative h-9 w-9 hover:bg-orange/10 hover:text-orange"
                 onClick={() => navigate("/comparar")}
               >
-                <GitCompare className="h-5 w-5" />
+                <GitCompare className="h-4 w-4" />
                 {compareCount > 0 && (
                   <Badge 
-                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-primary text-primary-foreground"
+                    className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 flex items-center justify-center text-[9px] bg-orange text-orange-foreground"
                   >
                     {compareCount > 4 ? "4" : compareCount}
                   </Badge>
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Comparar Produtos</TooltipContent>
+            <TooltipContent className="bg-card border-border">Comparar Produtos</TooltipContent>
           </Tooltip>
+
+          {/* Divider */}
+          <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
 
           {/* User menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Button 
+                variant="ghost" 
+                className="flex items-center gap-2 h-9 px-2 hover:bg-orange/10 rounded-lg"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange to-orange-active flex items-center justify-center ring-2 ring-background shadow-md">
                   {profile?.avatar_url ? (
                     <img 
                       src={profile.avatar_url} 
@@ -163,37 +172,51 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
-                    <User className="h-4 w-4 text-primary" />
+                    <User className="h-4 w-4 text-orange-foreground" />
                   )}
+                </div>
+                <div className="hidden lg:flex flex-col items-start">
+                  <span className="text-sm font-medium text-foreground leading-tight">
+                    {displayName}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground leading-tight">
+                    {roleLabel}
+                  </span>
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 bg-card border-border">
               <DropdownMenuLabel>
                 <div className="flex flex-col">
                   <span className="font-medium">{displayName}</span>
                   <div className="flex items-center gap-1.5">
-                    {isAdmin && <Shield className="h-3 w-3 text-primary" />}
+                    {isAdmin && <Shield className="h-3 w-3 text-orange" />}
                     <span className="text-xs text-muted-foreground">{roleLabel}</span>
                   </div>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/perfil")}>
+              <DropdownMenuSeparator className="bg-border" />
+              <DropdownMenuItem 
+                onClick={() => navigate("/perfil")}
+                className="hover:bg-orange/10 focus:bg-orange/10 cursor-pointer"
+              >
                 <User className="h-4 w-4 mr-2" />
                 Meu Perfil
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/configuracoes")}>
+              <DropdownMenuItem 
+                onClick={() => navigate("/configuracoes")}
+                className="hover:bg-orange/10 focus:bg-orange/10 cursor-pointer"
+              >
                 <Settings className="h-4 w-4 mr-2" />
                 Configurações
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="hover:bg-orange/10 focus:bg-orange/10 cursor-pointer">
                 <HelpCircle className="h-4 w-4 mr-2" />
                 Ajuda
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem 
-                className="text-destructive focus:text-destructive"
+                className="text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 cursor-pointer"
                 onClick={handleSignOut}
               >
                 <LogOut className="h-4 w-4 mr-2" />
