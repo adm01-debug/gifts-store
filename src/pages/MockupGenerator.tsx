@@ -14,6 +14,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LogoPositionEditor } from "@/components/mockup/LogoPositionEditor";
 import { MultiAreaManager, PersonalizationArea } from "@/components/mockup/MultiAreaManager";
+import { useGamification } from "@/hooks/useGamification";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,6 +90,7 @@ const createDefaultArea = (): PersonalizationArea => ({
 
 export default function MockupGenerator() {
   const { user } = useAuth();
+  const { addXp } = useGamification();
   const [products, setProducts] = useState<Product[]>([]);
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -338,6 +340,8 @@ export default function MockupGenerator() {
       if (response.data?.mockupUrl) {
         setGeneratedMockup(response.data.mockupUrl);
         await saveMockupToHistory(response.data.mockupUrl, primaryArea);
+        // Add XP for generating mockup
+        addXp(25);
         toast.success(`Mockup gerado com ${areasWithLogos.length} área(s) de personalização!`);
       } else {
         throw new Error("Nenhuma imagem retornada");
