@@ -189,10 +189,9 @@ export default function Auth() {
                 return (
                   <div 
                     key={i} 
-                    className="p-4 rounded-xl bg-white dark:bg-card border border-orange/30 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:border-orange/50 transition-all group animate-fade-in opacity-0"
+                    className="p-4 rounded-xl bg-white dark:bg-card border border-orange/30 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:border-orange/50 hover:scale-[1.02] transition-all duration-300 group opacity-0"
                     style={{ 
-                      animationDelay: `${300 + i * 150}ms`,
-                      animationFillMode: 'forwards'
+                      animation: `scale-fade-in 0.5s ease-out ${300 + i * 150}ms forwards`
                     }}
                   >
                     <div className="flex items-start justify-between">
