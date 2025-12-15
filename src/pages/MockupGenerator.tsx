@@ -554,6 +554,8 @@ export default function MockupGenerator() {
                     positionY={positionY}
                     logoWidth={logoWidth}
                     logoHeight={logoHeight}
+                    techniqueCode={selectedTechnique?.code}
+                    techniqueName={selectedTechnique?.name}
                     onPositionChange={(x, y) => {
                       setPositionX(x);
                       setPositionY(y);
