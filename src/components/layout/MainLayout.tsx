@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
+import { PageTransition } from "@/components/effects";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -26,7 +27,9 @@ export function MainLayout({ children }: MainLayoutProps) {
           />
           
           <main className="flex-1 p-4 lg:p-6">
-            {children}
+            <PageTransition variant="fade-slide" duration={0.25}>
+              {children}
+            </PageTransition>
           </main>
         </div>
       </div>
