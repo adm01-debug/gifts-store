@@ -50,6 +50,13 @@ export default {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
         },
+        orange: {
+          DEFAULT: "hsl(var(--orange))",
+          hover: "hsl(var(--orange-hover))",
+          active: "hsl(var(--orange-active))",
+          glow: "hsl(var(--orange-glow))",
+          foreground: "hsl(var(--orange-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -156,6 +163,7 @@ export default {
         "glow-secondary": "var(--shadow-glow-secondary)",
         "glow-success": "var(--shadow-glow-success)",
         "glow-gold": "var(--shadow-glow-gold)",
+        "glow-orange": "0 0 20px hsl(var(--orange) / 0.4)",
         header: "var(--shadow-header)",
         elevated: "0 4px 20px -2px hsl(var(--foreground) / 0.08)",
       },

@@ -58,6 +58,13 @@
     --info: 200 85% 55%;
     --info-foreground: 0 0% 100%;
     
+    /* ===== LARANJA (COR DE DESTAQUE) ===== */
+    --orange: 25 95% 53%;
+    --orange-hover: 25 95% 48%;
+    --orange-active: 25 95% 43%;
+    --orange-glow: 25 95% 63%;
+    --orange-foreground: 0 0% 100%;
+    
     /* ===== GAMIFICAÇÃO ===== */
     --xp: 280 85% 60%;
     --xp-glow: 280 85% 70%;
@@ -198,6 +205,13 @@
     --warning-foreground: 0 0% 100%;
     --info: 200 80% 55%;
     --info-foreground: 0 0% 100%;
+    
+    /* ===== LARANJA (COR DE DESTAQUE) ===== */
+    --orange: 25 95% 58%;
+    --orange-hover: 25 95% 63%;
+    --orange-active: 25 95% 68%;
+    --orange-glow: 25 95% 50%;
+    --orange-foreground: 0 0% 100%;
     
     /* ===== GAMIFICAÇÃO ===== */
     --xp: 280 85% 65%;
