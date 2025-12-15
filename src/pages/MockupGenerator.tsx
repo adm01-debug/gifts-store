@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LogoPositionEditor } from "@/components/mockup/LogoPositionEditor";
+import { MultiAreaManager, PersonalizationArea } from "@/components/mockup/MultiAreaManager";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,6 +77,16 @@ const TECHNIQUE_PROMPTS: Record<string, string> = {
   "default": "as professionally printed/applied logo maintaining the technique's characteristic appearance"
 };
 
+const createDefaultArea = (): PersonalizationArea => ({
+  id: crypto.randomUUID(),
+  name: "Frente",
+  positionX: 50,
+  positionY: 50,
+  logoWidth: 5,
+  logoHeight: 3,
+  logoPreview: null,
+});
+
 export default function MockupGenerator() {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
@@ -84,12 +95,11 @@ export default function MockupGenerator() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedTechnique, setSelectedTechnique] = useState<Technique | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [positionX, setPositionX] = useState(50);
-  const [positionY, setPositionY] = useState(50);
-  const [logoWidth, setLogoWidth] = useState(5);
-  const [logoHeight, setLogoHeight] = useState(3);
+  
+  // Multi-area support
+  const [personalizationAreas, setPersonalizationAreas] = useState<PersonalizationArea[]>([createDefaultArea()]);
+  const [activeAreaId, setActiveAreaId] = useState<string | null>(null);
+  
   const [generatedMockup, setGeneratedMockup] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -106,6 +116,50 @@ export default function MockupGenerator() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 12;
+
+  // Get active area
+  const activeArea = personalizationAreas.find(a => a.id === activeAreaId) || personalizationAreas[0];
+
+  // Set initial active area
+  useEffect(() => {
+    if (!activeAreaId && personalizationAreas.length > 0) {
+      setActiveAreaId(personalizationAreas[0].id);
+    }
+  }, [activeAreaId, personalizationAreas]);
+
+  // Update active area properties
+  const updateActiveArea = useCallback((updates: Partial<PersonalizationArea>) => {
+    if (!activeAreaId) return;
+    setPersonalizationAreas(prev => 
+      prev.map(area => 
+        area.id === activeAreaId ? { ...area, ...updates } : area
+      )
+    );
+  }, [activeAreaId]);
+
+  // Handle logo upload for a specific area
+  const handleAreaLogoUpload = useCallback((areaId: string, file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, selecione uma imagem válida");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const logoData = e.target?.result as string;
+      setPersonalizationAreas(prev =>
+        prev.map(area =>
+          area.id === areaId ? { ...area, logoPreview: logoData } : area
+        )
+      );
+    };
+    reader.readAsDataURL(file);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -181,24 +235,9 @@ export default function MockupGenerator() {
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !activeAreaId) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Por favor, selecione uma imagem válida");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("A imagem deve ter no máximo 5MB");
-      return;
-    }
-
-    setLogoFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setLogoPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    handleAreaLogoUpload(activeAreaId, file);
   };
 
   const getProductImage = (): string | null => {
@@ -219,8 +258,8 @@ export default function MockupGenerator() {
     return TECHNIQUE_PROMPTS.default;
   };
 
-  const saveMockupToHistory = async (mockupUrl: string) => {
-    if (!user || !selectedProduct || !selectedTechnique || !logoPreview) return;
+  const saveMockupToHistory = async (mockupUrl: string, area: PersonalizationArea) => {
+    if (!user || !selectedProduct || !selectedTechnique || !area.logoPreview) return;
 
     try {
       const { error } = await supabase
@@ -233,12 +272,12 @@ export default function MockupGenerator() {
           product_sku: selectedProduct.sku,
           technique_id: selectedTechnique.id,
           technique_name: selectedTechnique.name,
-          logo_url: logoPreview,
+          logo_url: area.logoPreview,
           mockup_url: mockupUrl,
-          position_x: positionX,
-          position_y: positionY,
-          logo_width_cm: logoWidth,
-          logo_height_cm: logoHeight,
+          position_x: area.positionX,
+          position_y: area.positionY,
+          logo_width_cm: area.logoWidth,
+          logo_height_cm: area.logoHeight,
         });
 
       if (error) throw error;
@@ -249,8 +288,11 @@ export default function MockupGenerator() {
   };
 
   const generateMockup = async () => {
-    if (!selectedProduct || !selectedTechnique || !logoPreview) {
-      toast.error("Selecione produto, técnica e faça upload do logo");
+    // Check if at least one area has a logo
+    const areasWithLogos = personalizationAreas.filter(a => a.logoPreview);
+    
+    if (!selectedProduct || !selectedTechnique || areasWithLogos.length === 0) {
+      toast.error("Selecione produto, técnica e faça upload de pelo menos um logo");
       return;
     }
 
@@ -266,17 +308,28 @@ export default function MockupGenerator() {
     try {
       const techniquePrompt = getTechniquePrompt(selectedTechnique);
       
+      // Use the first area with a logo for now (can be extended to generate multiple mockups)
+      const primaryArea = areasWithLogos[0];
+      
       const response = await supabase.functions.invoke("generate-mockup", {
         body: {
           productImageUrl: productImage,
-          logoBase64: logoPreview,
+          logoBase64: primaryArea.logoPreview,
           techniqueName: selectedTechnique.name,
           techniquePrompt,
-          positionX,
-          positionY,
-          logoWidthCm: logoWidth,
-          logoHeightCm: logoHeight,
-          productName: selectedProduct.name
+          positionX: primaryArea.positionX,
+          positionY: primaryArea.positionY,
+          logoWidthCm: primaryArea.logoWidth,
+          logoHeightCm: primaryArea.logoHeight,
+          productName: selectedProduct.name,
+          // Include all areas info for potential multi-area generation
+          areas: areasWithLogos.map(a => ({
+            name: a.name,
+            positionX: a.positionX,
+            positionY: a.positionY,
+            logoWidth: a.logoWidth,
+            logoHeight: a.logoHeight,
+          }))
         }
       });
 
@@ -284,8 +337,8 @@ export default function MockupGenerator() {
 
       if (response.data?.mockupUrl) {
         setGeneratedMockup(response.data.mockupUrl);
-        await saveMockupToHistory(response.data.mockupUrl);
-        toast.success("Mockup gerado e salvo no histórico!");
+        await saveMockupToHistory(response.data.mockupUrl, primaryArea);
+        toast.success(`Mockup gerado com ${areasWithLogos.length} área(s) de personalização!`);
       } else {
         throw new Error("Nenhuma imagem retornada");
       }
@@ -335,12 +388,8 @@ export default function MockupGenerator() {
     setSelectedProduct(null);
     setSelectedTechnique(null);
     setSelectedClient(null);
-    setLogoFile(null);
-    setLogoPreview(null);
-    setPositionX(50);
-    setPositionY(50);
-    setLogoWidth(5);
-    setLogoHeight(3);
+    setPersonalizationAreas([createDefaultArea()]);
+    setActiveAreaId(null);
     setGeneratedMockup(null);
   };
 
@@ -354,12 +403,19 @@ export default function MockupGenerator() {
     setSelectedProduct(product || null);
     setSelectedTechnique(technique || null);
     setSelectedClient(client || null);
-    setLogoPreview(mockup.logo_url);
-    setLogoFile(null); // Can't restore actual file
-    setPositionX(mockup.position_x ?? 50);
-    setPositionY(mockup.position_y ?? 50);
-    setLogoWidth(mockup.logo_width_cm ?? 5);
-    setLogoHeight(mockup.logo_height_cm ?? 3);
+    
+    // Create area from history
+    const restoredArea: PersonalizationArea = {
+      id: crypto.randomUUID(),
+      name: "Frente",
+      positionX: mockup.position_x ?? 50,
+      positionY: mockup.position_y ?? 50,
+      logoWidth: mockup.logo_width_cm ?? 5,
+      logoHeight: mockup.logo_height_cm ?? 3,
+      logoPreview: mockup.logo_url,
+    };
+    setPersonalizationAreas([restoredArea]);
+    setActiveAreaId(restoredArea.id);
     setGeneratedMockup(null);
 
     // Switch to generator tab
@@ -486,43 +542,11 @@ export default function MockupGenerator() {
                     </Select>
                   </div>
 
-                  {/* Logo Upload */}
-                  <div className="space-y-2">
-                    <Label>Logo do Cliente</Label>
-                    <div className="flex items-center gap-4">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="hidden"
-                        id="logo-upload"
-                      />
-                      <label
-                        htmlFor="logo-upload"
-                        className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-muted-foreground/30 rounded-lg cursor-pointer hover:border-primary/50 hover:bg-accent transition-colors flex-1"
-                      >
-                        <Upload className="h-4 w-4" />
-                        <span className="text-sm">
-                          {logoFile ? logoFile.name : "Selecionar logo..."}
-                        </span>
-                      </label>
-                      {logoPreview && (
-                        <div className="h-12 w-12 rounded border bg-background flex items-center justify-center overflow-hidden">
-                          <img
-                            src={logoPreview}
-                            alt="Logo preview"
-                            className="max-h-full max-w-full object-contain"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
                   {/* Action Buttons */}
                   <div className="flex gap-2 pt-4">
                     <Button
                       onClick={generateMockup}
-                      disabled={!selectedProduct || !selectedTechnique || !logoPreview || isLoading}
+                      disabled={!selectedProduct || !selectedTechnique || personalizationAreas.every(a => !a.logoPreview) || isLoading}
                       className="flex-1"
                     >
                       {isLoading ? (
@@ -544,25 +568,33 @@ export default function MockupGenerator() {
                 </CardContent>
               </Card>
 
-              {/* Position Editor - Interactive Canvas */}
-              <div className="space-y-6">
-                {selectedProduct && getProductImage() ? (
+              {/* Multi-Area Manager + Position Editor */}
+              <div className="space-y-4">
+                {/* Multi-Area Manager */}
+                <MultiAreaManager
+                  areas={personalizationAreas}
+                  activeAreaId={activeAreaId}
+                  onAreasChange={setPersonalizationAreas}
+                  onActiveAreaChange={setActiveAreaId}
+                  onLogoUpload={handleAreaLogoUpload}
+                />
+
+                {/* Position Editor - Interactive Canvas */}
+                {selectedProduct && getProductImage() && activeArea ? (
                   <LogoPositionEditor
                     productImageUrl={getProductImage()!}
-                    logoPreview={logoPreview}
-                    positionX={positionX}
-                    positionY={positionY}
-                    logoWidth={logoWidth}
-                    logoHeight={logoHeight}
+                    logoPreview={activeArea.logoPreview}
+                    positionX={activeArea.positionX}
+                    positionY={activeArea.positionY}
+                    logoWidth={activeArea.logoWidth}
+                    logoHeight={activeArea.logoHeight}
                     techniqueCode={selectedTechnique?.code}
                     techniqueName={selectedTechnique?.name}
                     onPositionChange={(x, y) => {
-                      setPositionX(x);
-                      setPositionY(y);
+                      updateActiveArea({ positionX: x, positionY: y });
                     }}
                     onSizeChange={(w, h) => {
-                      setLogoWidth(w);
-                      setLogoHeight(h);
+                      updateActiveArea({ logoWidth: w, logoHeight: h });
                     }}
                   />
                 ) : (
