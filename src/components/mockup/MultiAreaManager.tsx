@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Layers, MapPin, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, Layers, MapPin, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   Collapsible,
   CollapsibleContent,
@@ -97,6 +97,23 @@ export function MultiAreaManager({
 
     onLogoUpload(areaId, file);
   };
+
+  const applyLogoToAllAreas = () => {
+    const activeArea = areas.find((a) => a.id === activeAreaId);
+    if (!activeArea?.logoPreview) {
+      toast.error("Selecione uma área com logo primeiro");
+      return;
+    }
+
+    const updatedAreas = areas.map((a) => ({
+      ...a,
+      logoPreview: activeArea.logoPreview,
+    }));
+    onAreasChange(updatedAreas);
+    toast.success(`Logo aplicado em ${areas.length} áreas`);
+  };
+
+  const activeAreaHasLogo = areas.find((a) => a.id === activeAreaId)?.logoPreview;
 
   return (
     <Card>
@@ -207,16 +224,30 @@ export function MultiAreaManager({
               ))}
             </div>
 
-            {/* Add area button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={addArea}
-              className="w-full"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Adicionar Área
-            </Button>
+            {/* Action buttons */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={addArea}
+                className="flex-1"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Adicionar Área
+              </Button>
+              
+              {areas.length > 1 && activeAreaHasLogo && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={applyLogoToAllAreas}
+                  className="flex-1"
+                >
+                  <Copy className="h-4 w-4 mr-1" />
+                  Aplicar em Todas
+                </Button>
+              )}
+            </div>
 
             {/* Quick add buttons */}
             <div className="flex flex-wrap gap-1">
