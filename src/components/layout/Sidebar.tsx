@@ -83,7 +83,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 hover:bg-orange/10 hover:text-orange"
               onClick={toggleCollapse}
             >
               {isCollapsed ? (
@@ -104,14 +104,17 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 <NavLink
                   to={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                    "hover:bg-sidebar-accent",
-                    isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                    "hover:bg-orange/10 hover:text-orange",
+                    isActive && "bg-orange text-orange-foreground font-medium shadow-md",
                     !isActive && "text-sidebar-foreground/80"
                   )}
                   onClick={() => isOpen && onToggle()}
                 >
-                  <Icon className={cn("h-5 w-5 shrink-0", isActive && "text-primary")} />
+                  <Icon className={cn(
+                    "h-5 w-5 shrink-0 transition-colors",
+                    isActive ? "text-orange-foreground" : "group-hover:text-orange"
+                  )} />
                   {!isCollapsed && <span>{item.label}</span>}
                 </NavLink>
               );
@@ -122,7 +125,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                     <TooltipTrigger asChild>
                       {linkContent}
                     </TooltipTrigger>
-                    <TooltipContent side="right">
+                    <TooltipContent side="right" className="bg-card border-border">
                       {item.label}
                     </TooltipContent>
                   </Tooltip>
@@ -142,13 +145,13 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   {CATEGORIES.slice(0, 8).map((category) => (
                     <button
                       key={category.id}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent rounded-lg transition-colors"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-sidebar-foreground/70 hover:bg-orange/10 hover:text-orange rounded-lg transition-colors"
                     >
                       <span>{category.icon}</span>
                       <span className="truncate">{category.name}</span>
                     </button>
                   ))}
-                  <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-primary hover:bg-sidebar-accent rounded-lg transition-colors">
+                  <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-orange hover:bg-orange/10 rounded-lg transition-colors">
                     <span>+</span>
                     <span>Ver todas ({CATEGORIES.length})</span>
                   </button>
@@ -168,13 +171,16 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   <NavLink
                     to={item.href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                      "hover:bg-sidebar-accent",
-                      isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                      "hover:bg-orange/10 hover:text-orange",
+                      isActive && "bg-orange text-orange-foreground font-medium shadow-md",
                       !isActive && "text-sidebar-foreground/70"
                     )}
                   >
-                    <Icon className={cn("h-5 w-5 shrink-0", isActive && "text-primary")} />
+                    <Icon className={cn(
+                      "h-5 w-5 shrink-0 transition-colors",
+                      isActive ? "text-orange-foreground" : "group-hover:text-orange"
+                    )} />
                     {!isCollapsed && <span>{item.label}</span>}
                   </NavLink>
                 );
@@ -185,7 +191,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                       <TooltipTrigger asChild>
                         {linkContent}
                       </TooltipTrigger>
-                      <TooltipContent side="right">
+                      <TooltipContent side="right" className="bg-card border-border">
                         {item.label}
                       </TooltipContent>
                     </Tooltip>
