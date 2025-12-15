@@ -187,7 +187,14 @@ export default function Auth() {
               ].map((item, i) => {
                 const IconComponent = item.icon;
                 return (
-                  <div key={i} className="p-4 rounded-xl bg-white dark:bg-card border border-orange/30 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:border-orange/50 transition-all group">
+                  <div 
+                    key={i} 
+                    className="p-4 rounded-xl bg-white dark:bg-card border border-orange/30 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:border-orange/50 transition-all group animate-fade-in opacity-0"
+                    style={{ 
+                      animationDelay: `${300 + i * 150}ms`,
+                      animationFillMode: 'forwards'
+                    }}
+                  >
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-2xl font-bold text-orange">{item.label}</p>
