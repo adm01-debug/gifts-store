@@ -16,6 +16,7 @@ import {
   Palette,
   Calculator,
   Wand2,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ interface SidebarProps {
 }
 
 const mainNavItems = [
+  { icon: BarChart3, label: "Dashboard BI", href: "/bi" },
   { icon: Package, label: "Produtos", href: "/" },
   { icon: FolderOpen, label: "Coleções", href: "/colecoes" },
   { icon: Users, label: "Clientes", href: "/clientes" },
