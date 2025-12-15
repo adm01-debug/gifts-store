@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Canvas as FabricCanvas, FabricImage, Rect } from "fabric";
+import { Canvas as FabricCanvas, FabricImage } from "fabric";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Move, ZoomIn, ZoomOut, RotateCcw, Target } from "lucide-react";
-import { Label } from "@/components/ui/label";
+import { Move, RotateCcw, Target, Eye } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
 
 interface LogoPositionEditorProps {
   productImageUrl: string;
@@ -13,8 +13,93 @@ interface LogoPositionEditorProps {
   positionY: number;
   logoWidth: number;
   logoHeight: number;
+  techniqueCode?: string | null;
+  techniqueName?: string;
   onPositionChange: (x: number, y: number) => void;
   onSizeChange: (width: number, height: number) => void;
+}
+
+// CSS filter effects to simulate different techniques
+const TECHNIQUE_FILTERS: Record<string, { filter: string; opacity: number; blend?: string; description: string }> = {
+  bordado: { 
+    filter: "contrast(1.1) saturate(0.9)", 
+    opacity: 0.85,
+    description: "Textura de bordado"
+  },
+  silk: { 
+    filter: "contrast(1.2) saturate(1.1)", 
+    opacity: 0.9,
+    description: "Serigrafia"
+  },
+  dtf: { 
+    filter: "brightness(1.05) saturate(1.2)", 
+    opacity: 0.95,
+    description: "Transfer DTF"
+  },
+  laser: { 
+    filter: "grayscale(1) contrast(1.3) sepia(0.3)", 
+    opacity: 0.7,
+    description: "Gravação laser"
+  },
+  laser_co2: { 
+    filter: "grayscale(1) contrast(1.2) sepia(0.4) brightness(0.9)", 
+    opacity: 0.75,
+    description: "Laser CO2"
+  },
+  laser_fibra: { 
+    filter: "grayscale(1) contrast(1.4) brightness(1.1)", 
+    opacity: 0.8,
+    description: "Laser Fibra"
+  },
+  sublimacao: { 
+    filter: "saturate(1.3) brightness(1.05)", 
+    opacity: 0.92,
+    description: "Sublimação"
+  },
+  tampografia: { 
+    filter: "contrast(1.15)", 
+    opacity: 0.88,
+    description: "Tampografia"
+  },
+  hot_stamping: { 
+    filter: "sepia(0.5) saturate(1.5) brightness(1.2) contrast(1.1)", 
+    opacity: 0.85,
+    description: "Hot Stamping"
+  },
+  adesivo: { 
+    filter: "brightness(1.02)", 
+    opacity: 0.95,
+    description: "Adesivo"
+  },
+  uv: { 
+    filter: "contrast(1.1) saturate(1.15) brightness(1.05)", 
+    opacity: 0.9,
+    description: "Impressão UV"
+  },
+  transfer: { 
+    filter: "contrast(1.05)", 
+    opacity: 0.88,
+    description: "Transfer"
+  },
+  default: { 
+    filter: "none", 
+    opacity: 1,
+    description: "Preview"
+  }
+};
+
+function getTechniqueFilter(techniqueCode?: string | null, techniqueName?: string) {
+  if (!techniqueCode && !techniqueName) return TECHNIQUE_FILTERS.default;
+  
+  const code = (techniqueCode || techniqueName || "").toLowerCase();
+  
+  for (const [key, value] of Object.entries(TECHNIQUE_FILTERS)) {
+    if (code.includes(key)) {
+      return value;
+    }
+  }
+  
+  return TECHNIQUE_FILTERS.default;
 }
 
 export function LogoPositionEditor({
@@ -24,6 +109,8 @@ export function LogoPositionEditor({
   positionY,
   logoWidth,
   logoHeight,
+  techniqueCode,
+  techniqueName,
   onPositionChange,
   onSizeChange,
 }: LogoPositionEditorProps) {
@@ -31,8 +118,12 @@ export function LogoPositionEditor({
   const containerRef = useRef<HTMLDivElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const logoObjectRef = useRef<FabricImage | null>(null);
+  const productImageRef = useRef<FabricImage | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ width: 400, height: 400 });
+  const [showPreviewMode, setShowPreviewMode] = useState(true);
+
+  const techniqueFilter = getTechniqueFilter(techniqueCode, techniqueName);
 
   // Calculate logo display size based on cm (assuming ~3cm per 10% of canvas)
   const getLogoDisplaySize = useCallback(() => {
@@ -86,14 +177,12 @@ export function LogoPositionEditor({
           evented: false,
         });
 
-        // Clear and add background
-        const objects = canvas.getObjects();
-        objects.forEach((obj) => {
-          if (obj !== logoObjectRef.current) {
-            canvas.remove(obj);
-          }
-        });
+        // Remove old product image
+        if (productImageRef.current) {
+          canvas.remove(productImageRef.current);
+        }
         
+        productImageRef.current = img;
         canvas.add(img);
         canvas.sendObjectToBack(img);
         canvas.renderAll();
@@ -103,6 +192,19 @@ export function LogoPositionEditor({
         console.error("Error loading product image:", err);
       });
   }, [productImageUrl, canvasSize]);
+
+  // Apply technique filter to logo
+  const applyTechniqueFilter = useCallback((img: FabricImage) => {
+    if (!showPreviewMode) {
+      img.set({ opacity: 1 });
+      // Reset filters
+      img.filters = [];
+      img.applyFilters();
+      return;
+    }
+
+    img.set({ opacity: techniqueFilter.opacity });
+  }, [showPreviewMode, techniqueFilter]);
 
   // Add/update logo on canvas
   useEffect(() => {
@@ -143,6 +245,9 @@ export function LogoPositionEditor({
           cornerSize: 12,
         });
 
+        // Apply technique filter for preview
+        applyTechniqueFilter(img);
+
         canvas.add(img);
         canvas.setActiveObject(img);
         logoObjectRef.current = img;
@@ -172,7 +277,17 @@ export function LogoPositionEditor({
       .catch((err) => {
         console.error("Error loading logo:", err);
       });
-  }, [logoPreview, isReady, canvasSize]);
+  }, [logoPreview, isReady, canvasSize, applyTechniqueFilter, getLogoDisplaySize, onPositionChange, onSizeChange, positionX, positionY]);
+
+  // Update technique filter when technique changes
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    const logo = logoObjectRef.current;
+    if (!canvas || !logo) return;
+
+    applyTechniqueFilter(logo);
+    canvas.renderAll();
+  }, [techniqueCode, techniqueName, showPreviewMode, applyTechniqueFilter]);
 
   // Update logo position when sliders change externally
   useEffect(() => {
@@ -212,27 +327,78 @@ export function LogoPositionEditor({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Move className="h-4 w-4 text-primary" />
-          Posicionar Logo
-        </CardTitle>
-        <CardDescription className="text-xs">
-          Arraste o logo para posicionar. Use as alças para redimensionar.
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Move className="h-4 w-4 text-primary" />
+              Posicionar Logo
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Arraste o logo para posicionar. Use as alças para redimensionar.
+            </CardDescription>
+          </div>
+          <Button
+            variant={showPreviewMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowPreviewMode(!showPreviewMode)}
+            className="gap-1.5"
+          >
+            <Eye className="h-3.5 w-3.5" />
+            Preview
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Technique preview indicator */}
+        {showPreviewMode && techniqueName && (
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20">
+            <div 
+              className="w-4 h-4 rounded-full border-2 border-primary"
+              style={{ 
+                background: techniqueFilter.filter.includes('grayscale') 
+                  ? 'linear-gradient(135deg, #666, #999)' 
+                  : techniqueFilter.filter.includes('sepia')
+                  ? 'linear-gradient(135deg, #c9a227, #f5d742)'
+                  : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))'
+              }}
+            />
+            <span className="text-xs text-muted-foreground">
+              Simulando: <span className="font-medium text-foreground">{techniqueName}</span>
+            </span>
+            <Badge variant="secondary" className="text-[10px] ml-auto">
+              {techniqueFilter.description}
+            </Badge>
+          </div>
+        )}
+
         {/* Canvas container */}
         <div 
           ref={containerRef}
           className="relative rounded-lg border overflow-hidden bg-muted/30"
         >
-          <canvas ref={canvasRef} className="w-full" />
+          <canvas 
+            ref={canvasRef} 
+            className="w-full"
+            style={{
+              filter: showPreviewMode && logoPreview ? techniqueFilter.filter : 'none'
+            }}
+          />
           
           {!logoPreview && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/80">
               <p className="text-sm text-muted-foreground text-center px-4">
                 Faça upload do logo para posicioná-lo
               </p>
+            </div>
+          )}
+
+          {/* Live preview badge */}
+          {showPreviewMode && logoPreview && (
+            <div className="absolute top-2 left-2">
+              <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm text-[10px] gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                Preview em tempo real
+              </Badge>
             </div>
           )}
         </div>
