@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Layers, MapPin, ChevronDown, ChevronUp, Copy, LayoutTemplate, Shirt, Coffee, Backpack, PenTool, Package, Gift } from "lucide-react";
+import { Plus, Trash2, Layers, MapPin, ChevronDown, ChevronUp, Copy, LayoutTemplate, Shirt, Coffee, Backpack, PenTool, Package, Gift, Save, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -18,7 +18,16 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
+  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export interface PersonalizationArea {
   id: string;
@@ -43,7 +52,10 @@ interface ProductTemplate {
   name: string;
   icon: React.ElementType;
   areas: Omit<PersonalizationArea, "id" | "logoPreview">[];
+  isCustom?: boolean;
 }
+
+const CUSTOM_TEMPLATES_KEY = "mockup-custom-templates";
 
 const PRODUCT_TEMPLATES: ProductTemplate[] = [
   {
@@ -126,6 +138,64 @@ export function MultiAreaManager({
   onLogoUpload,
 }: MultiAreaManagerProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [customTemplates, setCustomTemplates] = useState<ProductTemplate[]>([]);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState("");
+
+  // Load custom templates from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(CUSTOM_TEMPLATES_KEY);
+    if (saved) {
+      try {
+        setCustomTemplates(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse custom templates:", e);
+      }
+    }
+  }, []);
+
+  // Save custom templates to localStorage
+  const saveCustomTemplates = (templates: ProductTemplate[]) => {
+    localStorage.setItem(CUSTOM_TEMPLATES_KEY, JSON.stringify(templates));
+    setCustomTemplates(templates);
+  };
+
+  const saveAsCustomTemplate = () => {
+    if (!newTemplateName.trim()) {
+      toast.error("Digite um nome para o template");
+      return;
+    }
+
+    if (areas.length === 0) {
+      toast.error("Adicione pelo menos uma área");
+      return;
+    }
+
+    const newTemplate: ProductTemplate = {
+      id: `custom-${Date.now()}`,
+      name: newTemplateName.trim(),
+      icon: User,
+      isCustom: true,
+      areas: areas.map(({ name, positionX, positionY, logoWidth, logoHeight }) => ({
+        name,
+        positionX,
+        positionY,
+        logoWidth,
+        logoHeight,
+      })),
+    };
+
+    saveCustomTemplates([...customTemplates, newTemplate]);
+    toast.success(`Template "${newTemplateName}" salvo com sucesso`);
+    setNewTemplateName("");
+    setShowSaveDialog(false);
+  };
+
+  const deleteCustomTemplate = (templateId: string) => {
+    const updated = customTemplates.filter((t) => t.id !== templateId);
+    saveCustomTemplates(updated);
+    toast.success("Template excluído");
+  };
 
   const applyTemplate = (template: ProductTemplate) => {
     const newAreas: PersonalizationArea[] = template.areas.map((area) => ({
@@ -321,22 +391,71 @@ export function MultiAreaManager({
                     Templates
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuContent align="start" className="w-56">
                   <DropdownMenuLabel>Tipo de Produto</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {PRODUCT_TEMPLATES.map((template) => (
-                    <DropdownMenuItem
-                      key={template.id}
-                      onClick={() => applyTemplate(template)}
-                      className="cursor-pointer"
-                    >
-                      <template.icon className="h-4 w-4 mr-2" />
-                      {template.name}
-                      <Badge variant="secondary" className="ml-auto text-[10px]">
-                        {template.areas.length}
-                      </Badge>
-                    </DropdownMenuItem>
-                  ))}
+                  <DropdownMenuGroup>
+                    {PRODUCT_TEMPLATES.map((template) => (
+                      <DropdownMenuItem
+                        key={template.id}
+                        onClick={() => applyTemplate(template)}
+                        className="cursor-pointer"
+                      >
+                        <template.icon className="h-4 w-4 mr-2" />
+                        {template.name}
+                        <Badge variant="secondary" className="ml-auto text-[10px]">
+                          {template.areas.length}
+                        </Badge>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuGroup>
+
+                  {customTemplates.length > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Meus Templates</DropdownMenuLabel>
+                      <DropdownMenuGroup>
+                        {customTemplates.map((template) => (
+                          <DropdownMenuItem
+                            key={template.id}
+                            className="cursor-pointer group"
+                          >
+                            <div
+                              className="flex items-center flex-1"
+                              onClick={() => applyTemplate(template)}
+                            >
+                              <User className="h-4 w-4 mr-2 text-primary" />
+                              {template.name}
+                              <Badge variant="secondary" className="ml-auto text-[10px] mr-2">
+                                {template.areas.length}
+                              </Badge>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteCustomTemplate(template.id);
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuGroup>
+                    </>
+                  )}
+
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setShowSaveDialog(true)}
+                    className="cursor-pointer text-primary"
+                    disabled={areas.length === 0}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Salvar Posicionamento Atual
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -396,6 +515,48 @@ export function MultiAreaManager({
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Save Template Dialog */}
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Salvar Template Personalizado</DialogTitle>
+            <DialogDescription>
+              Salve a configuração atual das áreas como um template reutilizável.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nome do Template</label>
+              <Input
+                value={newTemplateName}
+                onChange={(e) => setNewTemplateName(e.target.value)}
+                placeholder="Ex: Minha Camiseta Personalizada"
+                onKeyDown={(e) => e.key === "Enter" && saveAsCustomTemplate()}
+              />
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <p>Áreas que serão salvas:</p>
+              <ul className="list-disc list-inside mt-1">
+                {areas.map((area) => (
+                  <li key={area.id}>
+                    {area.name} ({area.logoWidth}x{area.logoHeight}cm)
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={saveAsCustomTemplate}>
+              <Save className="h-4 w-4 mr-1" />
+              Salvar Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
