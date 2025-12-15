@@ -57,6 +57,37 @@ export default function FiltersPage() {
     const command = parseCommand(transcript);
     
     switch (command.type) {
+      case "compound":
+        // Apply multiple filters at once
+        if (command.filters && command.filters.length > 0) {
+          setFilters(prev => {
+            const newFilters = { ...prev };
+            command.filters!.forEach(filter => {
+              if (filter.filterKey === "colors" && Array.isArray(filter.value)) {
+                newFilters.colors = [...prev.colors, ...(filter.value as string[])];
+              } else if (filter.filterKey === "categories" && Array.isArray(filter.value)) {
+                newFilters.categories = [...prev.categories, ...(filter.value as number[])];
+              } else if (filter.filterKey === "materiais" && Array.isArray(filter.value)) {
+                newFilters.materiais = [...prev.materiais, ...(filter.value as string[])];
+              } else if (filter.filterKey === "priceRange" && Array.isArray(filter.value)) {
+                const [min, max] = filter.value as string[];
+                newFilters.priceRange = [parseInt(min) || 0, parseInt(max) || 500];
+              } else if (filter.filterKey === "isKit") {
+                newFilters.isKit = true;
+              } else if (filter.filterKey === "inStock") {
+                newFilters.inStock = true;
+              } else if (filter.filterKey === "featured") {
+                newFilters.featured = true;
+              }
+            });
+            return newFilters;
+          });
+          setCommandAction(command.action || "Filtros aplicados");
+          toast.success(command.action || "Filtros compostos aplicados");
+        }
+        setActivePresetId(undefined);
+        break;
+
       case "filter":
         if (command.filterKey === "colors" && command.value) {
           setFilters(prev => ({ ...prev, colors: [...prev.colors, ...(command.value as string[])] }));
