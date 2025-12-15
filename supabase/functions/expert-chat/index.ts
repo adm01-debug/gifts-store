@@ -68,8 +68,8 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, clientId, categoryFilter } = await req.json();
-    console.log("Category filter:", categoryFilter);
+    const { messages, clientId, categoryFilter, priceMin, priceMax } = await req.json();
+    console.log("Filters - Category:", categoryFilter, "Price:", priceMin, "-", priceMax);
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -156,11 +156,23 @@ ${clientDeals.length > 0
       if (semanticError) {
         console.error("Semantic search error:", semanticError);
       } else {
-        // Apply category filter if set
-        semanticResults = categoryFilter
-          ? (semanticProducts || []).filter((p: any) => p.category_name === categoryFilter)
-          : (semanticProducts || []);
-        console.log("Semantic search found:", semanticResults.length, "products (after category filter)");
+        // Apply filters
+        let filtered = semanticProducts || [];
+        
+        if (categoryFilter) {
+          filtered = filtered.filter((p: any) => p.category_name === categoryFilter);
+        }
+        
+        if (priceMin !== null && priceMin !== undefined) {
+          filtered = filtered.filter((p: any) => p.price >= priceMin);
+        }
+        
+        if (priceMax !== null && priceMax !== undefined) {
+          filtered = filtered.filter((p: any) => p.price <= priceMax);
+        }
+        
+        semanticResults = filtered;
+        console.log("Semantic search found:", semanticResults.length, "products (after filters)");
       }
     }
 
@@ -173,6 +185,15 @@ ${clientDeals.length > 0
     // Apply category filter if set
     if (categoryFilter) {
       productsQuery = productsQuery.eq("category_name", categoryFilter);
+    }
+    
+    // Apply price filters
+    if (priceMin !== null && priceMin !== undefined) {
+      productsQuery = productsQuery.gte("price", priceMin);
+    }
+    
+    if (priceMax !== null && priceMax !== undefined) {
+      productsQuery = productsQuery.lte("price", priceMax);
     }
     
     const { data: products, error: productsError } = await productsQuery.limit(50);
@@ -222,11 +243,26 @@ ${generalProducts.map(p => buildProductDescription(p)).join("\n\n")}
       }
     }
 
-    const categoryInfo = categoryFilter ? `\nFILTRO DE CATEGORIA ATIVO: ${categoryFilter}\nAPENAS mostre produtos da categoria "${categoryFilter}". NÃO sugira produtos de outras categorias.` : "";
+    // Build filter info for the AI
+    const filterParts: string[] = [];
+    if (categoryFilter) {
+      filterParts.push(`Categoria: "${categoryFilter}"`);
+    }
+    if (priceMin !== null && priceMin !== undefined && priceMax !== null && priceMax !== undefined) {
+      filterParts.push(`Preço: R$ ${priceMin} - R$ ${priceMax}`);
+    } else if (priceMin !== null && priceMin !== undefined) {
+      filterParts.push(`Preço: acima de R$ ${priceMin}`);
+    } else if (priceMax !== null && priceMax !== undefined) {
+      filterParts.push(`Preço: até R$ ${priceMax}`);
+    }
+    
+    const filterInfo = filterParts.length > 0 
+      ? `\nFILTROS ATIVOS: ${filterParts.join(", ")}\nAPENAS mostre produtos que atendam a TODOS os filtros. NÃO sugira produtos fora dos critérios definidos.` 
+      : "";
 
     if (productsContext) {
       productsContext = `
-CATÁLOGO DE PRODUTOS (use o formato [[PRODUTO:id:nome]] para criar links clicáveis):${categoryInfo}
+CATÁLOGO DE PRODUTOS (use o formato [[PRODUTO:id:nome]] para criar links clicáveis):${filterInfo}
 ${productsContext}`;
     }
 
