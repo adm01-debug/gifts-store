@@ -185,9 +185,9 @@ export default function Auth() {
                 { label: "Filtros", desc: "Avançados" },
                 { label: "IA", desc: "Recomendações" },
               ].map((item, i) => (
-                <div key={i} className="p-4 rounded-xl bg-card/50 border border-border backdrop-blur-sm">
+                <div key={i} className="p-4 rounded-xl bg-white dark:bg-card border border-orange/30 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:border-orange/50 transition-all">
                   <p className="text-2xl font-bold text-orange">{item.label}</p>
-                  <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  <p className="text-sm text-foreground/70">{item.desc}</p>
                 </div>
               ))}
             </div>
