@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, X, Clock, TrendingUp, ArrowRight, Mic, MicOff } from "lucide-react";
+import { Search, X, Clock, TrendingUp, ArrowRight, Mic } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { SoundWaveIndicator } from "@/components/ui/sound-wave-indicator";
 import { VisualSearchButton } from "./VisualSearchButton";
+import { VoiceSearchOverlay } from "./VoiceSearchOverlay";
 import { cn } from "@/lib/utils";
 import { useSearch, SearchResult } from "@/hooks/useSearch";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
@@ -43,6 +43,7 @@ export function AdvancedSearch({ onSearch, onVisualSearchResults, className }: A
 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isVoiceOverlayOpen, setIsVoiceOverlayOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -53,10 +54,10 @@ export function AdvancedSearch({ onSearch, onVisualSearchResults, className }: A
     transcript,
     startListening,
     stopListening,
-    error: voiceError,
   } = useSpeechRecognition({
     onResult: (text) => {
       setQuery(text);
+      setIsVoiceOverlayOpen(false);
       onSearch?.(text);
       toast({
         title: "Busca por voz",
@@ -78,6 +79,16 @@ export function AdvancedSearch({ onSearch, onVisualSearchResults, className }: A
     } else {
       startListening();
     }
+  };
+
+  const handleOpenVoiceOverlay = () => {
+    setIsVoiceOverlayOpen(true);
+    startListening();
+  };
+
+  const handleCloseVoiceOverlay = () => {
+    stopListening();
+    setIsVoiceOverlayOpen(false);
   };
 
   // Close dropdown when clicking outside
@@ -212,25 +223,13 @@ export function AdvancedSearch({ onSearch, onVisualSearchResults, className }: A
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className={cn(
-                      "h-8 w-8 transition-all relative",
-                      isListening && "text-primary bg-primary/10"
-                    )}
-                    onClick={handleVoiceSearch}
+                    className="h-8 w-8 transition-all"
+                    onClick={handleOpenVoiceOverlay}
                   >
-                    {isListening ? (
-                      <div className="flex items-center justify-center">
-                        <SoundWaveIndicator isActive={true} className="absolute" />
-                        <MicOff className="h-4 w-4 opacity-0" />
-                      </div>
-                    ) : (
-                      <Mic className="h-4 w-4" />
-                    )}
+                    <Mic className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  {isListening ? "Parar gravação" : "Buscar por voz"}
-                </TooltipContent>
+                <TooltipContent>Buscar por voz</TooltipContent>
               </Tooltip>
             )}
           </div>
@@ -339,6 +338,15 @@ export function AdvancedSearch({ onSearch, onVisualSearchResults, className }: A
           )}
         </div>
       )}
+
+      {/* Voice Search Overlay */}
+      <VoiceSearchOverlay
+        isOpen={isVoiceOverlayOpen}
+        isListening={isListening}
+        transcript={transcript}
+        onClose={handleCloseVoiceOverlay}
+        onToggleListening={handleVoiceSearch}
+      />
     </div>
   );
 }
