@@ -899,6 +899,44 @@ export type Database = {
         }
         Relationships: []
       }
+      product_views: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string | null
+          product_name: string
+          product_sku: string | null
+          seller_id: string
+          view_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_name: string
+          product_sku?: string | null
+          seller_id: string
+          view_type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_name?: string
+          product_sku?: string | null
+          seller_id?: string
+          view_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_views_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category_id: number | null
@@ -1220,6 +1258,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      search_analytics: {
+        Row: {
+          created_at: string
+          filters_used: Json | null
+          id: string
+          results_count: number | null
+          search_term: string
+          seller_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters_used?: Json | null
+          id?: string
+          results_count?: number | null
+          search_term: string
+          seller_id: string
+        }
+        Update: {
+          created_at?: string
+          filters_used?: Json | null
+          id?: string
+          results_count?: number | null
+          search_term?: string
+          seller_id?: string
+        }
+        Relationships: []
       }
       seller_achievements: {
         Row: {
