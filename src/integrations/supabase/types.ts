@@ -213,6 +213,82 @@ export type Database = {
           },
         ]
       }
+      generated_mockups: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          logo_height_cm: number | null
+          logo_url: string
+          logo_width_cm: number | null
+          mockup_url: string
+          position_x: number | null
+          position_y: number | null
+          product_id: string | null
+          product_name: string
+          product_sku: string | null
+          seller_id: string
+          technique_id: string | null
+          technique_name: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          logo_height_cm?: number | null
+          logo_url: string
+          logo_width_cm?: number | null
+          mockup_url: string
+          position_x?: number | null
+          position_y?: number | null
+          product_id?: string | null
+          product_name: string
+          product_sku?: string | null
+          seller_id: string
+          technique_id?: string | null
+          technique_name: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          logo_height_cm?: number | null
+          logo_url?: string
+          logo_width_cm?: number | null
+          mockup_url?: string
+          position_x?: number | null
+          position_y?: number | null
+          product_id?: string | null
+          product_name?: string
+          product_sku?: string | null
+          seller_id?: string
+          technique_id?: string | null
+          technique_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_mockups_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "bitrix_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_mockups_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_mockups_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "personalization_techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       personalization_locations: {
         Row: {
           code: string | null
