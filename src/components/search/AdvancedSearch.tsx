@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useSearch, SearchResult } from "@/hooks/useSearch";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useToast } from "@/hooks/use-toast";
+import { useProductAnalytics } from "@/hooks/useProductAnalytics";
 
 interface ProductAnalysis {
   productType: string;
@@ -30,6 +31,7 @@ interface AdvancedSearchProps {
 export function AdvancedSearch({ onSearch, onVisualSearchResults, className }: AdvancedSearchProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { trackSearch } = useProductAnalytics();
   const {
     query,
     setQuery,
@@ -138,6 +140,11 @@ export function AdvancedSearch({ onSearch, onVisualSearchResults, className }: A
     if (query.trim()) {
       addToHistory(query);
       onSearch?.(query);
+      // Track search analytics
+      trackSearch({
+        searchTerm: query,
+        resultsCount: suggestions.filter(s => s.type === "product").length,
+      });
       setIsOpen(false);
     }
   };

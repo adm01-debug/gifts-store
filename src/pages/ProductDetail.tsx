@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, 
@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { useProductAnalytics } from "@/hooks/useProductAnalytics";
 import { cn } from "@/lib/utils";
 import { PRODUCTS, type Product, type ProductVariation, type KitItem } from "@/data/mockData";
 
@@ -35,6 +36,7 @@ export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { trackProductView } = useProductAnalytics();
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
@@ -45,6 +47,18 @@ export default function ProductDetail() {
   const product = useMemo(() => {
     return PRODUCTS.find((p) => p.id === id);
   }, [id]);
+
+  // Track product view
+  useEffect(() => {
+    if (product) {
+      trackProductView({
+        productId: product.id,
+        productSku: product.sku,
+        productName: product.name,
+        viewType: "detail",
+      });
+    }
+  }, [product?.id]);
 
   if (!product) {
     return (
