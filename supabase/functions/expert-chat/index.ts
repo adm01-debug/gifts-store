@@ -68,8 +68,8 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, clientId, categoryFilter, priceMin, priceMax } = await req.json();
-    console.log("Filters - Category:", categoryFilter, "Price:", priceMin, "-", priceMax);
+    const { messages, clientId, categoryFilter, priceMin, priceMax, materialFilter } = await req.json();
+    console.log("Filters - Category:", categoryFilter, "Price:", priceMin, "-", priceMax, "Material:", materialFilter);
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -171,6 +171,13 @@ ${clientDeals.length > 0
           filtered = filtered.filter((p: any) => p.price <= priceMax);
         }
         
+        if (materialFilter) {
+          filtered = filtered.filter((p: any) => 
+            p.materials && Array.isArray(p.materials) && 
+            p.materials.some((m: string) => m.toLowerCase() === materialFilter.toLowerCase())
+          );
+        }
+        
         semanticResults = filtered;
         console.log("Semantic search found:", semanticResults.length, "products (after filters)");
       }
@@ -194,6 +201,10 @@ ${clientDeals.length > 0
     
     if (priceMax !== null && priceMax !== undefined) {
       productsQuery = productsQuery.lte("price", priceMax);
+    }
+    
+    if (materialFilter) {
+      productsQuery = productsQuery.contains("materials", [materialFilter]);
     }
     
     const { data: products, error: productsError } = await productsQuery.limit(50);
@@ -254,6 +265,9 @@ ${generalProducts.map(p => buildProductDescription(p)).join("\n\n")}
       filterParts.push(`Preço: acima de R$ ${priceMin}`);
     } else if (priceMax !== null && priceMax !== undefined) {
       filterParts.push(`Preço: até R$ ${priceMax}`);
+    }
+    if (materialFilter) {
+      filterParts.push(`Material: "${materialFilter}"`);
     }
     
     const filterInfo = filterParts.length > 0 

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bot, X, Send, Loader2, User, Sparkles, ExternalLink, History, Plus, Trash2, MessageSquare, Filter, ChevronDown, DollarSign } from "lucide-react";
+import { Bot, X, Send, Loader2, User, Sparkles, ExternalLink, History, Plus, Trash2, MessageSquare, Filter, ChevronDown, DollarSign, Layers } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,7 +61,9 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPriceRange, setSelectedPriceRange] = useState<PriceRange | null>(null);
+  const [selectedMaterial, setSelectedMaterial] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
+  const [materials, setMaterials] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -75,23 +77,36 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
     saveMessage,
   } = useExpertConversations(clientId);
 
-  // Fetch categories
+  // Fetch categories and materials
   useEffect(() => {
-    const fetchCategories = async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("category_name")
-        .eq("is_active", true)
-        .not("category_name", "is", null);
+    const fetchFilters = async () => {
+      const [categoriesResult, materialsResult] = await Promise.all([
+        supabase
+          .from("products")
+          .select("category_name")
+          .eq("is_active", true)
+          .not("category_name", "is", null),
+        supabase
+          .from("products")
+          .select("materials")
+          .eq("is_active", true)
+          .not("materials", "is", null),
+      ]);
 
-      if (!error && data) {
-        const uniqueCategories = [...new Set(data.map(p => p.category_name).filter(Boolean))] as string[];
+      if (!categoriesResult.error && categoriesResult.data) {
+        const uniqueCategories = [...new Set(categoriesResult.data.map(p => p.category_name).filter(Boolean))] as string[];
         setCategories(uniqueCategories.sort());
+      }
+
+      if (!materialsResult.error && materialsResult.data) {
+        const allMaterials = materialsResult.data.flatMap(p => p.materials || []).filter(Boolean);
+        const uniqueMaterials = [...new Set(allMaterials)] as string[];
+        setMaterials(uniqueMaterials.sort());
       }
     };
     
     if (isOpen) {
-      fetchCategories();
+      fetchFilters();
     }
   }, [isOpen]);
 
@@ -172,6 +187,7 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
     setShowHistory(false);
     setSelectedCategory(null);
     setSelectedPriceRange(null);
+    setSelectedMaterial(null);
   }, [clientId]);
 
   const startNewConversation = () => {
@@ -234,6 +250,7 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
             categoryFilter: selectedCategory,
             priceMin: selectedPriceRange?.min ?? null,
             priceMax: selectedPriceRange?.max ?? null,
+            materialFilter: selectedMaterial,
           }),
         }
       );
@@ -405,6 +422,40 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+              {materials.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={selectedMaterial ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-8 text-xs gap-1"
+                    >
+                      <Layers className="h-3.5 w-3.5" />
+                      {selectedMaterial || "Material"}
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="max-h-[300px] overflow-y-auto">
+                    {selectedMaterial && (
+                      <>
+                        <DropdownMenuItem onClick={() => setSelectedMaterial(null)}>
+                          <span className="text-muted-foreground">Todos os materiais</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    {materials.map((material) => (
+                      <DropdownMenuItem
+                        key={material}
+                        onClick={() => setSelectedMaterial(material)}
+                        className={cn(selectedMaterial === material && "bg-primary/10")}
+                      >
+                        {material}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {clientName && (
                 <Badge variant="secondary" className="text-xs">
                   {clientName}
