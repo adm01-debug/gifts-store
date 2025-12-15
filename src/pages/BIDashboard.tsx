@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatCard, MiniStatCard } from "@/components/ui/stat-card";
 import { 
   Package, 
   Palette, 
@@ -23,6 +24,8 @@ import {
   Zap,
   Trophy,
   Gift,
+  CheckCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { MiniConfetti, FloatingReward, SuccessCelebration } from "@/components/effects";
 import { 
@@ -246,54 +249,97 @@ export default function BIDashboard() {
 
         {/* Main KPIs */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            title="Total de Produtos"
-            value={metrics?.totalProducts}
-            icon={Package}
-            isLoading={isLoading}
-            onClick={() => navigate("/")}
-          />
-          <MetricCard
-            title="Produtos Ativos"
-            value={metrics?.totalActiveProducts}
-            icon={Box}
-            isLoading={isLoading}
-          />
-          <MetricCard
-            title="Kits"
-            value={metrics?.totalKits}
-            icon={Layers}
-            isLoading={isLoading}
-          />
-          <MetricCard
-            title="Preço Médio"
-            value={metrics ? formatCurrency(metrics.averagePrice) : undefined}
-            icon={DollarSign}
-            isLoading={isLoading}
-            isText
-          />
+          {isLoading ? (
+            <>
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+            </>
+          ) : (
+            <>
+              <StatCard
+                title="Total de Produtos"
+                value={metrics?.totalProducts?.toLocaleString("pt-BR") || "0"}
+                icon={Package}
+                variant="orange"
+                className="cursor-pointer"
+                onClick={() => navigate("/")}
+              />
+              <StatCard
+                title="Produtos Ativos"
+                value={metrics?.totalActiveProducts?.toLocaleString("pt-BR") || "0"}
+                subtitle={`${metrics?.totalProducts ? Math.round((metrics.totalActiveProducts / metrics.totalProducts) * 100) : 0}% do total`}
+                icon={CheckCircle}
+                variant="success"
+              />
+              <StatCard
+                title="Kits"
+                value={metrics?.totalKits?.toLocaleString("pt-BR") || "0"}
+                icon={Layers}
+                variant="info"
+              />
+              <StatCard
+                title="Preço Médio"
+                value={metrics ? formatCurrency(metrics.averagePrice) : "R$ 0,00"}
+                icon={DollarSign}
+                variant="warning"
+              />
+            </>
+          )}
         </div>
 
         {/* Secondary KPIs */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <MetricCard
-            title="Destaques"
-            value={metrics?.featuredCount}
-            icon={Star}
-            isLoading={isLoading}
-          />
-          <MetricCard
-            title="Novidades"
-            value={metrics?.newArrivalCount}
-            icon={Sparkles}
-            isLoading={isLoading}
-          />
-          <MetricCard
-            title="Em Promoção"
-            value={metrics?.onSaleCount}
-            icon={Percent}
-            isLoading={isLoading}
-          />
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+          {isLoading ? (
+            <>
+              <Skeleton className="h-20 rounded-lg" />
+              <Skeleton className="h-20 rounded-lg" />
+              <Skeleton className="h-20 rounded-lg" />
+              <Skeleton className="h-20 rounded-lg" />
+              <Skeleton className="h-20 rounded-lg" />
+              <Skeleton className="h-20 rounded-lg" />
+            </>
+          ) : (
+            <>
+              <MiniStatCard
+                title="Destaques"
+                value={metrics?.featuredCount || 0}
+                icon={Star}
+                variant="warning"
+              />
+              <MiniStatCard
+                title="Novidades"
+                value={metrics?.newArrivalCount || 0}
+                icon={Sparkles}
+                variant="success"
+              />
+              <MiniStatCard
+                title="Em Promoção"
+                value={metrics?.onSaleCount || 0}
+                icon={Percent}
+                variant="danger"
+              />
+              <MiniStatCard
+                title="Categorias"
+                value={metrics?.productsByCategory?.length || 0}
+                icon={FolderOpen}
+                variant="info"
+              />
+              <MiniStatCard
+                title="Fornecedores"
+                value={metrics?.productsBySupplier?.length || 0}
+                icon={Factory}
+                variant="orange"
+              />
+              <MiniStatCard
+                title="Cores"
+                value={metrics?.productsByColor?.length || 0}
+                icon={Palette}
+                variant="default"
+              />
+            </>
+          )}
         </div>
 
         {/* Charts Row */}
