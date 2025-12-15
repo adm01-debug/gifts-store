@@ -6,17 +6,28 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SoundWaveIndicator } from "@/components/ui/sound-wave-indicator";
+import { VisualSearchButton } from "./VisualSearchButton";
 import { cn } from "@/lib/utils";
 import { useSearch, SearchResult } from "@/hooks/useSearch";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useToast } from "@/hooks/use-toast";
 
+interface ProductAnalysis {
+  productType: string;
+  material: string;
+  colors: string[];
+  category: string;
+  keywords: string[];
+  description: string;
+}
+
 interface AdvancedSearchProps {
   onSearch?: (query: string) => void;
+  onVisualSearchResults?: (products: any[], analysis: ProductAnalysis) => void;
   className?: string;
 }
 
-export function AdvancedSearch({ onSearch, className }: AdvancedSearchProps) {
+export function AdvancedSearch({ onSearch, onVisualSearchResults, className }: AdvancedSearchProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const {
@@ -167,8 +178,7 @@ export function AdvancedSearch({ onSearch, className }: AdvancedSearchProps) {
             onFocus={() => setIsOpen(true)}
             onKeyDown={handleKeyDown}
             className={cn(
-              "pl-10 h-10 bg-secondary/50 border-border/50 focus:bg-background transition-colors",
-              isVoiceSupported ? "pr-20" : "pr-10",
+              "pl-10 h-10 bg-secondary/50 border-border/50 focus:bg-background transition-colors pr-28",
               isListening && "border-primary ring-2 ring-primary/20"
             )}
           />
@@ -187,6 +197,14 @@ export function AdvancedSearch({ onSearch, className }: AdvancedSearchProps) {
                 <X className="h-4 w-4" />
               </Button>
             )}
+            
+            {/* Visual Search Button */}
+            <VisualSearchButton 
+              onResultsFound={(products, analysis) => {
+                onVisualSearchResults?.(products, analysis);
+              }} 
+            />
+            
             {isVoiceSupported && (
               <Tooltip>
                 <TooltipTrigger asChild>
