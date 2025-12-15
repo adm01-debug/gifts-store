@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Loader2, Sparkles, Mail, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Loader2, Sparkles, Mail, Lock, User, Package, Factory, SlidersHorizontal, Brain, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -180,16 +180,26 @@ export default function Auth() {
             {/* Feature highlights */}
             <div className="grid grid-cols-2 gap-4 pt-6">
               {[
-                { label: "15.000+", desc: "Produtos" },
-                { label: "50+", desc: "Fornecedores" },
-                { label: "Filtros", desc: "Avançados" },
-                { label: "IA", desc: "Recomendações" },
-              ].map((item, i) => (
-                <div key={i} className="p-4 rounded-xl bg-white dark:bg-card border border-orange/30 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:border-orange/50 transition-all">
-                  <p className="text-2xl font-bold text-orange">{item.label}</p>
-                  <p className="text-sm text-foreground/70">{item.desc}</p>
-                </div>
-              ))}
+                { label: "15.000+", desc: "Produtos", icon: Package },
+                { label: "50+", desc: "Fornecedores", icon: Factory },
+                { label: "Filtros", desc: "Avançados", icon: SlidersHorizontal },
+                { label: "IA", desc: "Recomendações", icon: Brain },
+              ].map((item, i) => {
+                const IconComponent = item.icon;
+                return (
+                  <div key={i} className="p-4 rounded-xl bg-white dark:bg-card border border-orange/30 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:border-orange/50 transition-all group">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-2xl font-bold text-orange">{item.label}</p>
+                        <p className="text-sm text-foreground/70">{item.desc}</p>
+                      </div>
+                      <div className="w-10 h-10 rounded-lg bg-orange/10 flex items-center justify-center group-hover:bg-orange/20 transition-colors">
+                        <IconComponent className="h-5 w-5 text-orange" />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
