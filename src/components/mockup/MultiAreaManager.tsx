@@ -28,6 +28,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { TemplatePreview } from "./TemplatePreview";
 
 export interface PersonalizationArea {
   id: string;
@@ -396,17 +402,39 @@ export function MultiAreaManager({
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     {PRODUCT_TEMPLATES.map((template) => (
-                      <DropdownMenuItem
-                        key={template.id}
-                        onClick={() => applyTemplate(template)}
-                        className="cursor-pointer"
-                      >
-                        <template.icon className="h-4 w-4 mr-2" />
-                        {template.name}
-                        <Badge variant="secondary" className="ml-auto text-[10px]">
-                          {template.areas.length}
-                        </Badge>
-                      </DropdownMenuItem>
+                      <HoverCard key={template.id} openDelay={200} closeDelay={100}>
+                        <HoverCardTrigger asChild>
+                          <DropdownMenuItem
+                            onClick={() => applyTemplate(template)}
+                            className="cursor-pointer"
+                          >
+                            <template.icon className="h-4 w-4 mr-2" />
+                            {template.name}
+                            <Badge variant="secondary" className="ml-auto text-[10px]">
+                              {template.areas.length}
+                            </Badge>
+                          </DropdownMenuItem>
+                        </HoverCardTrigger>
+                        <HoverCardContent side="right" align="start" className="w-auto p-3">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <template.icon className="h-4 w-4 text-primary" />
+                              <span className="font-medium text-sm">{template.name}</span>
+                            </div>
+                            <TemplatePreview areas={template.areas} />
+                            <div className="space-y-0.5">
+                              {template.areas.map((area, idx) => (
+                                <div key={idx} className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  <span className="w-3 h-3 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[8px]">
+                                    {idx + 1}
+                                  </span>
+                                  {area.name} ({area.logoWidth}x{area.logoHeight}cm)
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
                     ))}
                   </DropdownMenuGroup>
 
@@ -416,32 +444,52 @@ export function MultiAreaManager({
                       <DropdownMenuLabel>Meus Templates</DropdownMenuLabel>
                       <DropdownMenuGroup>
                         {customTemplates.map((template) => (
-                          <DropdownMenuItem
-                            key={template.id}
-                            className="cursor-pointer group"
-                          >
-                            <div
-                              className="flex items-center flex-1"
-                              onClick={() => applyTemplate(template)}
-                            >
-                              <User className="h-4 w-4 mr-2 text-primary" />
-                              {template.name}
-                              <Badge variant="secondary" className="ml-auto text-[10px] mr-2">
-                                {template.areas.length}
-                              </Badge>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteCustomTemplate(template.id);
-                              }}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </DropdownMenuItem>
+                          <HoverCard key={template.id} openDelay={200} closeDelay={100}>
+                            <HoverCardTrigger asChild>
+                              <DropdownMenuItem className="cursor-pointer group">
+                                <div
+                                  className="flex items-center flex-1"
+                                  onClick={() => applyTemplate(template)}
+                                >
+                                  <User className="h-4 w-4 mr-2 text-primary" />
+                                  {template.name}
+                                  <Badge variant="secondary" className="ml-auto text-[10px] mr-2">
+                                    {template.areas.length}
+                                  </Badge>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteCustomTemplate(template.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuItem>
+                            </HoverCardTrigger>
+                            <HoverCardContent side="right" align="start" className="w-auto p-3">
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-primary" />
+                                  <span className="font-medium text-sm">{template.name}</span>
+                                </div>
+                                <TemplatePreview areas={template.areas} />
+                                <div className="space-y-0.5">
+                                  {template.areas.map((area, idx) => (
+                                    <div key={idx} className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                      <span className="w-3 h-3 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[8px]">
+                                        {idx + 1}
+                                      </span>
+                                      {area.name} ({area.logoWidth}x{area.logoHeight}cm)
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </HoverCardContent>
+                          </HoverCard>
                         ))}
                       </DropdownMenuGroup>
                     </>
