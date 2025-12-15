@@ -11,7 +11,8 @@ import {
   Star,
   Sparkles,
   Check,
-  Share2
+  Share2,
+  Building2
 } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProductGallery } from "@/components/products/ProductGallery";
@@ -21,9 +22,11 @@ import { ShareActions } from "@/components/products/ShareActions";
 import { RelatedProducts, RecommendedProducts } from "@/components/products/RelatedProducts";
 import { ProductCustomizationOptions } from "@/components/products/ProductCustomizationOptions";
 import { ProductPersonalizationRules } from "@/components/products/ProductPersonalizationRules";
+import { SupplierComparisonModal } from "@/components/compare/SupplierComparisonModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { PRODUCTS, type Product, type ProductVariation, type KitItem } from "@/data/mockData";
@@ -36,6 +39,7 @@ export default function ProductDetail() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
   const [selectedKitItems, setSelectedKitItems] = useState<KitItem[]>([]);
+  const [supplierCompareOpen, setSupplierCompareOpen] = useState(false);
 
   // Encontrar produto
   const product = useMemo(() => {
@@ -188,13 +192,29 @@ export default function ProductDetail() {
               </h1>
 
               {/* SKU & Supplier */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 <span className="text-sm text-muted-foreground font-mono bg-muted px-3 py-1 rounded-full">
                   SKU: {selectedVariation?.sku || product.sku}
                 </span>
                 <span className="text-sm px-3 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
                   {product.supplier.name}
                 </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSupplierCompareOpen(true)}
+                      className="rounded-full h-8 px-3 text-xs"
+                    >
+                      <Building2 className="h-3.5 w-3.5 mr-1.5" />
+                      Comparar Fornecedores
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Ver mesmo produto em outros fornecedores
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </div>
 
@@ -387,6 +407,13 @@ export default function ProductDetail() {
             maxItems={4} 
           />
         </div>
+
+        {/* Supplier Comparison Modal */}
+        <SupplierComparisonModal
+          productId={id || ""}
+          open={supplierCompareOpen}
+          onOpenChange={setSupplierCompareOpen}
+        />
       </div>
     </MainLayout>
   );
