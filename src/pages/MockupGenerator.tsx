@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Loader2, Upload, Image as ImageIcon, Download, RefreshCw, Wand2, History, Trash2, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Upload, Image as ImageIcon, Download, RefreshCw, Wand2, History, Trash2, Clock, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
@@ -45,11 +45,17 @@ interface Client {
 
 interface GeneratedMockup {
   id: string;
+  product_id: string | null;
   product_name: string;
   product_sku: string | null;
+  technique_id: string | null;
   technique_name: string;
   mockup_url: string;
   logo_url: string;
+  position_x: number | null;
+  position_y: number | null;
+  logo_width_cm: number | null;
+  logo_height_cm: number | null;
   created_at: string;
   client_id: string | null;
   bitrix_clients?: { name: string } | null;
@@ -148,11 +154,17 @@ export default function MockupGenerator() {
         .from("generated_mockups")
         .select(`
           id,
+          product_id,
           product_name,
           product_sku,
+          technique_id,
           technique_name,
           mockup_url,
           logo_url,
+          position_x,
+          position_y,
+          logo_width_cm,
+          logo_height_cm,
           created_at,
           client_id,
           bitrix_clients(name)
@@ -331,6 +343,33 @@ export default function MockupGenerator() {
     setLogoWidth(5);
     setLogoHeight(3);
     setGeneratedMockup(null);
+  };
+
+  const loadFromHistory = (mockup: GeneratedMockup) => {
+    // Find product and technique by ID
+    const product = mockup.product_id ? products.find(p => p.id === mockup.product_id) : null;
+    const technique = mockup.technique_id ? techniques.find(t => t.id === mockup.technique_id) : null;
+    const client = mockup.client_id ? clients.find(c => c.id === mockup.client_id) : null;
+
+    // Set form values
+    setSelectedProduct(product || null);
+    setSelectedTechnique(technique || null);
+    setSelectedClient(client || null);
+    setLogoPreview(mockup.logo_url);
+    setLogoFile(null); // Can't restore actual file
+    setPositionX(mockup.position_x ?? 50);
+    setPositionY(mockup.position_y ?? 50);
+    setLogoWidth(mockup.logo_width_cm ?? 5);
+    setLogoHeight(mockup.logo_height_cm ?? 3);
+    setGeneratedMockup(null);
+
+    // Switch to generator tab
+    const generatorTab = document.querySelector('[data-state="inactive"][value="generator"]') as HTMLButtonElement | null;
+    if (generatorTab) {
+      generatorTab.click();
+    }
+
+    toast.success("Configurações carregadas! Ajuste se necessário e gere um novo mockup.");
   };
 
   return (
@@ -824,6 +863,16 @@ export default function MockupGenerator() {
                                 size="icon"
                                 variant="secondary"
                                 className="h-8 w-8"
+                                title="Regenerar com estas configurações"
+                                onClick={() => loadFromHistory(mockup)}
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="secondary"
+                                className="h-8 w-8"
+                                title="Baixar mockup"
                                 onClick={() => downloadMockup(mockup.mockup_url)}
                               >
                                 <Download className="h-4 w-4" />
@@ -832,6 +881,7 @@ export default function MockupGenerator() {
                                 size="icon"
                                 variant="destructive"
                                 className="h-8 w-8"
+                                title="Excluir mockup"
                                 onClick={() => {
                                   setMockupToDelete(mockup.id);
                                   setDeleteDialogOpen(true);
