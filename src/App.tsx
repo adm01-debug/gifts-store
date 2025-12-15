@@ -26,6 +26,7 @@ import PersonalizationSimulator from "./pages/PersonalizationSimulator";
 import MockupGenerator from "./pages/MockupGenerator";
 import ProfilePage from "./pages/ProfilePage";
 import BitrixSyncPage from "./pages/BitrixSyncPage";
+import BIDashboard from "./pages/BIDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -114,6 +115,11 @@ const App = () => (
                     <Route path="/mockup" element={
                       <ProtectedRoute>
                         <MockupGenerator />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/bi" element={
+                      <ProtectedRoute>
+                        <BIDashboard />
                       </ProtectedRoute>
                     } />
                     
