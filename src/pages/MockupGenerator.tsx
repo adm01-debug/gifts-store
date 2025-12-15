@@ -8,12 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Upload, Image as ImageIcon, Download, RefreshCw, Wand2, History, Trash2, Clock, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { LogoPositionEditor } from "@/components/mockup/LogoPositionEditor";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -519,72 +518,6 @@ export default function MockupGenerator() {
                     </div>
                   </div>
 
-                  {/* Position Controls */}
-                  <div className="space-y-4">
-                    <Label>Posição do Logo</Label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Horizontal</span>
-                          <span>{positionX}%</span>
-                        </div>
-                        <Slider
-                          value={[positionX]}
-                          onValueChange={(v) => setPositionX(v[0])}
-                          min={10}
-                          max={90}
-                          step={1}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Vertical</span>
-                          <span>{positionY}%</span>
-                        </div>
-                        <Slider
-                          value={[positionY]}
-                          onValueChange={(v) => setPositionY(v[0])}
-                          min={10}
-                          max={90}
-                          step={1}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Size Controls */}
-                  <div className="space-y-4">
-                    <Label>Tamanho da Gravação (cm)</Label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Largura</span>
-                          <span>{logoWidth} cm</span>
-                        </div>
-                        <Slider
-                          value={[logoWidth]}
-                          onValueChange={(v) => setLogoWidth(v[0])}
-                          min={1}
-                          max={20}
-                          step={0.5}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Altura</span>
-                          <span>{logoHeight} cm</span>
-                        </div>
-                        <Slider
-                          value={[logoHeight]}
-                          onValueChange={(v) => setLogoHeight(v[0])}
-                          min={1}
-                          max={20}
-                          step={0.5}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Action Buttons */}
                   <div className="flex gap-2 pt-4">
                     <Button
@@ -611,80 +544,80 @@ export default function MockupGenerator() {
                 </CardContent>
               </Card>
 
-              {/* Preview Panel */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ImageIcon className="h-5 w-5 text-primary" />
-                    Visualização
-                  </CardTitle>
-                  <CardDescription>
-                    Preview do produto e mockup gerado
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Product Preview */}
-                    {selectedProduct && getProductImage() && (
-                      <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">Imagem Original</Label>
-                        <div className="aspect-square rounded-lg border bg-muted/30 overflow-hidden">
-                          <img
-                            src={getProductImage()!}
-                            alt={selectedProduct.name}
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
+              {/* Position Editor - Interactive Canvas */}
+              <div className="space-y-6">
+                {selectedProduct && getProductImage() ? (
+                  <LogoPositionEditor
+                    productImageUrl={getProductImage()!}
+                    logoPreview={logoPreview}
+                    positionX={positionX}
+                    positionY={positionY}
+                    logoWidth={logoWidth}
+                    logoHeight={logoHeight}
+                    onPositionChange={(x, y) => {
+                      setPositionX(x);
+                      setPositionY(y);
+                    }}
+                    onSizeChange={(w, h) => {
+                      setLogoWidth(w);
+                      setLogoHeight(h);
+                    }}
+                  />
+                ) : (
+                  <Card>
+                    <CardContent className="flex items-center justify-center py-16">
+                      <div className="text-center text-muted-foreground">
+                        <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Selecione um produto para posicionar o logo</p>
                       </div>
-                    )}
+                    </CardContent>
+                  </Card>
+                )}
 
-                    {/* Generated Mockup */}
-                    {generatedMockup && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-sm text-muted-foreground">Mockup Gerado</Label>
-                          <Button size="sm" variant="outline" onClick={() => downloadMockup()}>
-                            <Download className="h-4 w-4 mr-1" />
-                            Baixar
-                          </Button>
-                        </div>
-                        <div className="aspect-square rounded-lg border bg-muted/30 overflow-hidden ring-2 ring-primary/20">
-                          <img
-                            src={generatedMockup}
-                            alt="Generated mockup"
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
+                {/* Generated Mockup Result */}
+                {generatedMockup && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <ImageIcon className="h-4 w-4 text-primary" />
+                          Mockup Gerado
+                        </CardTitle>
+                        <Button size="sm" variant="outline" onClick={() => downloadMockup()}>
+                          <Download className="h-4 w-4 mr-1" />
+                          Baixar
+                        </Button>
                       </div>
-                    )}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="aspect-square rounded-lg border bg-muted/30 overflow-hidden ring-2 ring-primary/20">
+                        <img
+                          src={generatedMockup}
+                          alt="Generated mockup"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
-                    {/* Empty State */}
-                    {!selectedProduct && !generatedMockup && (
-                      <div className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/20 flex items-center justify-center">
-                        <div className="text-center text-muted-foreground">
-                          <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">Selecione um produto para visualizar</p>
-                        </div>
+                {/* Loading State */}
+                {isLoading && (
+                  <Card>
+                    <CardContent className="py-8">
+                      <div className="text-center">
+                        <Loader2 className="h-12 w-12 mx-auto mb-2 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground">
+                          Gerando mockup com IA...
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Isso pode levar alguns segundos
+                        </p>
                       </div>
-                    )}
-
-                    {/* Loading State */}
-                    {isLoading && (
-                      <div className="aspect-square rounded-lg border bg-muted/30 flex items-center justify-center">
-                        <div className="text-center">
-                          <Loader2 className="h-12 w-12 mx-auto mb-2 animate-spin text-primary" />
-                          <p className="text-sm text-muted-foreground">
-                            Gerando mockup com IA...
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Isso pode levar alguns segundos
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </div>
           </TabsContent>
 
