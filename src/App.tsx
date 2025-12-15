@@ -27,6 +27,7 @@ import MockupGenerator from "./pages/MockupGenerator";
 import ProfilePage from "./pages/ProfilePage";
 import BitrixSyncPage from "./pages/BitrixSyncPage";
 import BIDashboard from "./pages/BIDashboard";
+import TrendsPage from "./pages/TrendsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -120,6 +121,11 @@ const App = () => (
                     <Route path="/bi" element={
                       <ProtectedRoute>
                         <BIDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/tendencias" element={
+                      <ProtectedRoute>
+                        <TrendsPage />
                       </ProtectedRoute>
                     } />
                     
