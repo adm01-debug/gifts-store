@@ -15,7 +15,6 @@ import {
   Users,
   FileText,
   ShoppingCart,
-  Search,
   ArrowRight,
   Loader2,
   FolderOpen,
@@ -26,10 +25,14 @@ import {
   TrendingUp,
   Sparkles,
   Brain,
+  Clock,
+  Flame,
+  X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useSearch } from "@/hooks/useSearch";
 
 interface SearchResult {
   id: string;
@@ -152,6 +155,14 @@ interface SearchIntent {
   originalQuery: string;
 }
 
+interface PopularProduct {
+  id: string;
+  name: string;
+  sku: string;
+  category_name: string | null;
+  view_count: number;
+}
+
 export function GlobalSearchPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -159,8 +170,84 @@ export function GlobalSearchPalette() {
   const [isSearching, setIsSearching] = useState(false);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [searchIntent, setSearchIntent] = useState<SearchIntent | null>(null);
+  const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([]);
+  const [typingSuggestions, setTypingSuggestions] = useState<string[]>([]);
   const navigate = useNavigate();
   const debouncedQuery = useDebounce(query, 500);
+  const { history, addToHistory, removeFromHistory, quickSuggestions } = useSearch();
+
+  // Fetch popular products based on views
+  useEffect(() => {
+    const fetchPopularProducts = async () => {
+      try {
+        // Get products with most views
+        const { data: viewsData } = await supabase
+          .from("product_views")
+          .select("product_id, product_name, product_sku")
+          .order("created_at", { ascending: false })
+          .limit(100);
+
+        if (viewsData) {
+          // Count views per product
+          const viewCounts = viewsData.reduce((acc: Record<string, { count: number; name: string; sku: string }>, view) => {
+            if (view.product_id) {
+              if (!acc[view.product_id]) {
+                acc[view.product_id] = { count: 0, name: view.product_name, sku: view.product_sku || "" };
+              }
+              acc[view.product_id].count++;
+            }
+            return acc;
+          }, {});
+
+          // Sort by view count and take top 5
+          const popular = Object.entries(viewCounts)
+            .sort(([, a], [, b]) => b.count - a.count)
+            .slice(0, 5)
+            .map(([id, data]) => ({
+              id,
+              name: data.name,
+              sku: data.sku,
+              category_name: null,
+              view_count: data.count,
+            }));
+
+          setPopularProducts(popular);
+        }
+      } catch (error) {
+        console.error("Error fetching popular products:", error);
+      }
+    };
+
+    if (open) {
+      fetchPopularProducts();
+    }
+  }, [open]);
+
+  // Generate typing suggestions based on current query
+  useEffect(() => {
+    if (query.length >= 2 && query.length < 5) {
+      const lowerQuery = query.toLowerCase();
+      const suggestions: string[] = [];
+
+      // Add from history that starts with query
+      history.forEach((h) => {
+        if (h.toLowerCase().startsWith(lowerQuery) && !suggestions.includes(h)) {
+          suggestions.push(h);
+        }
+      });
+
+      // Add from quick suggestions that match
+      quickSuggestions.forEach((qs) => {
+        if (qs.label.toLowerCase().includes(lowerQuery) && !suggestions.includes(qs.label)) {
+          suggestions.push(qs.label);
+        }
+      });
+
+      setTypingSuggestions(suggestions.slice(0, 5));
+    } else {
+      setTypingSuggestions([]);
+    }
+  }, [query, history, quickSuggestions]);
 
   // Listen for Ctrl+K / Cmd+K
   useEffect(() => {
@@ -375,12 +462,25 @@ export function GlobalSearchPalette() {
     performSemanticSearch(debouncedQuery);
   }, [debouncedQuery, performSemanticSearch]);
 
-  const handleSelect = (href: string) => {
+  const handleSelect = (href: string, saveToHistory = true) => {
+    if (saveToHistory && query.trim()) {
+      addToHistory(query.trim());
+    }
     setOpen(false);
     setQuery("");
     setResults([]);
     setSearchIntent(null);
+    setTypingSuggestions([]);
     navigate(href);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setQuery(suggestion);
+  };
+
+  const handleRemoveFromHistory = (e: React.MouseEvent, term: string) => {
+    e.stopPropagation();
+    removeFromHistory(term);
   };
 
   const groupedResults = results.reduce((acc, result) => {
@@ -510,15 +610,109 @@ export function GlobalSearchPalette() {
             );
           })}
 
+          {/* Typing suggestions */}
+          {typingSuggestions.length > 0 && query.length >= 2 && query.length < 5 && !isSearching && (
+            <CommandGroup heading="Sugestões">
+              {typingSuggestions.map((suggestion, index) => (
+                <CommandItem
+                  key={`suggestion-${index}`}
+                  value={`suggestion-${suggestion}`}
+                  onSelect={() => handleSuggestionClick(suggestion)}
+                  className="flex items-center gap-3 py-2"
+                >
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="flex-1">{suggestion}</span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+
           {/* Quick actions when no search query */}
           {query.length < 2 && (
             <>
+              {/* Recent searches from history */}
+              {history.length > 0 && (
+                <CommandGroup heading="Buscas Recentes">
+                  {history.slice(0, 5).map((term, index) => (
+                    <CommandItem
+                      key={`history-${index}`}
+                      value={`history-${term}`}
+                      onSelect={() => handleSuggestionClick(term)}
+                      className="flex items-center gap-3 py-2 group"
+                    >
+                      <div className="p-2 rounded-lg bg-muted">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <span className="flex-1">{term}</span>
+                      <button
+                        onClick={(e) => handleRemoveFromHistory(e, term)}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/10 rounded transition-opacity"
+                      >
+                        <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                      </button>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+
+              {/* Popular products */}
+              {popularProducts.length > 0 && (
+                <>
+                  <CommandSeparator />
+                  <CommandGroup heading="Produtos Populares">
+                    {popularProducts.map((product) => (
+                      <CommandItem
+                        key={`popular-${product.id}`}
+                        value={`popular-${product.name}`}
+                        onSelect={() => handleSelect(`/produto/${product.id}`, false)}
+                        className="flex items-center gap-3 py-2"
+                      >
+                        <div className="p-2 rounded-lg bg-orange-500/10">
+                          <Flame className="h-4 w-4 text-orange-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {product.sku} • {product.view_count} visualizações
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="shrink-0 text-xs">
+                          Popular
+                        </Badge>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </>
+              )}
+
+              {/* Quick suggestions */}
+              <CommandSeparator />
+              <CommandGroup heading="Sugestões Rápidas">
+                <div className="flex flex-wrap gap-2 p-2">
+                  {quickSuggestions.map((qs, index) => (
+                    <button
+                      key={`quick-${index}`}
+                      onClick={() => handleSuggestionClick(qs.label)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-sm transition-colors"
+                    >
+                      <span>{qs.icon}</span>
+                      <span>{qs.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </CommandGroup>
+
+              <CommandSeparator />
+
               <CommandGroup heading="Ações Rápidas">
                 {quickActions.slice(0, 5).map((action) => (
                   <CommandItem
                     key={action.id}
                     value={action.title}
-                    onSelect={() => handleSelect(action.href)}
+                    onSelect={() => handleSelect(action.href, false)}
                     className="flex items-center gap-3 py-2"
                   >
                     <div className="p-2 rounded-lg bg-primary/10">
@@ -547,7 +741,7 @@ export function GlobalSearchPalette() {
                   <CommandItem
                     key={action.id}
                     value={action.title}
-                    onSelect={() => handleSelect(action.href)}
+                    onSelect={() => handleSelect(action.href, false)}
                     className="flex items-center gap-3 py-2"
                   >
                     <div className="p-2 rounded-lg bg-muted">
