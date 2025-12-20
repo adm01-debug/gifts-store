@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatCard, MiniStatCard } from "@/components/ui/stat-card";
 import { SellerLeaderboard } from "@/components/gamification/SellerLeaderboard";
-import { 
+import { SalesGoalsCard } from "@/components/goals/SalesGoalsCard";
+import {
   Package, 
   Palette, 
   Layers, 
@@ -343,8 +344,12 @@ export default function BIDashboard() {
           )}
         </div>
 
-        {/* Charts Row + Leaderboard */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        {/* Sales Goals + Charts Row + Leaderboard */}
+        <div className="grid gap-6 lg:grid-cols-4">
+          {/* Sales Goals Card */}
+          <SalesGoalsCard />
+
+          {/* Products by Category */}
           {/* Products by Category */}
           <Card>
             <CardHeader>

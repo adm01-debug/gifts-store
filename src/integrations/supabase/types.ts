@@ -258,6 +258,69 @@ export type Database = {
           },
         ]
       }
+      follow_up_reminders: {
+        Row: {
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_completed: boolean | null
+          priority: string
+          quote_id: string | null
+          reminder_date: string
+          reminder_type: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean | null
+          priority?: string
+          quote_id?: string | null
+          reminder_date: string
+          reminder_type?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean | null
+          priority?: string
+          quote_id?: string | null
+          reminder_date?: string
+          reminder_type?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_up_reminders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "bitrix_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_up_reminders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generated_mockups: {
         Row: {
           client_id: string | null
@@ -1656,6 +1719,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sales_goals: {
+        Row: {
+          achieved_at: string | null
+          created_at: string
+          current_conversions: number | null
+          current_quotes: number | null
+          current_value: number
+          end_date: string
+          goal_type: string
+          id: string
+          is_achieved: boolean | null
+          start_date: string
+          target_conversions: number | null
+          target_quotes: number | null
+          target_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          achieved_at?: string | null
+          created_at?: string
+          current_conversions?: number | null
+          current_quotes?: number | null
+          current_value?: number
+          end_date: string
+          goal_type?: string
+          id?: string
+          is_achieved?: boolean | null
+          start_date: string
+          target_conversions?: number | null
+          target_quotes?: number | null
+          target_value?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          achieved_at?: string | null
+          created_at?: string
+          current_conversions?: number | null
+          current_quotes?: number | null
+          current_value?: number
+          end_date?: string
+          goal_type?: string
+          id?: string
+          is_achieved?: boolean | null
+          start_date?: string
+          target_conversions?: number | null
+          target_quotes?: number | null
+          target_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       search_analytics: {
         Row: {
