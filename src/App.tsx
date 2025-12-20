@@ -32,6 +32,7 @@ import QuoteTemplatesPage from "./pages/QuoteTemplatesPage";
 import QuotesListPage from "./pages/QuotesListPage";
 import QuoteBuilderPage from "./pages/QuoteBuilderPage";
 import QuoteViewPage from "./pages/QuoteViewPage";
+import PublicQuoteApproval from "./pages/PublicQuoteApproval";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,8 +49,9 @@ const App = () => (
                 <Sonner />
                 <BrowserRouter>
                   <Routes>
-                    {/* Public route */}
+                    {/* Public routes */}
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/aprovar-orcamento" element={<PublicQuoteApproval />} />
                     
                     {/* Protected routes */}
                     <Route path="/" element={

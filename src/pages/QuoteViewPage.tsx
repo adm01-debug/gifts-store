@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Download, FileText, History, Printer, Share2 } from "lucide-react";
+import { ArrowLeft, Copy, Download, FileText, History, Link2, Loader2, Printer, Share2 } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuotes, Quote } from "@/hooks/useQuotes";
 import { generateProposalPDF, downloadPDF } from "@/utils/proposalPdfGenerator";
 import { useAuth } from "@/contexts/AuthContext";
 import { QuoteHistoryPanel } from "@/components/quotes/QuoteHistoryPanel";
+import { useQuoteApproval } from "@/hooks/useQuoteApproval";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -37,8 +39,10 @@ export default function QuoteViewPage() {
   const navigate = useNavigate();
   const { fetchQuote, isLoading } = useQuotes();
   const { user } = useAuth();
+  const { generateApprovalLink, copyToClipboard, isGenerating } = useQuoteApproval();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [approvalLink, setApprovalLink] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -100,6 +104,14 @@ export default function QuoteViewPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleGenerateApprovalLink = async () => {
+    if (!id) return;
+    const link = await generateApprovalLink(id);
+    if (link) {
+      setApprovalLink(link);
+    }
   };
 
   if (isLoading) {
@@ -171,10 +183,53 @@ export default function QuoteViewPage() {
               <Printer className="h-4 w-4 mr-2" />
               Imprimir
             </Button>
-            <Button variant="outline" size="sm" disabled>
-              <Share2 className="h-4 w-4 mr-2" />
-              Enviar
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Link2 className="h-4 w-4 mr-2" />
+                  Link Aprovação
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="end">
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-medium mb-1">Link de Aprovação</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Gere um link para o cliente aprovar ou rejeitar este orçamento.
+                    </p>
+                  </div>
+                  {approvalLink ? (
+                    <div className="space-y-2">
+                      <div className="p-2 bg-muted rounded text-xs break-all font-mono">
+                        {approvalLink}
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => copyToClipboard(approvalLink)}
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copiar Link
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      className="w-full"
+                      onClick={handleGenerateApprovalLink}
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Link2 className="h-4 w-4 mr-2" />
+                      )}
+                      {isGenerating ? "Gerando..." : "Gerar Link"}
+                    </Button>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
             <Button onClick={handleDownloadPDF} disabled={isGeneratingPDF}>
               <Download className="h-4 w-4 mr-2" />
               {isGeneratingPDF ? "Gerando..." : "Baixar PDF"}

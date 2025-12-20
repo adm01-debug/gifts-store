@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.visual-search]
 verify_jwt = false
+
+[functions.quote-approval]
+verify_jwt = false
