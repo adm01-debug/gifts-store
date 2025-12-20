@@ -101,6 +101,24 @@ Deno.serve(async (req) => {
         .eq("id", quote.client_id)
         .maybeSingle();
 
+      // Create notification for quote viewed (only once per token)
+      if (!tokenData.used_at && quote.seller_id) {
+        const clientName = client?.name || "Cliente";
+        await supabase.from("notifications").insert([{
+          user_id: quote.seller_id,
+          type: "quote_viewed",
+          title: "Orçamento visualizado",
+          message: `${clientName} abriu o orçamento ${quote.quote_number}`,
+          metadata: {
+            quote_id: quote.id,
+            quote_number: quote.quote_number,
+            client_id: quote.client_id,
+            client_name: clientName,
+          },
+        }]);
+        console.log(`[quote-approval] Notification sent: quote ${quote.quote_number} viewed`);
+      }
+
       // Format items for response
       const items = quoteItems?.map((item: any) => ({
         id: item.id,
@@ -188,6 +206,39 @@ Deno.serve(async (req) => {
           old_value: quote.status,
           new_value: newStatus,
         });
+
+      // Fetch client name for notification
+      const { data: client } = await supabase
+        .from("bitrix_clients")
+        .select("name")
+        .eq("id", quote.client_id)
+        .maybeSingle();
+
+      const clientName = client?.name || "Cliente";
+
+      // Create notification for quote approved/rejected
+      if (quote.seller_id) {
+        const notificationType = action === "approve" ? "quote_approved" : "quote_rejected";
+        const notificationTitle = action === "approve" ? "Orçamento aprovado!" : "Orçamento rejeitado";
+        const notificationMessage = action === "approve"
+          ? `${clientName} aprovou o orçamento ${quote.quote_number}`
+          : `${clientName} rejeitou o orçamento ${quote.quote_number}`;
+
+        await supabase.from("notifications").insert([{
+          user_id: quote.seller_id,
+          type: notificationType,
+          title: notificationTitle,
+          message: notificationMessage + (notes ? `. Comentário: "${notes}"` : ""),
+          metadata: {
+            quote_id: quote.id,
+            quote_number: quote.quote_number,
+            client_id: quote.client_id,
+            client_name: clientName,
+            client_notes: notes,
+          },
+        }]);
+        console.log(`[quote-approval] Notification sent: quote ${quote.quote_number} ${responseText}`);
+      }
 
       console.log(`[quote-approval] Quote ${quote.quote_number} ${responseText}`);
 

@@ -19,6 +19,7 @@ import { AdvancedSearch } from "@/components/search/AdvancedSearch";
 import { useToast } from "@/hooks/use-toast";
 import { GamificationIndicators } from "./GamificationIndicators";
 import { StockAlertsIndicator } from "@/components/inventory/StockAlertsIndicator";
+import { NotificationsPopover } from "@/components/notifications/NotificationsPopover";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -110,6 +111,9 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             <span className="sr-only">Alternar tema</span>
           </Button>
+
+          {/* Notifications */}
+          <NotificationsPopover />
 
           {/* Stock Alerts */}
           <StockAlertsIndicator />
