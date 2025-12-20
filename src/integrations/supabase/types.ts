@@ -1069,6 +1069,44 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_approval_tokens: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          quote_id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at: string
+          id?: string
+          quote_id: string
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          quote_id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_approval_tokens_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_history: {
         Row: {
           action: string
@@ -1297,6 +1335,9 @@ export type Database = {
           bitrix_deal_id: string | null
           bitrix_quote_id: string | null
           client_id: string | null
+          client_response: string | null
+          client_response_at: string | null
+          client_response_notes: string | null
           created_at: string
           discount_amount: number | null
           discount_percent: number | null
@@ -1317,6 +1358,9 @@ export type Database = {
           bitrix_deal_id?: string | null
           bitrix_quote_id?: string | null
           client_id?: string | null
+          client_response?: string | null
+          client_response_at?: string | null
+          client_response_notes?: string | null
           created_at?: string
           discount_amount?: number | null
           discount_percent?: number | null
@@ -1337,6 +1381,9 @@ export type Database = {
           bitrix_deal_id?: string | null
           bitrix_quote_id?: string | null
           client_id?: string | null
+          client_response?: string | null
+          client_response_at?: string | null
+          client_response_notes?: string | null
           created_at?: string
           discount_amount?: number | null
           discount_percent?: number | null
