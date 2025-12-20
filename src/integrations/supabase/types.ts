@@ -367,6 +367,220 @@ export type Database = {
         }
         Relationships: []
       }
+      order_history: {
+        Row: {
+          action: string
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+          new_value: string | null
+          old_value: string | null
+          order_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          new_value?: string | null
+          old_value?: string | null
+          order_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          new_value?: string | null
+          old_value?: string | null
+          order_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          color_hex: string | null
+          color_name: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          order_id: string
+          personalization_details: Json | null
+          product_id: string | null
+          product_image_url: string | null
+          product_name: string
+          product_sku: string | null
+          quantity: number
+          sort_order: number | null
+          subtotal: number | null
+          unit_price: number
+        }
+        Insert: {
+          color_hex?: string | null
+          color_name?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id: string
+          personalization_details?: Json | null
+          product_id?: string | null
+          product_image_url?: string | null
+          product_name: string
+          product_sku?: string | null
+          quantity?: number
+          sort_order?: number | null
+          subtotal?: number | null
+          unit_price?: number
+        }
+        Update: {
+          color_hex?: string | null
+          color_name?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id?: string
+          personalization_details?: Json | null
+          product_id?: string | null
+          product_image_url?: string | null
+          product_name?: string
+          product_sku?: string | null
+          quantity?: number
+          sort_order?: number | null
+          subtotal?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          actual_delivery_date: string | null
+          client_id: string | null
+          confirmed_at: string | null
+          created_at: string
+          delivered_at: string | null
+          discount_amount: number | null
+          discount_percent: number | null
+          estimated_delivery_date: string | null
+          fulfillment_status: Database["public"]["Enums"]["fulfillment_status"]
+          id: string
+          internal_notes: string | null
+          notes: string | null
+          order_number: string
+          paid_amount: number | null
+          payment_method: string | null
+          payment_status: string | null
+          quote_id: string | null
+          seller_id: string
+          shipped_at: string | null
+          shipping_address: string | null
+          shipping_cost: number | null
+          shipping_method: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number | null
+          total: number | null
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_delivery_date?: string | null
+          client_id?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
+          estimated_delivery_date?: string | null
+          fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"]
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          order_number: string
+          paid_amount?: number | null
+          payment_method?: string | null
+          payment_status?: string | null
+          quote_id?: string | null
+          seller_id: string
+          shipped_at?: string | null
+          shipping_address?: string | null
+          shipping_cost?: number | null
+          shipping_method?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal?: number | null
+          total?: number | null
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_delivery_date?: string | null
+          client_id?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
+          estimated_delivery_date?: string | null
+          fulfillment_status?: Database["public"]["Enums"]["fulfillment_status"]
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          order_number?: string
+          paid_amount?: number | null
+          payment_method?: string | null
+          payment_status?: string | null
+          quote_id?: string | null
+          seller_id?: string
+          shipped_at?: string | null
+          shipping_address?: string | null
+          shipping_cost?: number | null
+          shipping_method?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal?: number | null
+          total?: number | null
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "bitrix_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       personalization_locations: {
         Row: {
           code: string | null
@@ -1596,6 +1810,20 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "vendedor"
+      fulfillment_status:
+        | "not_started"
+        | "picking"
+        | "packing"
+        | "shipped"
+        | "delivered"
+      order_status:
+        | "pending"
+        | "confirmed"
+        | "in_production"
+        | "ready_for_pickup"
+        | "shipped"
+        | "delivered"
+        | "cancelled"
       quote_status:
         | "draft"
         | "pending"
@@ -1731,6 +1959,22 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "vendedor"],
+      fulfillment_status: [
+        "not_started",
+        "picking",
+        "packing",
+        "shipped",
+        "delivered",
+      ],
+      order_status: [
+        "pending",
+        "confirmed",
+        "in_production",
+        "ready_for_pickup",
+        "shipped",
+        "delivered",
+        "cancelled",
+      ],
       quote_status: [
         "draft",
         "pending",
