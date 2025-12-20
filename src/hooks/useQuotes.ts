@@ -52,6 +52,9 @@ export interface Quote {
   bitrix_quote_id?: string;
   synced_to_bitrix?: boolean;
   synced_at?: string;
+  client_response?: string;
+  client_response_at?: string;
+  client_response_notes?: string;
   created_at?: string;
   updated_at?: string;
   items?: QuoteItem[];

@@ -1,0 +1,488 @@
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StatCard } from "@/components/ui/stat-card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+import {
+  FileText,
+  CheckCircle,
+  XCircle,
+  Clock,
+  DollarSign,
+  TrendingUp,
+  ArrowLeft,
+  Calendar,
+  Users,
+  Target,
+  Hourglass,
+} from "lucide-react";
+import { useQuotes } from "@/hooks/useQuotes";
+import { format, differenceInDays, differenceInHours, startOfMonth, endOfMonth, subMonths, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+const statusConfig = {
+  draft: { label: "Rascunho", color: "hsl(var(--muted-foreground))" },
+  pending: { label: "Pendente", color: "hsl(var(--warning))" },
+  sent: { label: "Enviado", color: "hsl(var(--info))" },
+  approved: { label: "Aprovado", color: "hsl(var(--success))" },
+  rejected: { label: "Rejeitado", color: "hsl(var(--destructive))" },
+  expired: { label: "Expirado", color: "hsl(var(--muted-foreground))" },
+};
+
+export default function QuotesDashboardPage() {
+  const navigate = useNavigate();
+  const { quotes, isLoading } = useQuotes();
+  const [selectedPeriod, setSelectedPeriod] = useState<"month" | "quarter" | "year">("month");
+
+  const metrics = useMemo(() => {
+    if (!quotes.length) {
+      return {
+        totalQuotes: 0,
+        totalValue: 0,
+        approvedValue: 0,
+        approvalRate: 0,
+        rejectionRate: 0,
+        averageResponseTime: 0,
+        averageValue: 0,
+        pendingQuotes: 0,
+        statusDistribution: [],
+        monthlyData: [],
+        conversionFunnel: [],
+      };
+    }
+
+    // Filter by period
+    const now = new Date();
+    let startDate: Date;
+    switch (selectedPeriod) {
+      case "month":
+        startDate = startOfMonth(now);
+        break;
+      case "quarter":
+        startDate = subMonths(startOfMonth(now), 2);
+        break;
+      case "year":
+        startDate = subMonths(startOfMonth(now), 11);
+        break;
+    }
+
+    const filteredQuotes = quotes.filter((q) => new Date(q.created_at) >= startDate);
+
+    // Basic metrics
+    const totalQuotes = filteredQuotes.length;
+    const totalValue = filteredQuotes.reduce((sum, q) => sum + (q.total || 0), 0);
+    
+    const approvedQuotes = filteredQuotes.filter((q) => q.status === "approved");
+    const rejectedQuotes = filteredQuotes.filter((q) => q.status === "rejected");
+    const pendingQuotes = filteredQuotes.filter((q) => ["pending", "sent"].includes(q.status));
+    
+    const approvedValue = approvedQuotes.reduce((sum, q) => sum + (q.total || 0), 0);
+    
+    // Approval & rejection rates (only consider quotes that got a response)
+    const respondedQuotes = [...approvedQuotes, ...rejectedQuotes];
+    const approvalRate = respondedQuotes.length > 0 
+      ? (approvedQuotes.length / respondedQuotes.length) * 100 
+      : 0;
+    const rejectionRate = respondedQuotes.length > 0 
+      ? (rejectedQuotes.length / respondedQuotes.length) * 100 
+      : 0;
+
+    // Average response time (for quotes that got a response)
+    const quotesWithResponse = filteredQuotes.filter(
+      (q) => q.client_response_at && (q.status === "approved" || q.status === "rejected")
+    );
+    
+    let averageResponseTime = 0;
+    if (quotesWithResponse.length > 0) {
+      const totalHours = quotesWithResponse.reduce((sum, q) => {
+        const created = new Date(q.created_at);
+        const responded = new Date(q.client_response_at!);
+        return sum + differenceInHours(responded, created);
+      }, 0);
+      averageResponseTime = totalHours / quotesWithResponse.length;
+    }
+
+    // Average value
+    const averageValue = totalQuotes > 0 ? totalValue / totalQuotes : 0;
+
+    // Status distribution for pie chart
+    const statusCounts = filteredQuotes.reduce((acc, q) => {
+      acc[q.status] = (acc[q.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({
+      name: statusConfig[status as keyof typeof statusConfig]?.label || status,
+      value: count,
+      color: statusConfig[status as keyof typeof statusConfig]?.color || "hsl(var(--muted))",
+    }));
+
+    // Monthly data for bar chart
+    const monthlyGroups = filteredQuotes.reduce((acc, q) => {
+      const month = format(new Date(q.created_at), "MMM", { locale: ptBR });
+      if (!acc[month]) {
+        acc[month] = { month, total: 0, approved: 0, rejected: 0, value: 0 };
+      }
+      acc[month].total++;
+      if (q.status === "approved") {
+        acc[month].approved++;
+        acc[month].value += q.total || 0;
+      }
+      if (q.status === "rejected") acc[month].rejected++;
+      return acc;
+    }, {} as Record<string, { month: string; total: number; approved: number; rejected: number; value: number }>);
+
+    const monthlyData = Object.values(monthlyGroups);
+
+    // Conversion funnel
+    const conversionFunnel = [
+      { stage: "Criados", count: totalQuotes, fill: "hsl(var(--primary))" },
+      { stage: "Enviados", count: filteredQuotes.filter((q) => ["sent", "approved", "rejected"].includes(q.status)).length, fill: "hsl(var(--info))" },
+      { stage: "Respondidos", count: respondedQuotes.length, fill: "hsl(var(--warning))" },
+      { stage: "Aprovados", count: approvedQuotes.length, fill: "hsl(var(--success))" },
+    ];
+
+    return {
+      totalQuotes,
+      totalValue,
+      approvedValue,
+      approvalRate,
+      rejectionRate,
+      averageResponseTime,
+      averageValue,
+      pendingQuotes: pendingQuotes.length,
+      statusDistribution,
+      monthlyData,
+      conversionFunnel,
+    };
+  }, [quotes, selectedPeriod]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
+  const formatResponseTime = (hours: number) => {
+    if (hours < 24) {
+      return `${Math.round(hours)}h`;
+    }
+    const days = Math.floor(hours / 24);
+    const remainingHours = Math.round(hours % 24);
+    return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
+  };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="space-y-6">
+          <Skeleton className="h-10 w-64" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-32" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Skeleton className="h-80" />
+            <Skeleton className="h-80" />
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  return (
+    <MainLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/orcamentos")}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Dashboard de Orçamentos</h1>
+              <p className="text-muted-foreground">Métricas e análises de performance</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant={selectedPeriod === "month" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedPeriod("month")}
+            >
+              Mês
+            </Button>
+            <Button
+              variant={selectedPeriod === "quarter" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedPeriod("quarter")}
+            >
+              Trimestre
+            </Button>
+            <Button
+              variant={selectedPeriod === "year" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedPeriod("year")}
+            >
+              Ano
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total de Orçamentos"
+            value={metrics.totalQuotes.toString()}
+            icon={FileText}
+            variant="info"
+            subtitle={`${metrics.pendingQuotes} pendentes`}
+          />
+          <StatCard
+            title="Taxa de Aprovação"
+            value={`${metrics.approvalRate.toFixed(1)}%`}
+            icon={Target}
+            variant="success"
+            trend={metrics.approvalRate >= 50 ? { value: metrics.approvalRate } : undefined}
+          />
+          <StatCard
+            title="Tempo Médio de Resposta"
+            value={formatResponseTime(metrics.averageResponseTime)}
+            icon={Hourglass}
+            variant="warning"
+            subtitle="para aprovação/rejeição"
+          />
+          <StatCard
+            title="Valor Total Aprovado"
+            value={formatCurrency(metrics.approvedValue)}
+            icon={DollarSign}
+            variant="success"
+            subtitle={`de ${formatCurrency(metrics.totalValue)} orçados`}
+          />
+        </div>
+
+        {/* Secondary metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Ticket Médio</p>
+                  <p className="text-2xl font-bold text-foreground">{formatCurrency(metrics.averageValue)}</p>
+                </div>
+                <div className="p-3 rounded-full bg-primary/10">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Taxa de Rejeição</p>
+                  <p className="text-2xl font-bold text-destructive">{metrics.rejectionRate.toFixed(1)}%</p>
+                </div>
+                <div className="p-3 rounded-full bg-destructive/10">
+                  <XCircle className="h-5 w-5 text-destructive" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Aguardando Resposta</p>
+                  <p className="text-2xl font-bold text-warning">{metrics.pendingQuotes}</p>
+                </div>
+                <div className="p-3 rounded-full bg-warning/10">
+                  <Clock className="h-5 w-5 text-warning" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Status Distribution Pie Chart */}
+          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+            <CardHeader>
+              <CardTitle className="text-lg">Distribuição por Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {metrics.statusDistribution.length > 0 ? (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={metrics.statusDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={4}
+                        dataKey="value"
+                        label={({ name, value }) => `${name}: ${value}`}
+                      >
+                        {metrics.statusDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  Nenhum dado disponível
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Conversion Funnel */}
+          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+            <CardHeader>
+              <CardTitle className="text-lg">Funil de Conversão</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {metrics.conversionFunnel.length > 0 ? (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={metrics.conversionFunnel}
+                      layout="vertical"
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <XAxis type="number" />
+                      <YAxis dataKey="stage" type="category" width={100} />
+                      <ChartTooltip
+                        content={<ChartTooltipContent />}
+                      />
+                      <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                        {metrics.conversionFunnel.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  Nenhum dado disponível
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Monthly Trend */}
+          {metrics.monthlyData.length > 0 && (
+            <Card className="bg-card/50 backdrop-blur-sm border-border/50 lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-lg">Evolução Mensal</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={metrics.monthlyData}>
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <ChartTooltip
+                        content={<ChartTooltipContent />}
+                      />
+                      <Bar dataKey="total" name="Total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="approved" name="Aprovados" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="rejected" name="Rejeitados" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+                      <Legend />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Recent Activity */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardHeader>
+            <CardTitle className="text-lg">Últimas Respostas de Clientes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {quotes
+                .filter((q) => q.client_response_at)
+                .sort((a, b) => new Date(b.client_response_at!).getTime() - new Date(a.client_response_at!).getTime())
+                .slice(0, 5)
+                .map((quote) => (
+                  <div
+                    key={quote.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
+                    onClick={() => navigate(`/orcamentos/${quote.id}`)}
+                  >
+                    <div className="flex items-center gap-3">
+                      {quote.status === "approved" ? (
+                        <CheckCircle className="h-5 w-5 text-success" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-destructive" />
+                      )}
+                      <div>
+                        <p className="font-medium text-foreground">{quote.quote_number}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {quote.client_response_at && format(new Date(quote.client_response_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant={quote.status === "approved" ? "default" : "destructive"}>
+                        {statusConfig[quote.status]?.label || quote.status}
+                      </Badge>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {formatCurrency(quote.total || 0)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              
+              {quotes.filter((q) => q.client_response_at).length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhuma resposta de cliente registrada ainda
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
+  );
+}
