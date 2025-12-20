@@ -2,15 +2,19 @@ import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { QuoteTemplatesList } from "@/components/quotes/QuoteTemplatesList";
 import { QuoteTemplateForm } from "@/components/quotes/QuoteTemplateForm";
-import { QuoteTemplate } from "@/hooks/useQuoteTemplates";
+import { AdminTemplatesManager } from "@/components/quotes/AdminTemplatesManager";
+import { QuoteTemplate, useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, FileText, Users } from "lucide-react";
 
 type ViewMode = "list" | "create" | "edit";
 
 export default function QuoteTemplatesPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [editingTemplate, setEditingTemplate] = useState<QuoteTemplate | null>(null);
+  const [activeTab, setActiveTab] = useState<"my-templates" | "all-templates">("my-templates");
+  const { isAdmin } = useQuoteTemplates();
 
   const handleCreateTemplate = () => {
     setEditingTemplate(null);
@@ -55,12 +59,36 @@ export default function QuoteTemplatesPage() {
           </div>
         </div>
 
-        {viewMode === "list" && (
+        {viewMode === "list" && isAdmin ? (
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+            <TabsList>
+              <TabsTrigger value="my-templates" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Meus Templates
+              </TabsTrigger>
+              <TabsTrigger value="all-templates" className="gap-2">
+                <Users className="h-4 w-4" />
+                Todos os Templates
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="my-templates" className="mt-4">
+              <QuoteTemplatesList
+                onCreateTemplate={handleCreateTemplate}
+                onEditTemplate={handleEditTemplate}
+              />
+            </TabsContent>
+            
+            <TabsContent value="all-templates" className="mt-4">
+              <AdminTemplatesManager onEditTemplate={handleEditTemplate} />
+            </TabsContent>
+          </Tabs>
+        ) : viewMode === "list" ? (
           <QuoteTemplatesList
             onCreateTemplate={handleCreateTemplate}
             onEditTemplate={handleEditTemplate}
           />
-        )}
+        ) : null}
 
         {(viewMode === "create" || viewMode === "edit") && (
           <QuoteTemplateForm
