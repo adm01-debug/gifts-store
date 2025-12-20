@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatCard, MiniStatCard } from "@/components/ui/stat-card";
+import { SellerLeaderboard } from "@/components/gamification/SellerLeaderboard";
 import { 
   Package, 
   Palette, 
@@ -342,8 +343,8 @@ export default function BIDashboard() {
           )}
         </div>
 
-        {/* Charts Row */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        {/* Charts Row + Leaderboard */}
+        <div className="grid gap-6 lg:grid-cols-3">
           {/* Products by Category */}
           <Card>
             <CardHeader>
@@ -427,6 +428,9 @@ export default function BIDashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* Seller Leaderboard */}
+          <SellerLeaderboard limit={5} className="lg:col-span-1" />
         </div>
 
         {/* Price Ranges Chart */}
