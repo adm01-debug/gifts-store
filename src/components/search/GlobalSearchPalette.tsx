@@ -30,7 +30,9 @@ import {
   X,
   Mic,
   Zap,
+  MapPin,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,6 +40,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useSearch } from "@/hooks/useSearch";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useVoiceCommandHistory } from "@/hooks/useVoiceCommandHistory";
+import { useContextualSuggestions } from "@/hooks/useContextualSuggestions";
 import { VoiceSearchOverlay } from "./VoiceSearchOverlay";
 
 interface SearchResult {
@@ -197,6 +200,12 @@ export function GlobalSearchPalette() {
     addCommand: addVoiceCommand,
     getSuggestions: getVoiceCommandSuggestions,
   } = useVoiceCommandHistory();
+
+  // Contextual suggestions based on current page and filters
+  const { suggestions: contextualSuggestions, routeContext } = useContextualSuggestions({
+    searchQuery: query,
+  });
+
   // Determine command type from transcript
   const detectCommandType = useCallback((text: string): 'filter' | 'search' | 'navigation' | 'sort' | 'clear' => {
     const lower = text.toLowerCase();
@@ -893,6 +902,33 @@ export function GlobalSearchPalette() {
                         </Badge>
                       </CommandItem>
                     ))}
+                  </CommandGroup>
+                </>
+              )}
+
+              {/* Contextual suggestions based on current page */}
+              {contextualSuggestions.length > 0 && (
+                <>
+                  <CommandSeparator />
+                  <CommandGroup heading={`Sugestões para ${routeContext.section === 'products' ? 'Catálogo' : routeContext.section === 'quotes' ? 'Orçamentos' : routeContext.section === 'orders' ? 'Pedidos' : routeContext.section === 'clients' ? 'Clientes' : 'Esta Página'}`}>
+                    <div className="flex flex-wrap gap-2 p-2">
+                      {contextualSuggestions.slice(0, 6).map((suggestion) => (
+                        <button
+                          key={suggestion.id}
+                          onClick={() => handleSuggestionClick(suggestion.text)}
+                          className={cn(
+                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors",
+                            suggestion.type === 'filter' && "bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30",
+                            suggestion.type === 'navigation' && "bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30",
+                            suggestion.type === 'action' && "bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30",
+                            suggestion.type === 'search' && "bg-muted hover:bg-muted/80"
+                          )}
+                        >
+                          <span>{suggestion.icon}</span>
+                          <span>{suggestion.text}</span>
+                        </button>
+                      ))}
+                    </div>
                   </CommandGroup>
                 </>
               )}
