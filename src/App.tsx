@@ -36,6 +36,7 @@ import QuoteViewPage from "./pages/QuoteViewPage";
 import PublicQuoteApproval from "./pages/PublicQuoteApproval";
 import OrdersListPage from "./pages/OrdersListPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
+import QuotesKanbanPage from "./pages/QuotesKanbanPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -150,6 +151,11 @@ const App = () => (
                     <Route path="/orcamentos/dashboard" element={
                       <ProtectedRoute>
                         <QuotesDashboardPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/orcamentos/kanban" element={
+                      <ProtectedRoute>
+                        <QuotesKanbanPage />
                       </ProtectedRoute>
                     } />
                     <Route path="/orcamentos/novo" element={

@@ -20,6 +20,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ArrowLeft, 
   Building2, 
@@ -31,12 +32,14 @@ import {
   TrendingUp,
   Clock,
   FileText,
-  RefreshCw
+  RefreshCw,
+  History
 } from "lucide-react";
 import { ExpertChatButton } from "@/components/expert/ExpertChatButton";
+import { ClientInteractionsTimeline } from "@/components/clients/ClientInteractionsTimeline";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -72,6 +75,10 @@ export default function ClientDetail() {
   const navigate = useNavigate();
   const [client, setClient] = useState<BitrixClient | null>(null);
   const [deals, setDeals] = useState<BitrixDeal[]>([]);
+  const [quotes, setQuotes] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [reminders, setReminders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDeals, setIsLoadingDeals] = useState(true);
 
@@ -114,6 +121,39 @@ export default function ClientDetail() {
 
       if (dealsError) throw dealsError;
       setDeals(dealsData || []);
+
+      // Carregar orçamentos do cliente
+      const { data: quotesData } = await supabase
+        .from("quotes")
+        .select("*")
+        .eq("client_id", clientData.id)
+        .order("created_at", { ascending: false });
+      setQuotes(quotesData || []);
+
+      // Carregar pedidos do cliente
+      const { data: ordersData } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("client_id", clientData.id)
+        .order("created_at", { ascending: false });
+      setOrders(ordersData || []);
+
+      // Carregar conversas do cliente
+      const { data: conversationsData } = await supabase
+        .from("expert_conversations")
+        .select("*")
+        .eq("client_id", clientData.id)
+        .order("created_at", { ascending: false });
+      setConversations(conversationsData || []);
+
+      // Carregar lembretes do cliente
+      const { data: remindersData } = await supabase
+        .from("follow_up_reminders")
+        .select("*")
+        .eq("client_id", clientData.id)
+        .order("reminder_date", { ascending: false });
+      setReminders(remindersData || []);
+
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao carregar dados";
       toast.error("Erro ao carregar cliente", { description: message });
@@ -182,6 +222,27 @@ export default function ClientDetail() {
   const totalDealsValue = deals.reduce((sum, deal) => sum + (deal.value || 0), 0);
   const wonDeals = deals.filter(d => d.stage?.toLowerCase().includes("ganho") || d.stage?.toLowerCase().includes("won"));
   const totalWonValue = wonDeals.reduce((sum, deal) => sum + (deal.value || 0), 0);
+
+  // Build timeline events
+  const timelineEvents = useMemo(() => {
+    const events: any[] = [];
+    deals.forEach((deal) => {
+      events.push({ id: `deal-${deal.id}`, type: "deal", title: deal.title, status: deal.stage, value: deal.value || 0, date: deal.created_at_bitrix || new Date().toISOString() });
+    });
+    quotes.forEach((quote) => {
+      events.push({ id: `quote-${quote.id}`, type: "quote", title: `Orçamento ${quote.quote_number}`, status: quote.status, value: quote.total || 0, date: quote.created_at, metadata: { quoteId: quote.id } });
+    });
+    orders.forEach((order) => {
+      events.push({ id: `order-${order.id}`, type: "order", title: `Pedido ${order.order_number}`, status: order.status, value: order.total || 0, date: order.created_at, metadata: { orderId: order.id } });
+    });
+    conversations.forEach((conv) => {
+      events.push({ id: `conv-${conv.id}`, type: "conversation", title: conv.title, date: conv.created_at });
+    });
+    reminders.forEach((reminder) => {
+      events.push({ id: `reminder-${reminder.id}`, type: "reminder", title: reminder.title, description: reminder.description, status: reminder.is_completed ? "completed" : "pending", date: reminder.reminder_date });
+    });
+    return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [deals, quotes, orders, conversations, reminders]);
 
   return (
     <MainLayout>
@@ -363,6 +424,9 @@ export default function ClientDetail() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Timeline de Interações */}
+        <ClientInteractionsTimeline events={timelineEvents} isLoading={isLoadingDeals} />
 
         {/* Histórico de Negócios */}
         <Card>
