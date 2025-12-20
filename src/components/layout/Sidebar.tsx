@@ -37,7 +37,7 @@ const mainNavItems = [
   { icon: Package, label: "Produtos", href: "/" },
   { icon: FolderOpen, label: "Coleções", href: "/colecoes" },
   { icon: Users, label: "Clientes", href: "/clientes" },
-  { icon: FileText, label: "Templates", href: "/templates-orcamento" },
+  { icon: FileText, label: "Orçamentos", href: "/orcamentos" },
   { icon: Calculator, label: "Simulador", href: "/simulador" },
   { icon: Wand2, label: "Mockups", href: "/mockup" },
   { icon: Filter, label: "Filtros", href: "/filtros" },

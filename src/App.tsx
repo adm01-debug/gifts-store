@@ -29,6 +29,8 @@ import BitrixSyncPage from "./pages/BitrixSyncPage";
 import BIDashboard from "./pages/BIDashboard";
 import TrendsPage from "./pages/TrendsPage";
 import QuoteTemplatesPage from "./pages/QuoteTemplatesPage";
+import QuotesListPage from "./pages/QuotesListPage";
+import QuoteBuilderPage from "./pages/QuoteBuilderPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -132,6 +134,16 @@ const App = () => (
                     <Route path="/templates-orcamento" element={
                       <ProtectedRoute>
                         <QuoteTemplatesPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/orcamentos" element={
+                      <ProtectedRoute>
+                        <QuotesListPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/orcamentos/novo" element={
+                      <ProtectedRoute>
+                        <QuoteBuilderPage />
                       </ProtectedRoute>
                     } />
                     
