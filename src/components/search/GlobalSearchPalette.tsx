@@ -29,6 +29,7 @@ import {
   Flame,
   X,
   Mic,
+  Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useSearch } from "@/hooks/useSearch";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useVoiceCommandHistory } from "@/hooks/useVoiceCommandHistory";
 import { VoiceSearchOverlay } from "./VoiceSearchOverlay";
 
 interface SearchResult {
@@ -187,10 +189,28 @@ export function GlobalSearchPalette() {
   const navigate = useNavigate();
   const debouncedQuery = useDebounce(query, 500);
   const { history, addToHistory, removeFromHistory, quickSuggestions } = useSearch();
+  
+  // Voice command history
+  const {
+    frequentCommands,
+    recentCommands,
+    addCommand: addVoiceCommand,
+    getSuggestions: getVoiceCommandSuggestions,
+  } = useVoiceCommandHistory();
+  // Determine command type from transcript
+  const detectCommandType = useCallback((text: string): 'filter' | 'search' | 'navigation' | 'sort' | 'clear' => {
+    const lower = text.toLowerCase();
+    if (/^(limpar|resetar|remover filtros)/.test(lower)) return 'clear';
+    if (/^(ir para|abrir|navegar|mostrar pagina)/.test(lower)) return 'navigation';
+    if (/(ordenar|ordem|mais barato|mais caro)/.test(lower)) return 'sort';
+    if (/(filtrar|buscar|mostrar|encontrar|quero)/.test(lower)) return 'filter';
+    return 'search';
+  }, []);
 
   // Voice search integration
   const handleVoiceResult = useCallback((transcript: string) => {
     const lowerTranscript = transcript.toLowerCase();
+    const commandType = detectCommandType(transcript);
     
     // Parse voice commands
     const appliedFilters: AppliedFilter[] = [];
@@ -237,6 +257,7 @@ export function GlobalSearchPalette() {
     
     // Check for navigation commands
     if (/(?:ir para|abrir|mostrar|ver)\s*(?:orçamentos?|cotações?)/i.test(lowerTranscript)) {
+      addVoiceCommand(transcript, 'navigation', true);
       setVoiceCommandAction("Abrindo orçamentos...");
       setTimeout(() => {
         setVoiceOverlayOpen(false);
@@ -246,6 +267,7 @@ export function GlobalSearchPalette() {
     }
     
     if (/(?:ir para|abrir|mostrar|ver)\s*(?:pedidos?|orders?)/i.test(lowerTranscript)) {
+      addVoiceCommand(transcript, 'navigation', true);
       setVoiceCommandAction("Abrindo pedidos...");
       setTimeout(() => {
         setVoiceOverlayOpen(false);
@@ -255,6 +277,7 @@ export function GlobalSearchPalette() {
     }
     
     if (/(?:ir para|abrir|mostrar|ver)\s*(?:clientes?)/i.test(lowerTranscript)) {
+      addVoiceCommand(transcript, 'navigation', true);
       setVoiceCommandAction("Abrindo clientes...");
       setTimeout(() => {
         setVoiceOverlayOpen(false);
@@ -264,6 +287,7 @@ export function GlobalSearchPalette() {
     }
     
     if (/(?:ir para|abrir|mostrar|ver)\s*(?:favoritos?)/i.test(lowerTranscript)) {
+      addVoiceCommand(transcript, 'navigation', true);
       setVoiceCommandAction("Abrindo favoritos...");
       setTimeout(() => {
         setVoiceOverlayOpen(false);
@@ -273,6 +297,7 @@ export function GlobalSearchPalette() {
     }
     
     if (/(?:novo|criar|fazer)\s*(?:orçamento|cotação)/i.test(lowerTranscript)) {
+      addVoiceCommand(transcript, 'navigation', true);
       setVoiceCommandAction("Criando novo orçamento...");
       setTimeout(() => {
         setVoiceOverlayOpen(false);
@@ -283,6 +308,7 @@ export function GlobalSearchPalette() {
     
     // Search command - close overlay and perform search
     if (appliedFilters.length > 0 || transcript.length > 3) {
+      addVoiceCommand(transcript, commandType, true);
       setVoiceCommandAction(`Buscando: "${transcript}"`);
       setTimeout(() => {
         setVoiceOverlayOpen(false);
@@ -290,7 +316,7 @@ export function GlobalSearchPalette() {
         setOpen(true);
       }, 1500);
     }
-  }, [navigate]);
+  }, [navigate, addVoiceCommand, detectCommandType]);
   
   const {
     isListening,
@@ -681,6 +707,11 @@ export function GlobalSearchPalette() {
         onToggleListening={toggleVoiceSearch}
         commandAction={voiceCommandAction}
         appliedFilters={voiceAppliedFilters}
+        frequentCommands={frequentCommands}
+        recentCommands={recentCommands}
+        onCommandSelect={(command) => {
+          handleVoiceResult(command);
+        }}
       />
 
       <CommandDialog open={open} onOpenChange={setOpen}>

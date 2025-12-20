@@ -1,6 +1,6 @@
-import { useEffect, useCallback } from "react";
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, X, Palette, Tag, DollarSign, Package, Sparkles, CheckCircle2 } from "lucide-react";
+import { Mic, MicOff, X, Palette, Tag, DollarSign, Package, Sparkles, CheckCircle2, Clock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,20 @@ import { cn } from "@/lib/utils";
 interface AppliedFilter {
   type: "category" | "color" | "price" | "material" | "stock" | "featured" | "kit";
   label: string;
+}
+
+interface CommandPattern {
+  command: string;
+  count: number;
+  lastUsed: Date;
+  type: 'filter' | 'search' | 'navigation' | 'sort' | 'clear' | 'unknown';
+}
+
+interface VoiceCommandRecord {
+  id: string;
+  command: string;
+  timestamp: Date;
+  type: 'filter' | 'search' | 'navigation' | 'sort' | 'clear' | 'unknown';
 }
 
 interface VoiceSearchOverlayProps {
@@ -19,6 +33,9 @@ interface VoiceSearchOverlayProps {
   onToggleListening: () => void;
   commandAction?: string | null;
   appliedFilters?: AppliedFilter[];
+  frequentCommands?: CommandPattern[];
+  recentCommands?: VoiceCommandRecord[];
+  onCommandSelect?: (command: string) => void;
 }
 
 const filterIcons: Record<AppliedFilter["type"], React.ReactNode> = {
@@ -50,6 +67,9 @@ export function VoiceSearchOverlay({
   onToggleListening,
   commandAction,
   appliedFilters = [],
+  frequentCommands = [],
+  recentCommands = [],
+  onCommandSelect,
 }: VoiceSearchOverlayProps) {
   // Close on escape key
   useEffect(() => {
@@ -187,36 +207,103 @@ export function VoiceSearchOverlay({
               </motion.div>
             )}
 
-            {/* Command suggestions */}
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="space-y-3 text-center w-full"
-            >
-              <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
-                Comandos suportados
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {[
-                  "Canetas azuis até 30 reais",
-                  "Mochilas ecológicas",
-                  "Garrafas vermelhas em estoque",
-                  "Kits de bambu",
-                  "Mostrar canetas",
-                  "Filtrar por cor azul",
-                  "Ordenar por preço",
-                  "Limpar filtros",
-                ].map((cmd) => (
-                  <span
-                    key={cmd}
-                    className="px-3 py-1.5 bg-muted/50 rounded-full text-xs text-muted-foreground border border-border/50"
-                  >
-                    "{cmd}"
-                  </span>
-                ))}
-              </div>
-            </motion.div>
+            {/* Frequent commands - from usage history */}
+            {frequentCommands.length > 0 && !isListening && (
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.15 }}
+                className="space-y-3 text-center w-full"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+                    Seus comandos frequentes
+                  </p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {frequentCommands.map((cmd, index) => (
+                    <motion.button
+                      key={`freq-${index}`}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.1 * index }}
+                      onClick={() => onCommandSelect?.(cmd.command)}
+                      className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 rounded-full text-xs text-amber-400 border border-amber-500/30 transition-colors flex items-center gap-1.5"
+                    >
+                      <span>"{cmd.command}"</span>
+                      <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-amber-500/20">
+                        {cmd.count}x
+                      </Badge>
+                    </motion.button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Recent commands - from usage history */}
+            {recentCommands.length > 0 && frequentCommands.length === 0 && !isListening && (
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.15 }}
+                className="space-y-3 text-center w-full"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+                    Comandos recentes
+                  </p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {recentCommands.slice(0, 4).map((cmd, index) => (
+                    <motion.button
+                      key={`recent-${cmd.id}`}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.1 * index }}
+                      onClick={() => onCommandSelect?.(cmd.command)}
+                      className="px-3 py-1.5 bg-muted/50 hover:bg-muted rounded-full text-xs text-muted-foreground border border-border/50 transition-colors"
+                    >
+                      "{cmd.command}"
+                    </motion.button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Command suggestions - when no history */}
+            {frequentCommands.length === 0 && recentCommands.length === 0 && (
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="space-y-3 text-center w-full"
+              >
+                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+                  Comandos suportados
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {[
+                    "Canetas azuis até 30 reais",
+                    "Mochilas ecológicas",
+                    "Garrafas vermelhas em estoque",
+                    "Kits de bambu",
+                    "Mostrar canetas",
+                    "Filtrar por cor azul",
+                    "Ordenar por preço",
+                    "Limpar filtros",
+                  ].map((cmd) => (
+                    <span
+                      key={cmd}
+                      className="px-3 py-1.5 bg-muted/50 rounded-full text-xs text-muted-foreground border border-border/50"
+                    >
+                      "{cmd}"
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
             {/* Transcript display */}
             <AnimatePresence mode="wait">
