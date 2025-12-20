@@ -18,6 +18,7 @@ import {
   Wand2,
   BarChart3,
   TrendingUp,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ const mainNavItems = [
   { icon: Package, label: "Produtos", href: "/" },
   { icon: FolderOpen, label: "Coleções", href: "/colecoes" },
   { icon: Users, label: "Clientes", href: "/clientes" },
+  { icon: FileText, label: "Templates", href: "/templates-orcamento" },
   { icon: Calculator, label: "Simulador", href: "/simulador" },
   { icon: Wand2, label: "Mockups", href: "/mockup" },
   { icon: Filter, label: "Filtros", href: "/filtros" },
