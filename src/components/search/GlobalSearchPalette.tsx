@@ -28,11 +28,15 @@ import {
   Clock,
   Flame,
   X,
+  Mic,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useSearch } from "@/hooks/useSearch";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { VoiceSearchOverlay } from "./VoiceSearchOverlay";
 
 interface SearchResult {
   id: string;
@@ -163,6 +167,11 @@ interface PopularProduct {
   view_count: number;
 }
 
+interface AppliedFilter {
+  type: "category" | "color" | "price" | "material" | "stock" | "featured" | "kit";
+  label: string;
+}
+
 export function GlobalSearchPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -172,9 +181,151 @@ export function GlobalSearchPalette() {
   const [searchIntent, setSearchIntent] = useState<SearchIntent | null>(null);
   const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([]);
   const [typingSuggestions, setTypingSuggestions] = useState<string[]>([]);
+  const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
+  const [voiceCommandAction, setVoiceCommandAction] = useState<string | null>(null);
+  const [voiceAppliedFilters, setVoiceAppliedFilters] = useState<AppliedFilter[]>([]);
   const navigate = useNavigate();
   const debouncedQuery = useDebounce(query, 500);
   const { history, addToHistory, removeFromHistory, quickSuggestions } = useSearch();
+
+  // Voice search integration
+  const handleVoiceResult = useCallback((transcript: string) => {
+    const lowerTranscript = transcript.toLowerCase();
+    
+    // Parse voice commands
+    const appliedFilters: AppliedFilter[] = [];
+    
+    // Category detection
+    const categoryMatches = lowerTranscript.match(/(?:canetas?|mochilas?|garrafas?|canecas?|camisetas?|bolsas?|cadernos?|agendas?|kits?|ecobags?)/gi);
+    if (categoryMatches) {
+      appliedFilters.push({ type: "category", label: categoryMatches[0] });
+    }
+    
+    // Color detection
+    const colorMatches = lowerTranscript.match(/(?:azul|azuis|vermelho|vermelhas?|verde|verdes?|amarelo|amarelas?|preto|pretas?|branco|brancas?|rosa|roxo|laranja)/gi);
+    if (colorMatches) {
+      appliedFilters.push({ type: "color", label: colorMatches[0] });
+    }
+    
+    // Price detection
+    const priceMatch = lowerTranscript.match(/(?:até|menos de|abaixo de|barato|baratas?)\s*(?:r?\$?\s*)?(\d+)/i);
+    if (priceMatch) {
+      appliedFilters.push({ type: "price", label: `Até R$ ${priceMatch[1]}` });
+    } else if (/barato|baratas?|econômico/i.test(lowerTranscript)) {
+      appliedFilters.push({ type: "price", label: "Preço baixo" });
+    } else if (/premium|caro|luxo/i.test(lowerTranscript)) {
+      appliedFilters.push({ type: "price", label: "Premium" });
+    }
+    
+    // Material detection
+    const materialMatches = lowerTranscript.match(/(?:ecológico|ecológicas?|bambu|reciclado|sustentável|metal|plástico|algodão)/gi);
+    if (materialMatches) {
+      appliedFilters.push({ type: "material", label: materialMatches[0] });
+    }
+    
+    // Stock detection
+    if (/em estoque|disponível|pronta entrega/i.test(lowerTranscript)) {
+      appliedFilters.push({ type: "stock", label: "Em estoque" });
+    }
+    
+    // Kit detection
+    if (/kits?(?:\s|$)/i.test(lowerTranscript)) {
+      appliedFilters.push({ type: "kit", label: "Kit" });
+    }
+    
+    setVoiceAppliedFilters(appliedFilters);
+    
+    // Check for navigation commands
+    if (/(?:ir para|abrir|mostrar|ver)\s*(?:orçamentos?|cotações?)/i.test(lowerTranscript)) {
+      setVoiceCommandAction("Abrindo orçamentos...");
+      setTimeout(() => {
+        setVoiceOverlayOpen(false);
+        navigate("/orcamentos");
+      }, 1000);
+      return;
+    }
+    
+    if (/(?:ir para|abrir|mostrar|ver)\s*(?:pedidos?|orders?)/i.test(lowerTranscript)) {
+      setVoiceCommandAction("Abrindo pedidos...");
+      setTimeout(() => {
+        setVoiceOverlayOpen(false);
+        navigate("/pedidos");
+      }, 1000);
+      return;
+    }
+    
+    if (/(?:ir para|abrir|mostrar|ver)\s*(?:clientes?)/i.test(lowerTranscript)) {
+      setVoiceCommandAction("Abrindo clientes...");
+      setTimeout(() => {
+        setVoiceOverlayOpen(false);
+        navigate("/clientes");
+      }, 1000);
+      return;
+    }
+    
+    if (/(?:ir para|abrir|mostrar|ver)\s*(?:favoritos?)/i.test(lowerTranscript)) {
+      setVoiceCommandAction("Abrindo favoritos...");
+      setTimeout(() => {
+        setVoiceOverlayOpen(false);
+        navigate("/favoritos");
+      }, 1000);
+      return;
+    }
+    
+    if (/(?:novo|criar|fazer)\s*(?:orçamento|cotação)/i.test(lowerTranscript)) {
+      setVoiceCommandAction("Criando novo orçamento...");
+      setTimeout(() => {
+        setVoiceOverlayOpen(false);
+        navigate("/orcamentos/novo");
+      }, 1000);
+      return;
+    }
+    
+    // Search command - close overlay and perform search
+    if (appliedFilters.length > 0 || transcript.length > 3) {
+      setVoiceCommandAction(`Buscando: "${transcript}"`);
+      setTimeout(() => {
+        setVoiceOverlayOpen(false);
+        setQuery(transcript);
+        setOpen(true);
+      }, 1500);
+    }
+  }, [navigate]);
+  
+  const {
+    isListening,
+    isSupported: isVoiceSupported,
+    transcript: voiceTranscript,
+    startListening,
+    stopListening,
+    error: voiceError,
+  } = useSpeechRecognition({
+    onResult: handleVoiceResult,
+    language: "pt-BR",
+  });
+  
+  const toggleVoiceSearch = useCallback(() => {
+    if (isListening) {
+      stopListening();
+    } else {
+      setVoiceCommandAction(null);
+      setVoiceAppliedFilters([]);
+      startListening();
+    }
+  }, [isListening, startListening, stopListening]);
+  
+  const handleOpenVoiceOverlay = useCallback(() => {
+    setVoiceOverlayOpen(true);
+    setVoiceCommandAction(null);
+    setVoiceAppliedFilters([]);
+  }, []);
+  
+  const handleCloseVoiceOverlay = useCallback(() => {
+    setVoiceOverlayOpen(false);
+    if (isListening) {
+      stopListening();
+    }
+  }, [isListening, stopListening]);
 
   // Fetch popular products based on views
   useEffect(() => {
@@ -493,17 +644,44 @@ export function GlobalSearchPalette() {
 
   return (
     <>
-      {/* Search trigger button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground bg-muted/50 hover:bg-muted rounded-lg border border-border transition-colors w-full md:w-64"
-      >
-        <Brain className="h-4 w-4 text-primary" />
-        <span className="flex-1 text-left">Busca inteligente...</span>
-        <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-          <span className="text-xs">⌘</span>K
-        </kbd>
-      </button>
+      {/* Search trigger button with voice */}
+      <div className="flex items-center gap-2 w-full md:w-auto">
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground bg-muted/50 hover:bg-muted rounded-lg border border-border transition-colors flex-1 md:w-56"
+        >
+          <Brain className="h-4 w-4 text-primary" />
+          <span className="flex-1 text-left">Busca inteligente...</span>
+          <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <span className="text-xs">⌘</span>K
+          </kbd>
+        </button>
+        
+        {/* Voice search button */}
+        {isVoiceSupported && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleOpenVoiceOverlay}
+            className="shrink-0 h-10 w-10 rounded-lg border-border hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
+            title="Busca por voz"
+          >
+            <Mic className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+      
+      {/* Voice search overlay */}
+      <VoiceSearchOverlay
+        isOpen={voiceOverlayOpen}
+        isListening={isListening}
+        transcript={voiceTranscript}
+        error={voiceError}
+        onClose={handleCloseVoiceOverlay}
+        onToggleListening={toggleVoiceSearch}
+        commandAction={voiceCommandAction}
+        appliedFilters={voiceAppliedFilters}
+      />
 
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput 
