@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -37,15 +37,25 @@ import {
   Loader2,
   BookTemplate,
   ArrowLeft,
+  Edit,
+  Palette,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format, addDays } from "date-fns";
+import { format, addDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useQuotes, QuoteItem } from "@/hooks/useQuotes";
+import { useQuotes, QuoteItem, QuoteItemPersonalization } from "@/hooks/useQuotes";
 import { useQuoteTemplates, QuoteTemplate, QuoteTemplateItem } from "@/hooks/useQuoteTemplates";
 import { QuoteTemplateSelector } from "@/components/quotes/QuoteTemplateSelector";
 import { SaveAsTemplateButton } from "@/components/quotes/SaveAsTemplateButton";
+import { QuotePersonalizationSelector } from "@/components/quotes/QuotePersonalizationSelector";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface Product {
   id: string;
@@ -64,8 +74,12 @@ interface Client {
 
 export default function QuoteBuilderPage() {
   const navigate = useNavigate();
+  const { id: quoteId } = useParams();
+  const [searchParams] = useSearchParams();
+  const isEditMode = Boolean(quoteId);
+  
   const { user } = useAuth();
-  const { createQuote, techniques, isLoading: quotesLoading } = useQuotes();
+  const { createQuote, updateQuote, fetchQuote, techniques, isLoading: quotesLoading } = useQuotes();
   const { templates } = useQuoteTemplates();
 
   // Quote state
@@ -78,6 +92,8 @@ export default function QuoteBuilderPage() {
   const [notes, setNotes] = useState<string>("");
   const [internalNotes, setInternalNotes] = useState<string>("");
   const [items, setItems] = useState<QuoteItem[]>([]);
+  const [quoteNumber, setQuoteNumber] = useState<string>("");
+  const [currentStatus, setCurrentStatus] = useState<string>("draft");
 
   // Product search modal
   const [productSearchOpen, setProductSearchOpen] = useState(false);
@@ -85,6 +101,42 @@ export default function QuoteBuilderPage() {
 
   // Template applied notification
   const [templateApplied, setTemplateApplied] = useState<string | null>(null);
+  
+  // Loading state for edit mode
+  const [loadingQuote, setLoadingQuote] = useState(isEditMode);
+
+  // Personalization expanded states
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+
+  // Load existing quote data when editing
+  useEffect(() => {
+    if (isEditMode && quoteId) {
+      setLoadingQuote(true);
+      fetchQuote(quoteId).then((quote) => {
+        if (quote) {
+          setClientId(quote.client_id || "");
+          setValidUntil(quote.valid_until || format(addDays(new Date(), 30), "yyyy-MM-dd"));
+          setNotes(quote.notes || "");
+          setInternalNotes(quote.internal_notes || "");
+          setQuoteNumber(quote.quote_number || "");
+          setCurrentStatus(quote.status);
+          
+          if (quote.discount_percent && quote.discount_percent > 0) {
+            setDiscountType("percent");
+            setDiscountValue(quote.discount_percent);
+          } else if (quote.discount_amount && quote.discount_amount > 0) {
+            setDiscountType("amount");
+            setDiscountValue(quote.discount_amount);
+          }
+          
+          if (quote.items) {
+            setItems(quote.items);
+          }
+        }
+        setLoadingQuote(false);
+      });
+    }
+  }, [isEditMode, quoteId]);
 
   // Fetch products
   const { data: products } = useQuery({
@@ -131,9 +183,24 @@ export default function QuoteBuilderPage() {
     }).format(value);
   };
 
+  // Calculate personalization total for an item
+  const calculateItemPersonalizationTotal = (item: QuoteItem) => {
+    return (item.personalizations || []).reduce(
+      (sum, p) => sum + (p.total_cost || 0),
+      0
+    );
+  };
+
+  // Calculate full item total (base + personalization)
+  const calculateItemTotal = (item: QuoteItem) => {
+    const baseTotal = item.quantity * item.unit_price;
+    const personalizationTotal = calculateItemPersonalizationTotal(item);
+    return baseTotal + personalizationTotal;
+  };
+
   // Calculations
   const subtotal = useMemo(() => {
-    return items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+    return items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
   }, [items]);
 
   const discountAmount = useMemo(() => {
@@ -146,6 +213,42 @@ export default function QuoteBuilderPage() {
   const total = useMemo(() => {
     return Math.max(0, subtotal - discountAmount);
   }, [subtotal, discountAmount]);
+
+  // Toggle personalization panel
+  const toggleExpanded = (index: number) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedItems(newExpanded);
+  };
+
+  // Add personalization to item
+  const handlePersonalizationAdd = (index: number, personalization: QuoteItemPersonalization) => {
+    setItems((prev) =>
+      prev.map((item, idx) =>
+        idx === index
+          ? { ...item, personalizations: [...(item.personalizations || []), personalization] }
+          : item
+      )
+    );
+  };
+
+  // Remove personalization from item
+  const handlePersonalizationRemove = (itemIndex: number, persIndex: number) => {
+    setItems((prev) =>
+      prev.map((item, idx) =>
+        idx === itemIndex
+          ? {
+              ...item,
+              personalizations: (item.personalizations || []).filter((_, i) => i !== persIndex),
+            }
+          : item
+      )
+    );
+  };
 
   // Add product to quote
   const addProduct = useCallback((product: Product) => {
@@ -172,6 +275,7 @@ export default function QuoteBuilderPage() {
           product_image_url: imageUrl,
           quantity: 1,
           unit_price: product.price,
+          personalizations: [],
         },
       ]);
     }
@@ -201,7 +305,6 @@ export default function QuoteBuilderPage() {
 
   // Apply template
   const applyTemplate = useCallback((template: QuoteTemplate) => {
-    // Convert template items to quote items
     const newItems: QuoteItem[] = template.items_data.map((item) => ({
       product_id: item.productId || "",
       product_name: item.productName,
@@ -263,27 +366,31 @@ export default function QuoteBuilderPage() {
     }));
   }, [items]);
 
-  // Save quote
+  // Save quote (create or update)
   const handleSaveQuote = async (status: "draft" | "pending" = "draft") => {
     if (items.length === 0) {
       toast.error("Adicione pelo menos um item ao orçamento");
       return;
     }
 
-    const quote = await createQuote(
-      {
-        client_id: clientId || undefined,
-        status,
-        discount_percent: discountType === "percent" ? discountValue : 0,
-        discount_amount: discountType === "amount" ? discountValue : 0,
-        notes: notes || undefined,
-        internal_notes: internalNotes || undefined,
-        valid_until: validUntil || undefined,
-      },
-      items
-    );
+    const quoteData = {
+      client_id: clientId || undefined,
+      status,
+      discount_percent: discountType === "percent" ? discountValue : 0,
+      discount_amount: discountType === "amount" ? discountValue : 0,
+      notes: notes || undefined,
+      internal_notes: internalNotes || undefined,
+      valid_until: validUntil || undefined,
+    };
 
-    if (quote) {
+    let result;
+    if (isEditMode && quoteId) {
+      result = await updateQuote(quoteId, quoteData, items);
+    } else {
+      result = await createQuote(quoteData, items);
+    }
+
+    if (result) {
       navigate("/orcamentos");
     }
   };
@@ -292,6 +399,16 @@ export default function QuoteBuilderPage() {
   const defaultTemplate = useMemo(() => {
     return templates.find((t) => t.is_default);
   }, [templates]);
+
+  if (loadingQuote) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -305,31 +422,41 @@ export default function QuoteBuilderPage() {
             <div>
               <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
-                  <FileText className="h-6 w-6 text-primary" />
+                  {isEditMode ? (
+                    <Edit className="h-6 w-6 text-primary" />
+                  ) : (
+                    <FileText className="h-6 w-6 text-primary" />
+                  )}
                 </div>
-                Novo Orçamento
+                {isEditMode ? `Editar Orçamento` : "Novo Orçamento"}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Crie um orçamento com produtos e personalizações
+                {isEditMode && quoteNumber ? (
+                  <>Editando: <strong>{quoteNumber}</strong></>
+                ) : (
+                  "Crie um orçamento com produtos e personalizações"
+                )}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <QuoteTemplateSelector
-              onSelectTemplate={applyTemplate}
-              trigger={
-                <Button variant="outline">
-                  <BookTemplate className="h-4 w-4 mr-2" />
-                  Usar Template
-                  {templates.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {templates.length}
-                    </Badge>
-                  )}
-                </Button>
-              }
-            />
+            {!isEditMode && (
+              <QuoteTemplateSelector
+                onSelectTemplate={applyTemplate}
+                trigger={
+                  <Button variant="outline">
+                    <BookTemplate className="h-4 w-4 mr-2" />
+                    Usar Template
+                    {templates.length > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {templates.length}
+                      </Badge>
+                    )}
+                  </Button>
+                }
+              />
+            )}
             {items.length > 0 && (
               <SaveAsTemplateButton
                 items={getTemplateItems()}
@@ -363,8 +490,8 @@ export default function QuoteBuilderPage() {
           </Card>
         )}
 
-        {/* Default template suggestion */}
-        {defaultTemplate && items.length === 0 && !templateApplied && (
+        {/* Default template suggestion (only for new quotes) */}
+        {!isEditMode && defaultTemplate && items.length === 0 && !templateApplied && (
           <Card className="bg-muted/50 border-dashed">
             <CardContent className="py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -428,7 +555,7 @@ export default function QuoteBuilderPage() {
               </CardContent>
             </Card>
 
-            {/* Items */}
+            {/* Items with Personalization */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -452,78 +579,125 @@ export default function QuoteBuilderPage() {
                 ) : (
                   <div className="space-y-4">
                     {items.map((item, index) => (
-                      <div
-                        key={`${item.product_id}-${index}`}
-                        className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg"
-                      >
-                        {item.product_image_url ? (
-                          <img
-                            src={item.product_image_url}
-                            alt={item.product_name}
-                            className="h-16 w-16 object-cover rounded-lg"
-                          />
-                        ) : (
-                          <div className="h-16 w-16 bg-muted rounded-lg flex items-center justify-center">
-                            <Package className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        )}
-
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{item.product_name}</p>
-                          <p className="text-sm text-muted-foreground">{item.product_sku}</p>
-                          {item.personalizations && item.personalizations.length > 0 && (
-                            <div className="flex gap-1 mt-1">
-                              {item.personalizations.map((p, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs">
-                                  {p.technique_name}
-                                </Badge>
-                              ))}
+                      <Card key={`${item.product_id}-${index}`} className="overflow-hidden">
+                        <div className="flex items-start gap-4 p-4">
+                          {/* Product Image */}
+                          {item.product_image_url ? (
+                            <img
+                              src={item.product_image_url}
+                              alt={item.product_name}
+                              className="h-16 w-16 object-cover rounded-lg shrink-0"
+                            />
+                          ) : (
+                            <div className="h-16 w-16 bg-muted rounded-lg flex items-center justify-center shrink-0">
+                              <Package className="h-8 w-8 text-muted-foreground" />
                             </div>
                           )}
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="font-medium truncate">{item.product_name}</p>
+                                <p className="text-sm text-muted-foreground">{item.product_sku}</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive shrink-0"
+                                onClick={() => removeItem(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+
+                            {/* Personalization badges */}
+                            {item.personalizations && item.personalizations.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {item.personalizations.map((p, idx) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    {p.technique_name || `Técnica ${idx + 1}`}
+                                    <button
+                                      onClick={() => handlePersonalizationRemove(index, idx)}
+                                      className="ml-1 hover:text-destructive"
+                                    >
+                                      ×
+                                    </button>
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Quantity, Price, Total */}
+                            <div className="flex items-center gap-3 mt-3 flex-wrap">
+                              <div className="w-20">
+                                <Label className="text-xs text-muted-foreground">Qtd</Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={item.quantity}
+                                  onChange={(e) =>
+                                    updateItemQuantity(index, parseInt(e.target.value) || 1)
+                                  }
+                                  className="h-8 text-center"
+                                />
+                              </div>
+                              <div className="w-28">
+                                <Label className="text-xs text-muted-foreground">Preço Un.</Label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step={0.01}
+                                  value={item.unit_price}
+                                  onChange={(e) =>
+                                    updateItemPrice(index, parseFloat(e.target.value) || 0)
+                                  }
+                                  className="h-8"
+                                />
+                              </div>
+                              <div className="text-right">
+                                <Label className="text-xs text-muted-foreground">Subtotal</Label>
+                                <p className="font-medium text-primary">
+                                  {formatCurrency(calculateItemTotal(item))}
+                                </p>
+                                {calculateItemPersonalizationTotal(item) > 0 && (
+                                  <p className="text-xs text-muted-foreground">
+                                    (+ {formatCurrency(calculateItemPersonalizationTotal(item))} pers.)
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                          <div className="w-20">
-                            <Label className="text-xs text-muted-foreground">Qtd</Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              value={item.quantity}
-                              onChange={(e) =>
-                                updateItemQuantity(index, parseInt(e.target.value) || 1)
-                              }
-                              className="h-8 text-center"
-                            />
-                          </div>
-                          <div className="w-28">
-                            <Label className="text-xs text-muted-foreground">Preço Un.</Label>
-                            <Input
-                              type="number"
-                              min={0}
-                              step={0.01}
-                              value={item.unit_price}
-                              onChange={(e) =>
-                                updateItemPrice(index, parseFloat(e.target.value) || 0)
-                              }
-                              className="h-8"
-                            />
-                          </div>
-                          <div className="w-28 text-right">
-                            <Label className="text-xs text-muted-foreground">Subtotal</Label>
-                            <p className="font-medium">
-                              {formatCurrency(item.quantity * item.unit_price)}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => removeItem(index)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
+                        {/* Expandable Personalization Section */}
+                        <Collapsible open={expandedItems.has(index)}>
+                          <CollapsibleTrigger asChild>
+                            <button
+                              onClick={() => toggleExpanded(index)}
+                              className="w-full flex items-center justify-center gap-2 py-2 bg-muted/50 text-sm text-muted-foreground hover:bg-muted transition-colors"
+                            >
+                              <Palette className="h-4 w-4" />
+                              Técnicas de Personalização
+                              {expandedItems.has(index) ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="p-4 bg-muted/30 border-t">
+                              <QuotePersonalizationSelector
+                                techniques={techniques}
+                                quantity={item.quantity}
+                                onAdd={(personalization) =>
+                                  handlePersonalizationAdd(index, personalization)
+                                }
+                              />
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      </Card>
                     ))}
                   </div>
                 )}
@@ -621,7 +795,7 @@ export default function QuoteBuilderPage() {
                     ) : (
                       <Send className="h-4 w-4 mr-2" />
                     )}
-                    Criar e Enviar
+                    {isEditMode ? "Salvar e Enviar" : "Criar e Enviar"}
                   </Button>
                   <Button
                     variant="outline"
@@ -634,7 +808,7 @@ export default function QuoteBuilderPage() {
                     ) : (
                       <Save className="h-4 w-4 mr-2" />
                     )}
-                    Salvar Rascunho
+                    {isEditMode ? "Salvar Alterações" : "Salvar Rascunho"}
                   </Button>
                 </div>
               </CardContent>

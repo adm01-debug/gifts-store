@@ -42,6 +42,7 @@ import {
   RefreshCw,
   BookTemplate,
   Copy,
+  Edit,
 } from "lucide-react";
 import { useQuotes, Quote } from "@/hooks/useQuotes";
 import { format } from "date-fns";
@@ -227,6 +228,10 @@ export default function QuotesListPage() {
                           <DropdownMenuItem onClick={() => navigate(`/orcamentos/${quote.id}`)}>
                             <Eye className="h-4 w-4 mr-2" />
                             Visualizar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/orcamentos/${quote.id}/editar`)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
                           </DropdownMenuItem>
                           {quote.status === "draft" && (
                             <DropdownMenuItem onClick={() => updateQuoteStatus(quote.id!, "sent")}>
