@@ -1069,6 +1069,53 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_history: {
+        Row: {
+          action: string
+          created_at: string
+          description: string
+          field_changed: string | null
+          id: string
+          metadata: Json | null
+          new_value: string | null
+          old_value: string | null
+          quote_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description: string
+          field_changed?: string | null
+          id?: string
+          metadata?: Json | null
+          new_value?: string | null
+          old_value?: string | null
+          quote_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string
+          field_changed?: string | null
+          id?: string
+          metadata?: Json | null
+          new_value?: string | null
+          old_value?: string | null
+          quote_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_history_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_item_personalizations: {
         Row: {
           area_cm2: number | null

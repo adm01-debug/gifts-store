@@ -2,16 +2,18 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Download, FileText, Printer, Share2 } from "lucide-react";
+import { ArrowLeft, Download, FileText, History, Printer, Share2 } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useQuotes, Quote } from "@/hooks/useQuotes";
 import { generateProposalPDF, downloadPDF } from "@/utils/proposalPdfGenerator";
 import { useAuth } from "@/contexts/AuthContext";
+import { QuoteHistoryPanel } from "@/components/quotes/QuoteHistoryPanel";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -147,8 +149,24 @@ export default function QuoteViewPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge variant={status.variant}>{status.label}</Badge>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <History className="h-4 w-4 mr-2" />
+                  Histórico
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Histórico de Alterações</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6">
+                  <QuoteHistoryPanel quoteId={id!} />
+                </div>
+              </SheetContent>
+            </Sheet>
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-2" />
               Imprimir

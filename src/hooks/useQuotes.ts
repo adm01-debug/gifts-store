@@ -264,6 +264,9 @@ export function useQuotes() {
         }
       }
 
+      // Log history
+      await logQuoteHistory(newQuote.id, "created", `Orçamento ${newQuote.quote_number} criado`);
+
       toast.success("Orçamento criado com sucesso!", {
         description: `Número: ${newQuote.quote_number}`,
       });
@@ -279,15 +282,64 @@ export function useQuotes() {
     }
   };
 
+  // Helper to log quote history
+  const logQuoteHistory = async (
+    quoteId: string,
+    action: string,
+    description: string,
+    options?: {
+      fieldChanged?: string;
+      oldValue?: string;
+      newValue?: string;
+      metadata?: Record<string, any>;
+    }
+  ) => {
+    if (!user) return;
+    try {
+      await supabase.from("quote_history").insert({
+        quote_id: quoteId,
+        user_id: user.id,
+        action,
+        description,
+        field_changed: options?.fieldChanged,
+        old_value: options?.oldValue,
+        new_value: options?.newValue,
+        metadata: options?.metadata || {},
+      });
+    } catch (err) {
+      console.error("Error logging history:", err);
+    }
+  };
+
   // Update quote status
   const updateQuoteStatus = async (quoteId: string, status: Quote["status"]): Promise<boolean> => {
     try {
+      // Get current status for history
+      const currentQuote = quotes.find(q => q.id === quoteId);
+      const oldStatus = currentQuote?.status || "draft";
+
       const { error } = await supabase
         .from("quotes")
         .update({ status })
         .eq("id", quoteId);
 
       if (error) throw error;
+
+      // Log status change
+      const statusLabels: Record<string, string> = {
+        draft: "Rascunho",
+        pending: "Pendente",
+        sent: "Enviado",
+        approved: "Aprovado",
+        rejected: "Rejeitado",
+        expired: "Expirado",
+      };
+      await logQuoteHistory(
+        quoteId,
+        "status_changed",
+        `Status alterado de "${statusLabels[oldStatus]}" para "${statusLabels[status]}"`,
+        { fieldChanged: "status", oldValue: oldStatus, newValue: status }
+      );
 
       toast.success("Status atualizado");
       await fetchQuotes();
@@ -423,6 +475,13 @@ export function useQuotes() {
         }
       }
 
+      // Log history
+      await logQuoteHistory(
+        quoteId,
+        "updated",
+        `Orçamento atualizado: ${items.length} item(s), total ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(total)}`
+      );
+
       toast.success("Orçamento atualizado com sucesso!");
       await fetchQuotes();
       return updatedQuote;
@@ -488,6 +547,13 @@ export function useQuotes() {
       );
 
       if (newQuote) {
+        // Log as duplicated (overwrite the "created" log)
+        await logQuoteHistory(
+          newQuote.id,
+          "created",
+          `Orçamento duplicado a partir de ${original.quote_number}`
+        );
+        
         toast.success("Orçamento duplicado com sucesso!", {
           description: `Novo número: ${newQuote.quote_number}`,
         });
