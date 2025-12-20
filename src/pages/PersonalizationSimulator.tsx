@@ -151,6 +151,10 @@ export default function PersonalizationSimulator() {
   }>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
   
+  // Profit margin calculation
+  const [sellingPrice, setSellingPrice] = useState<string>("");
+  const [targetMargin, setTargetMargin] = useState<string>("30");
+  
   // Save simulation modal states
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -952,6 +956,191 @@ Opção ${idx + 1}: ${opt.techniqueName}
                           </p>
                         </div>
                       </div>
+
+                      {/* Profit Margin Calculator */}
+                      <Card className="mt-6 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <DollarSign className="h-5 w-5 text-primary" />
+                            Calculadora de Margem de Lucro
+                          </CardTitle>
+                          <CardDescription>
+                            Calcule sua margem de lucro ou determine o preço de venda ideal
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Option 1: Calculate margin from selling price */}
+                            <div className="space-y-4 p-4 rounded-lg bg-card border">
+                              <h4 className="font-medium flex items-center gap-2">
+                                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">1</span>
+                                Calcular margem a partir do preço de venda
+                              </h4>
+                              <div className="space-y-3">
+                                <div>
+                                  <Label htmlFor="selling-price">Preço de venda por unidade</Label>
+                                  <div className="relative mt-1">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                                    <Input
+                                      id="selling-price"
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      placeholder="0,00"
+                                      value={sellingPrice}
+                                      onChange={(e) => setSellingPrice(e.target.value)}
+                                      className="pl-9"
+                                    />
+                                  </div>
+                                </div>
+                                
+                                {sellingPrice && parseFloat(sellingPrice) > 0 && simulationOptions.length > 0 && (
+                                  <div className="space-y-3 pt-2">
+                                    {simulationOptions
+                                      .sort((a, b) => a.grandTotalPerUnit - b.grandTotalPerUnit)
+                                      .map((option) => {
+                                        const cost = option.grandTotalPerUnit;
+                                        const price = parseFloat(sellingPrice);
+                                        const profit = price - cost;
+                                        const marginPercent = ((profit / price) * 100);
+                                        const markupPercent = ((profit / cost) * 100);
+                                        const totalProfit = profit * quantity;
+                                        
+                                        return (
+                                          <div 
+                                            key={option.id} 
+                                            className={cn(
+                                              "p-3 rounded-lg border",
+                                              marginPercent >= 30 ? "bg-success/10 border-success/30" :
+                                              marginPercent >= 15 ? "bg-warning/10 border-warning/30" :
+                                              "bg-destructive/10 border-destructive/30"
+                                            )}
+                                          >
+                                            <div className="flex items-center justify-between mb-2">
+                                              <span className="font-medium text-sm">{option.techniqueName}</span>
+                                              <Badge 
+                                                variant="outline"
+                                                className={cn(
+                                                  marginPercent >= 30 ? "border-success text-success" :
+                                                  marginPercent >= 15 ? "border-warning text-warning" :
+                                                  "border-destructive text-destructive"
+                                                )}
+                                              >
+                                                {marginPercent >= 30 ? "Ótima" : marginPercent >= 15 ? "Regular" : "Baixa"}
+                                              </Badge>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                              <div>
+                                                <span className="text-muted-foreground">Custo/un:</span>
+                                                <span className="ml-1 font-medium">{formatCurrency(cost)}</span>
+                                              </div>
+                                              <div>
+                                                <span className="text-muted-foreground">Lucro/un:</span>
+                                                <span className={cn("ml-1 font-medium", profit >= 0 ? "text-success" : "text-destructive")}>
+                                                  {formatCurrency(profit)}
+                                                </span>
+                                              </div>
+                                              <div>
+                                                <span className="text-muted-foreground">Margem:</span>
+                                                <span className={cn("ml-1 font-bold", marginPercent >= 30 ? "text-success" : marginPercent >= 15 ? "text-warning" : "text-destructive")}>
+                                                  {marginPercent.toFixed(1)}%
+                                                </span>
+                                              </div>
+                                              <div>
+                                                <span className="text-muted-foreground">Markup:</span>
+                                                <span className="ml-1 font-medium">{markupPercent.toFixed(1)}%</span>
+                                              </div>
+                                            </div>
+                                            <div className="mt-2 pt-2 border-t border-border/50">
+                                              <span className="text-muted-foreground text-sm">Lucro total ({quantity} un):</span>
+                                              <span className={cn("ml-2 font-bold", totalProfit >= 0 ? "text-success" : "text-destructive")}>
+                                                {formatCurrency(totalProfit)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Option 2: Calculate selling price from target margin */}
+                            <div className="space-y-4 p-4 rounded-lg bg-card border">
+                              <h4 className="font-medium flex items-center gap-2">
+                                <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">2</span>
+                                Calcular preço a partir da margem desejada
+                              </h4>
+                              <div className="space-y-3">
+                                <div>
+                                  <Label htmlFor="target-margin">Margem de lucro desejada (%)</Label>
+                                  <div className="relative mt-1">
+                                    <Input
+                                      id="target-margin"
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="1"
+                                      placeholder="30"
+                                      value={targetMargin}
+                                      onChange={(e) => setTargetMargin(e.target.value)}
+                                      className="pr-8"
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                                  </div>
+                                </div>
+                                
+                                {targetMargin && parseFloat(targetMargin) > 0 && simulationOptions.length > 0 && (
+                                  <div className="space-y-3 pt-2">
+                                    {simulationOptions
+                                      .sort((a, b) => a.grandTotalPerUnit - b.grandTotalPerUnit)
+                                      .map((option) => {
+                                        const cost = option.grandTotalPerUnit;
+                                        const margin = parseFloat(targetMargin) / 100;
+                                        const suggestedPrice = cost / (1 - margin);
+                                        const profit = suggestedPrice - cost;
+                                        const totalProfit = profit * quantity;
+                                        const totalRevenue = suggestedPrice * quantity;
+                                        
+                                        return (
+                                          <div 
+                                            key={option.id} 
+                                            className="p-3 rounded-lg border bg-muted/30"
+                                          >
+                                            <div className="flex items-center justify-between mb-2">
+                                              <span className="font-medium text-sm">{option.techniqueName}</span>
+                                              <span className="text-xs text-muted-foreground">Custo: {formatCurrency(cost)}</span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                              <div>
+                                                <span className="text-muted-foreground">Preço sugerido/un:</span>
+                                                <p className="font-bold text-lg text-primary">{formatCurrency(suggestedPrice)}</p>
+                                              </div>
+                                              <div>
+                                                <span className="text-muted-foreground">Lucro/un:</span>
+                                                <p className="font-bold text-success">{formatCurrency(profit)}</p>
+                                              </div>
+                                            </div>
+                                            <div className="mt-2 pt-2 border-t border-border/50 grid grid-cols-2 gap-2 text-sm">
+                                              <div>
+                                                <span className="text-muted-foreground">Faturamento total:</span>
+                                                <p className="font-medium">{formatCurrency(totalRevenue)}</p>
+                                              </div>
+                                              <div>
+                                                <span className="text-muted-foreground">Lucro total:</span>
+                                                <p className="font-bold text-success">{formatCurrency(totalProfit)}</p>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </CardContent>
                   </Card>
                 )}

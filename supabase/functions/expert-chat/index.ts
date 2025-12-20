@@ -116,6 +116,58 @@ serve(async (req) => {
         console.log("Client deals count:", clientDeals.length);
       }
 
+      // Fetch client's quote history for product preferences
+      let quoteProductHistory: any[] = [];
+      const { data: clientQuotes, error: quotesError } = await supabase
+        .from("quotes")
+        .select(`
+          id,
+          status,
+          total,
+          created_at,
+          quote_items (
+            product_name,
+            product_sku,
+            quantity,
+            unit_price,
+            subtotal
+          )
+        `)
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (!quotesError && clientQuotes) {
+        quoteProductHistory = clientQuotes;
+        console.log("Client quote history count:", quoteProductHistory.length);
+      }
+
+      // Analyze product preferences from quote history
+      const productPreferences = new Map<string, { count: number; totalValue: number; lastPurchase: string }>();
+      const categoryPreferences = new Map<string, number>();
+      
+      quoteProductHistory.forEach(quote => {
+        if (quote.quote_items) {
+          quote.quote_items.forEach((item: any) => {
+            const existing = productPreferences.get(item.product_name) || { count: 0, totalValue: 0, lastPurchase: quote.created_at };
+            productPreferences.set(item.product_name, {
+              count: existing.count + item.quantity,
+              totalValue: existing.totalValue + (item.subtotal || 0),
+              lastPurchase: quote.created_at > existing.lastPurchase ? quote.created_at : existing.lastPurchase
+            });
+          });
+        }
+      });
+
+      // Build enhanced client context with upsell intelligence
+      const topProducts = Array.from(productPreferences.entries())
+        .sort((a, b) => b[1].totalValue - a[1].totalValue)
+        .slice(0, 5);
+
+      const averageOrderValue = quoteProductHistory.length > 0
+        ? quoteProductHistory.reduce((sum, q) => sum + (q.total || 0), 0) / quoteProductHistory.length
+        : 0;
+
       if (clientData) {
         clientContext = `
 CONTEXTO DO CLIENTE ATUAL:
@@ -127,10 +179,26 @@ CONTEXTO DO CLIENTE ATUAL:
 - Total investido: ${clientData.total_spent ? `R$ ${clientData.total_spent.toLocaleString("pt-BR")}` : "Não disponível"}
 - Última compra: ${clientData.last_purchase_date ? new Date(clientData.last_purchase_date).toLocaleDateString("pt-BR") : "Não disponível"}
 
-HISTÓRICO DE COMPRAS (últimas ${clientDeals.length} negociações):
+HISTÓRICO DE NEGOCIAÇÕES (últimas ${clientDeals.length}):
 ${clientDeals.length > 0 
   ? clientDeals.map((deal, i) => `${i + 1}. ${deal.title} - ${deal.value ? `R$ ${deal.value.toLocaleString("pt-BR")}` : "Valor não informado"} (${deal.stage || "Em andamento"})`).join("\n")
   : "Nenhum histórico de compras encontrado"}
+
+INTELIGÊNCIA DE UPSELL - ANÁLISE DE COMPORTAMENTO:
+- Ticket médio: ${averageOrderValue > 0 ? `R$ ${averageOrderValue.toFixed(2)}` : "Não disponível"}
+- Total de orçamentos: ${quoteProductHistory.length}
+- Produtos mais comprados:
+${topProducts.length > 0
+  ? topProducts.map(([name, data], i) => `  ${i + 1}. ${name} - ${data.count} unidades, R$ ${data.totalValue.toFixed(2)} total`).join("\n")
+  : "  Nenhum histórico de produtos"}
+
+SUGESTÕES DE UPSELL BASEADAS NO HISTÓRICO:
+${topProducts.length > 0 
+  ? `- Este cliente tem preferência por produtos como: ${topProducts.map(([name]) => name).join(", ")}
+- Sugira produtos complementares ou versões premium dos itens que já comprou
+- Considere o ticket médio de R$ ${averageOrderValue.toFixed(2)} para calibrar sugestões de preço
+- Ofereça kits ou combos que incluam produtos que ele já conhece`
+  : "- Cliente novo ou sem histórico de orçamentos - foque em entender suas necessidades"}
 `;
       }
     }
@@ -288,6 +356,15 @@ SEU PAPEL:
 - Analisa o perfil do cliente (ramo, nicho, cores da marca, histórico) para fazer recomendações personalizadas
 - Sugere produtos que combinam com as cores da marca do cliente
 - Considera o histórico de compras para sugerir produtos complementares ou similares
+- PROATIVAMENTE sugere UPSELLS e CROSS-SELLS baseado no comportamento do cliente
+
+ESTRATÉGIAS DE UPSELL E CROSS-SELL:
+1. **Upgrade de produto**: Se o cliente comprou um item básico, sugira a versão premium
+2. **Produtos complementares**: Se comprou caneta, sugira caderno; se comprou squeeze, sugira toalha
+3. **Kits e combos**: Agrupe produtos que o cliente já comprou em kits com desconto
+4. **Maior quantidade**: Sugira quantidade maior com melhor custo-benefício
+5. **Personalização adicional**: Ofereça gravação, bordado ou impressão colorida
+6. **Linha premium**: Baseado no ticket médio, sugira produtos de faixa de preço superior
 
 FORMATO DE LINKS DE PRODUTOS:
 Quando recomendar produtos, SEMPRE use este formato para criar links clicáveis:
@@ -304,13 +381,15 @@ DIRETRIZES:
 1. Seja proativo e sugira produtos baseado no contexto do cliente
 2. Sempre explique POR QUE está recomendando cada produto
 3. Considere as cores da marca do cliente nas sugestões
-4. Analise o histórico para entender preferências
+4. Analise o histórico para entender preferências e SUGERIR UPSELLS
 5. Sugira produtos para datas comemorativas quando apropriado
 6. Seja conciso mas informativo
 7. Use linguagem profissional mas acessível
 8. Se não souber algo, seja honesto
 9. SEMPRE use o formato [[PRODUTO:id:nome]] ao mencionar produtos específicos
 10. PRIORIZE produtos da busca semântica quando disponíveis
+11. Use a INTELIGÊNCIA DE UPSELL para fazer sugestões estratégicas
+12. Mencione o ticket médio do cliente para calibrar sugestões de preço
 
 MAPEAMENTO DE CARACTERÍSTICAS:
 - "produto sustentável/ecológico" → materiais: bambu, papel reciclado, algodão orgânico, madeira, cortiça
@@ -323,7 +402,7 @@ MAPEAMENTO DE CARACTERÍSTICAS:
 ${clientContext}
 ${productsContext}
 
-IMPORTANTE: Você tem acesso em tempo real aos dados do cliente e histórico de compras do Bitrix24, além de busca semântica avançada que encontra produtos por similaridade. Use essas informações para fazer recomendações precisas e personalizadas. Lembre-se de usar o formato [[PRODUTO:id:nome]] para tornar os produtos clicáveis.`;
+IMPORTANTE: Você tem acesso em tempo real aos dados do cliente, histórico de compras do Bitrix24, histórico de orçamentos e análise de comportamento para UPSELL inteligente. Use essas informações para fazer recomendações precisas, personalizadas e estratégicas. Lembre-se de usar o formato [[PRODUTO:id:nome]] para tornar os produtos clicáveis.`;
 
     const apiMessages: Message[] = [
       { role: "system", content: systemPrompt },
