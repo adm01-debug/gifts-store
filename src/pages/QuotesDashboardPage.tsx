@@ -7,6 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/ui/stat-card";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -36,10 +43,17 @@ import {
   Users,
   Target,
   Hourglass,
+  Building2,
 } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
+import { supabase } from "@/integrations/supabase/client";
 import { format, differenceInDays, differenceInHours, startOfMonth, endOfMonth, subMonths, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+interface Client {
+  id: string;
+  name: string;
+}
 
 const statusConfig = {
   draft: { label: "Rascunho", color: "hsl(var(--muted-foreground))" },
@@ -54,6 +68,41 @@ export default function QuotesDashboardPage() {
   const navigate = useNavigate();
   const { quotes, isLoading } = useQuotes();
   const [selectedPeriod, setSelectedPeriod] = useState<"month" | "quarter" | "year">("month");
+  const [selectedClientId, setSelectedClientId] = useState<string>("all");
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loadingClients, setLoadingClients] = useState(true);
+
+  // Fetch clients for filter
+  useEffect(() => {
+    const fetchClients = async () => {
+      setLoadingClients(true);
+      const { data } = await supabase
+        .from("bitrix_clients")
+        .select("id, name")
+        .order("name");
+      setClients(data || []);
+      setLoadingClients(false);
+    };
+    fetchClients();
+  }, []);
+
+  // Get unique clients from quotes for quick access
+  const quotesClients = useMemo(() => {
+    const clientMap = new Map<string, string>();
+    quotes.forEach((q) => {
+      if (q.client_id && q.client_name) {
+        clientMap.set(q.client_id, q.client_name);
+      }
+    });
+    return Array.from(clientMap, ([id, name]) => ({ id, name }));
+  }, [quotes]);
+
+  const selectedClientName = useMemo(() => {
+    if (selectedClientId === "all") return null;
+    return clients.find((c) => c.id === selectedClientId)?.name || 
+           quotesClients.find((c) => c.id === selectedClientId)?.name || 
+           null;
+  }, [selectedClientId, clients, quotesClients]);
 
   const metrics = useMemo(() => {
     if (!quotes.length) {
@@ -87,7 +136,13 @@ export default function QuotesDashboardPage() {
         break;
     }
 
-    const filteredQuotes = quotes.filter((q) => new Date(q.created_at) >= startDate);
+    // Filter by period and client
+    let filteredQuotes = quotes.filter((q) => new Date(q.created_at) >= startDate);
+    
+    // Filter by client if selected
+    if (selectedClientId !== "all") {
+      filteredQuotes = filteredQuotes.filter((q) => q.client_id === selectedClientId);
+    }
 
     // Basic metrics
     const totalQuotes = filteredQuotes.length;
@@ -176,7 +231,7 @@ export default function QuotesDashboardPage() {
       monthlyData,
       conversionFunnel,
     };
-  }, [quotes, selectedPeriod]);
+  }, [quotes, selectedPeriod, selectedClientId]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -232,7 +287,24 @@ export default function QuotesDashboardPage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Client Filter */}
+            <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+              <SelectTrigger className="w-[200px]">
+                <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Todos os clientes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os clientes</SelectItem>
+                {(clients.length > 0 ? clients : quotesClients).map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Period Buttons */}
             <Button
               variant={selectedPeriod === "month" ? "default" : "outline"}
               size="sm"
@@ -256,6 +328,23 @@ export default function QuotesDashboardPage() {
             </Button>
           </div>
         </div>
+
+        {/* Active Client Filter Badge */}
+        {selectedClientName && (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="gap-2 py-1.5 px-3">
+              <Building2 className="h-3.5 w-3.5" />
+              Filtrando por: {selectedClientName}
+              <button
+                onClick={() => setSelectedClientId("all")}
+                className="ml-1 hover:text-destructive"
+              >
+                ×
+              </button>
+            </Badge>
+          </div>
+        )}
+
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
