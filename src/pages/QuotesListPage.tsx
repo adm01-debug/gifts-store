@@ -41,6 +41,7 @@ import {
   Filter,
   RefreshCw,
   BookTemplate,
+  Copy,
 } from "lucide-react";
 import { useQuotes, Quote } from "@/hooks/useQuotes";
 import { format } from "date-fns";
@@ -57,7 +58,7 @@ const statusConfig: Record<Quote["status"], { label: string; variant: "default" 
 
 export default function QuotesListPage() {
   const navigate = useNavigate();
-  const { quotes, isLoading, deleteQuote, updateQuoteStatus, syncQuoteToBitrix } = useQuotes();
+  const { quotes, isLoading, deleteQuote, updateQuoteStatus, syncQuoteToBitrix, duplicateQuote } = useQuotes();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -233,6 +234,10 @@ export default function QuotesListPage() {
                               Enviar
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuItem onClick={() => duplicateQuote(quote.id!)}>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicar
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => syncQuoteToBitrix(quote.id!)}>
                             <RefreshCw className="h-4 w-4 mr-2" />
                             Sincronizar Bitrix
