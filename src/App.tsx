@@ -30,6 +30,7 @@ import BIDashboard from "./pages/BIDashboard";
 import TrendsPage from "./pages/TrendsPage";
 import QuoteTemplatesPage from "./pages/QuoteTemplatesPage";
 import QuotesListPage from "./pages/QuotesListPage";
+import QuotesDashboardPage from "./pages/QuotesDashboardPage";
 import QuoteBuilderPage from "./pages/QuoteBuilderPage";
 import QuoteViewPage from "./pages/QuoteViewPage";
 import PublicQuoteApproval from "./pages/PublicQuoteApproval";
@@ -142,6 +143,11 @@ const App = () => (
                     <Route path="/orcamentos" element={
                       <ProtectedRoute>
                         <QuotesListPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/orcamentos/dashboard" element={
+                      <ProtectedRoute>
+                        <QuotesDashboardPage />
                       </ProtectedRoute>
                     } />
                     <Route path="/orcamentos/novo" element={
