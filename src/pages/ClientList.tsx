@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Pagination,
   PaginationContent,
@@ -27,13 +28,16 @@ import {
   ChevronRight,
   RefreshCw,
   Filter,
-  X
+  X,
+  BarChart3,
+  Users,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ClientRFMSegmentation } from "@/components/clients/ClientRFMSegmentation";
 
 interface BitrixClient {
   id: string;
@@ -54,6 +58,7 @@ const ITEMS_PER_PAGE = 10;
 
 export default function ClientList() {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("list");
   const [clients, setClients] = useState<BitrixClient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -161,6 +166,21 @@ export default function ClientList() {
             Atualizar
           </Button>
         </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="list" className="gap-2">
+              <Users className="h-4 w-4" />
+              Lista
+            </TabsTrigger>
+            <TabsTrigger value="rfm" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Análise RFM
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="list" className="mt-6 space-y-6">
 
         {/* Search & Filters */}
         <div className="flex flex-col md:flex-row gap-4">
@@ -362,6 +382,12 @@ export default function ClientList() {
             </PaginationContent>
           </Pagination>
         )}
+          </TabsContent>
+
+          <TabsContent value="rfm" className="mt-6">
+            <ClientRFMSegmentation />
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   );
