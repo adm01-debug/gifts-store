@@ -57,9 +57,11 @@ export interface CreateTemplateInput {
 
 export function useQuoteTemplates() {
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
+  const [allTemplates, setAllTemplates] = useState<QuoteTemplate[]>([]);
+  const [sellers, setSellers] = useState<{ id: string; full_name: string | null; email: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
   const fetchTemplates = useCallback(async () => {
@@ -100,6 +102,66 @@ export function useQuoteTemplates() {
       setLoading(false);
     }
   }, [user]);
+
+  // Fetch all templates (for admins to clone between sellers)
+  const fetchAllTemplates = useCallback(async () => {
+    if (!user || !isAdmin) {
+      setAllTemplates([]);
+      return;
+    }
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from("quote_templates")
+        .select("*")
+        .order("seller_id")
+        .order("updated_at", { ascending: false });
+
+      if (fetchError) throw fetchError;
+
+      const transformedData = (data || []).map((item) => ({
+        ...item,
+        items_data: Array.isArray(item.items_data) 
+          ? item.items_data as unknown as QuoteTemplateItem[]
+          : [],
+        template_data: typeof item.template_data === 'object' && item.template_data !== null
+          ? item.template_data as Record<string, unknown>
+          : {},
+      }));
+
+      setAllTemplates(transformedData);
+    } catch (err) {
+      console.error("Error fetching all templates:", err);
+    }
+  }, [user, isAdmin]);
+
+  // Fetch all sellers (for admin cloning)
+  const fetchSellers = useCallback(async () => {
+    if (!user || !isAdmin) {
+      setSellers([]);
+      return;
+    }
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .order("full_name");
+
+      if (fetchError) throw fetchError;
+
+      // Also get emails from auth (via user_roles as a proxy since we can't query auth.users directly)
+      const sellersWithInfo = (data || []).map((profile) => ({
+        id: profile.user_id,
+        full_name: profile.full_name,
+        email: profile.full_name || 'Vendedor'
+      }));
+
+      setSellers(sellersWithInfo);
+    } catch (err) {
+      console.error("Error fetching sellers:", err);
+    }
+  }, [user, isAdmin]);
 
   const createTemplate = useCallback(async (input: CreateTemplateInput) => {
     if (!user) {
@@ -265,19 +327,96 @@ export function useQuoteTemplates() {
     });
   }, [templates, createTemplate]);
 
+  // Clone template to another seller (admin only)
+  const cloneTemplateToSeller = useCallback(async (templateId: string, targetSellerId: string) => {
+    if (!user || !isAdmin) {
+      toast({
+        title: "Erro",
+        description: "Apenas administradores podem clonar templates entre vendedores",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    // Find template in allTemplates
+    const template = allTemplates.find((t) => t.id === templateId);
+    if (!template) {
+      toast({
+        title: "Erro",
+        description: "Template não encontrado",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    try {
+      const { data, error: insertError } = await supabase
+        .from("quote_templates")
+        .insert({
+          seller_id: targetSellerId,
+          name: `${template.name} (Clonado)`,
+          description: template.description || null,
+          is_default: false,
+          items_data: JSON.parse(JSON.stringify(template.items_data || [])),
+          template_data: JSON.parse(JSON.stringify(template.template_data || {})),
+          discount_percent: template.discount_percent || 0,
+          discount_amount: template.discount_amount || 0,
+          notes: template.notes || null,
+          internal_notes: template.internal_notes || null,
+          payment_terms: template.payment_terms || null,
+          delivery_time: template.delivery_time || null,
+          validity_days: template.validity_days || 30,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      const targetSeller = sellers.find((s) => s.id === targetSellerId);
+      toast({
+        title: "Template clonado",
+        description: `Template "${template.name}" clonado para ${targetSeller?.full_name || 'vendedor'} com sucesso`,
+      });
+
+      await fetchAllTemplates();
+      return data;
+    } catch (err) {
+      console.error("Error cloning template:", err);
+      toast({
+        title: "Erro",
+        description: "Não foi possível clonar o template",
+        variant: "destructive",
+      });
+      return null;
+    }
+  }, [user, isAdmin, allTemplates, sellers, toast, fetchAllTemplates]);
+
   useEffect(() => {
     fetchTemplates();
   }, [fetchTemplates]);
 
+  useEffect(() => {
+    if (isAdmin) {
+      fetchAllTemplates();
+      fetchSellers();
+    }
+  }, [isAdmin, fetchAllTemplates, fetchSellers]);
+
   return {
     templates,
+    allTemplates,
+    sellers,
     loading,
     error,
+    isAdmin,
     fetchTemplates,
+    fetchAllTemplates,
+    fetchSellers,
     createTemplate,
     updateTemplate,
     deleteTemplate,
     setDefaultTemplate,
     duplicateTemplate,
+    cloneTemplateToSeller,
   };
 }

@@ -30,12 +30,29 @@ import {
   Edit, 
   Search,
   Plus,
-  Package
+  Package,
+  Users,
+  UserPlus
 } from "lucide-react";
 import { QuoteTemplate, useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface QuoteTemplatesListProps {
   onApplyTemplate?: (template: QuoteTemplate) => void;
@@ -50,9 +67,12 @@ export function QuoteTemplatesList({
   onCreateTemplate,
   selectionMode = false,
 }: QuoteTemplatesListProps) {
-  const { templates, loading, deleteTemplate, setDefaultTemplate, duplicateTemplate } = useQuoteTemplates();
+  const { templates, allTemplates, sellers, loading, deleteTemplate, setDefaultTemplate, duplicateTemplate, cloneTemplateToSeller, isAdmin } = useQuoteTemplates();
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [cloneDialogOpen, setCloneDialogOpen] = useState(false);
+  const [cloneTemplateId, setCloneTemplateId] = useState<string | null>(null);
+  const [targetSellerId, setTargetSellerId] = useState<string>("");
 
   const filteredTemplates = templates.filter((template) =>
     template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -87,6 +107,20 @@ export function QuoteTemplatesList({
       await deleteTemplate(deleteConfirmId);
       setDeleteConfirmId(null);
     }
+  };
+
+  const handleClone = async () => {
+    if (cloneTemplateId && targetSellerId) {
+      await cloneTemplateToSeller(cloneTemplateId, targetSellerId);
+      setCloneDialogOpen(false);
+      setCloneTemplateId(null);
+      setTargetSellerId("");
+    }
+  };
+
+  const openCloneDialog = (templateId: string) => {
+    setCloneTemplateId(templateId);
+    setCloneDialogOpen(true);
   };
 
   if (loading) {
@@ -214,6 +248,15 @@ export function QuoteTemplatesList({
                             </>
                           )}
                         </DropdownMenuItem>
+                        {isAdmin && sellers.length > 0 && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => openCloneDialog(template.id)}>
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Clonar para Vendedor
+                            </DropdownMenuItem>
+                          </>
+                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
                           onClick={() => setDeleteConfirmId(template.id)}
