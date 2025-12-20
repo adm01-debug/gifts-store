@@ -31,6 +31,7 @@ import TrendsPage from "./pages/TrendsPage";
 import QuoteTemplatesPage from "./pages/QuoteTemplatesPage";
 import QuotesListPage from "./pages/QuotesListPage";
 import QuoteBuilderPage from "./pages/QuoteBuilderPage";
+import QuoteViewPage from "./pages/QuoteViewPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -149,6 +150,11 @@ const App = () => (
                     <Route path="/orcamentos/:id/editar" element={
                       <ProtectedRoute>
                         <QuoteBuilderPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/orcamentos/:id" element={
+                      <ProtectedRoute>
+                        <QuoteViewPage />
                       </ProtectedRoute>
                     } />
                     
