@@ -41,6 +41,7 @@ import { useSearch } from "@/hooks/useSearch";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useVoiceCommandHistory } from "@/hooks/useVoiceCommandHistory";
 import { useContextualSuggestions } from "@/hooks/useContextualSuggestions";
+import { useVoiceFeedback } from "@/hooks/useVoiceFeedback";
 import { VoiceSearchOverlay } from "./VoiceSearchOverlay";
 
 interface SearchResult {
@@ -206,6 +207,17 @@ export function GlobalSearchPalette() {
     searchQuery: query,
   });
 
+  // Voice feedback sounds
+  const {
+    playStartListening,
+    playStopListening,
+    playCommandRecognized,
+    playCommandSuccess,
+    playError,
+    playNavigation,
+    playFilterApplied,
+  } = useVoiceFeedback();
+
   // Determine command type from transcript
   const detectCommandType = useCallback((text: string): 'filter' | 'search' | 'navigation' | 'sort' | 'clear' => {
     const lower = text.toLowerCase();
@@ -220,6 +232,9 @@ export function GlobalSearchPalette() {
   const handleVoiceResult = useCallback((transcript: string) => {
     const lowerTranscript = transcript.toLowerCase();
     const commandType = detectCommandType(transcript);
+    
+    // Play command recognized sound
+    playCommandRecognized();
     
     // Parse voice commands
     const appliedFilters: AppliedFilter[] = [];
@@ -264,10 +279,16 @@ export function GlobalSearchPalette() {
     
     setVoiceAppliedFilters(appliedFilters);
     
+    // Play filter sound if filters detected
+    if (appliedFilters.length > 0) {
+      playFilterApplied();
+    }
+    
     // Check for navigation commands
     if (/(?:ir para|abrir|mostrar|ver)\s*(?:orçamentos?|cotações?)/i.test(lowerTranscript)) {
       addVoiceCommand(transcript, 'navigation', true);
       setVoiceCommandAction("Abrindo orçamentos...");
+      playNavigation();
       setTimeout(() => {
         setVoiceOverlayOpen(false);
         navigate("/orcamentos");
@@ -278,6 +299,7 @@ export function GlobalSearchPalette() {
     if (/(?:ir para|abrir|mostrar|ver)\s*(?:pedidos?|orders?)/i.test(lowerTranscript)) {
       addVoiceCommand(transcript, 'navigation', true);
       setVoiceCommandAction("Abrindo pedidos...");
+      playNavigation();
       setTimeout(() => {
         setVoiceOverlayOpen(false);
         navigate("/pedidos");
@@ -288,6 +310,7 @@ export function GlobalSearchPalette() {
     if (/(?:ir para|abrir|mostrar|ver)\s*(?:clientes?)/i.test(lowerTranscript)) {
       addVoiceCommand(transcript, 'navigation', true);
       setVoiceCommandAction("Abrindo clientes...");
+      playNavigation();
       setTimeout(() => {
         setVoiceOverlayOpen(false);
         navigate("/clientes");
@@ -298,6 +321,7 @@ export function GlobalSearchPalette() {
     if (/(?:ir para|abrir|mostrar|ver)\s*(?:favoritos?)/i.test(lowerTranscript)) {
       addVoiceCommand(transcript, 'navigation', true);
       setVoiceCommandAction("Abrindo favoritos...");
+      playNavigation();
       setTimeout(() => {
         setVoiceOverlayOpen(false);
         navigate("/favoritos");
@@ -308,6 +332,7 @@ export function GlobalSearchPalette() {
     if (/(?:novo|criar|fazer)\s*(?:orçamento|cotação)/i.test(lowerTranscript)) {
       addVoiceCommand(transcript, 'navigation', true);
       setVoiceCommandAction("Criando novo orçamento...");
+      playNavigation();
       setTimeout(() => {
         setVoiceOverlayOpen(false);
         navigate("/orcamentos/novo");
@@ -319,13 +344,19 @@ export function GlobalSearchPalette() {
     if (appliedFilters.length > 0 || transcript.length > 3) {
       addVoiceCommand(transcript, commandType, true);
       setVoiceCommandAction(`Buscando: "${transcript}"`);
+      playCommandSuccess();
       setTimeout(() => {
         setVoiceOverlayOpen(false);
         setQuery(transcript);
         setOpen(true);
       }, 1500);
     }
-  }, [navigate, addVoiceCommand, detectCommandType]);
+  }, [navigate, addVoiceCommand, detectCommandType, playCommandRecognized, playNavigation, playFilterApplied, playCommandSuccess]);
+
+  // Handle voice errors
+  const handleVoiceError = useCallback((errorMessage: string) => {
+    playError();
+  }, [playError]);
   
   const {
     isListening,
@@ -336,18 +367,21 @@ export function GlobalSearchPalette() {
     error: voiceError,
   } = useSpeechRecognition({
     onResult: handleVoiceResult,
+    onError: handleVoiceError,
     language: "pt-BR",
   });
   
   const toggleVoiceSearch = useCallback(() => {
     if (isListening) {
+      playStopListening();
       stopListening();
     } else {
       setVoiceCommandAction(null);
       setVoiceAppliedFilters([]);
+      playStartListening();
       startListening();
     }
-  }, [isListening, startListening, stopListening]);
+  }, [isListening, startListening, stopListening, playStartListening, playStopListening]);
   
   const handleOpenVoiceOverlay = useCallback(() => {
     setVoiceOverlayOpen(true);
@@ -358,9 +392,10 @@ export function GlobalSearchPalette() {
   const handleCloseVoiceOverlay = useCallback(() => {
     setVoiceOverlayOpen(false);
     if (isListening) {
+      playStopListening();
       stopListening();
     }
-  }, [isListening, stopListening]);
+  }, [isListening, stopListening, playStopListening]);
 
   // Fetch popular products based on views
   useEffect(() => {
