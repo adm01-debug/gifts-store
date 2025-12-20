@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { GamificationIndicators } from "./GamificationIndicators";
 import { StockAlertsIndicator } from "@/components/inventory/StockAlertsIndicator";
 import { NotificationsPopover } from "@/components/notifications/NotificationsPopover";
+import { GlobalSearchPalette } from "@/components/search/GlobalSearchPalette";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -81,9 +82,9 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
           </div>
         </div>
 
-        {/* Center section - Search Bar */}
-        <div className="flex-1 max-w-2xl mx-4 hidden md:block">
-          <AdvancedSearch onSearch={onSearchChange} />
+        {/* Center section - Global Search */}
+        <div className="flex-1 max-w-md mx-4 hidden md:block">
+          <GlobalSearchPalette />
         </div>
 
         {/* Right section */}
@@ -91,11 +92,16 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
           {/* Gamification indicators */}
           <GamificationIndicators />
 
-          {/* Mobile search */}
+          {/* Mobile search trigger */}
           <Button 
             variant="ghost" 
             size="icon" 
             className="md:hidden h-9 w-9 hover:bg-orange/10 hover:text-orange"
+            onClick={() => {
+              // Trigger Ctrl+K programmatically for mobile
+              const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true });
+              document.dispatchEvent(event);
+            }}
           >
             <Search className="h-4 w-4" />
           </Button>
