@@ -313,7 +313,125 @@ export function useQuotes() {
       return true;
     } catch (err) {
       toast.error("Erro ao excluir orçamento");
-      return false;
+    return false;
+    }
+  };
+
+  // Update existing quote
+  const updateQuote = async (quoteId: string, quote: Partial<Quote>, items: QuoteItem[]): Promise<Quote | null> => {
+    if (!user) {
+      toast.error("Usuário não autenticado");
+      return null;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Calculate totals
+      const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+      const discountAmount = quote.discount_percent 
+        ? subtotal * (quote.discount_percent / 100) 
+        : (quote.discount_amount || 0);
+      const total = subtotal - discountAmount;
+
+      // Update quote
+      const { data: updatedQuote, error: quoteError } = await supabase
+        .from("quotes")
+        .update({
+          client_id: quote.client_id || null,
+          status: quote.status,
+          subtotal,
+          discount_percent: quote.discount_percent || 0,
+          discount_amount: discountAmount,
+          total,
+          notes: quote.notes || null,
+          internal_notes: quote.internal_notes || null,
+          valid_until: quote.valid_until || null,
+        })
+        .eq("id", quoteId)
+        .select()
+        .single();
+
+      if (quoteError) throw quoteError;
+
+      // Delete existing items and personalizations
+      const { data: existingItems } = await supabase
+        .from("quote_items")
+        .select("id")
+        .eq("quote_id", quoteId);
+
+      if (existingItems?.length) {
+        for (const item of existingItems) {
+          await supabase
+            .from("quote_item_personalizations")
+            .delete()
+            .eq("quote_item_id", item.id);
+        }
+        await supabase
+          .from("quote_items")
+          .delete()
+          .eq("quote_id", quoteId);
+      }
+
+      // Insert new items
+      if (items.length > 0) {
+        const itemsToInsert = items.map((item, index) => ({
+          quote_id: quoteId,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          product_sku: item.product_sku,
+          product_image_url: item.product_image_url,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          color_name: item.color_name,
+          color_hex: item.color_hex,
+          notes: item.notes,
+          sort_order: index,
+        }));
+
+        const { data: insertedItems, error: itemsError } = await supabase
+          .from("quote_items")
+          .insert(itemsToInsert)
+          .select();
+
+        if (itemsError) throw itemsError;
+
+        // Insert personalizations for each item
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          const insertedItem = insertedItems?.[i];
+
+          if (item.personalizations?.length && insertedItem) {
+            const personalizationsToInsert = item.personalizations.map(p => ({
+              quote_item_id: insertedItem.id,
+              technique_id: p.technique_id,
+              colors_count: p.colors_count || 1,
+              positions_count: p.positions_count || 1,
+              area_cm2: p.area_cm2,
+              setup_cost: p.setup_cost || 0,
+              unit_cost: p.unit_cost || 0,
+              total_cost: p.total_cost || 0,
+              notes: p.notes,
+            }));
+
+            const { error: persError } = await supabase
+              .from("quote_item_personalizations")
+              .insert(personalizationsToInsert);
+
+            if (persError) throw persError;
+          }
+        }
+      }
+
+      toast.success("Orçamento atualizado com sucesso!");
+      await fetchQuotes();
+      return updatedQuote;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao atualizar orçamento";
+      toast.error("Erro ao atualizar orçamento", { description: message });
+      return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -462,6 +580,7 @@ export function useQuotes() {
     fetchQuotes,
     fetchQuote,
     createQuote,
+    updateQuote,
     updateQuoteStatus,
     deleteQuote,
     duplicateQuote,

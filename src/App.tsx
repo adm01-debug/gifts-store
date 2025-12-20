@@ -146,6 +146,11 @@ const App = () => (
                         <QuoteBuilderPage />
                       </ProtectedRoute>
                     } />
+                    <Route path="/orcamentos/:id/editar" element={
+                      <ProtectedRoute>
+                        <QuoteBuilderPage />
+                      </ProtectedRoute>
+                    } />
                     
                     {/* Catch-all */}
                     <Route path="*" element={<NotFound />} />
