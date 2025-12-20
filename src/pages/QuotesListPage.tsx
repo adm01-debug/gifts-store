@@ -44,6 +44,8 @@ import {
   Copy,
   Edit,
   BarChart3,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { useQuotes, Quote } from "@/hooks/useQuotes";
 import { format } from "date-fns";
@@ -124,6 +126,14 @@ export default function QuotesListPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" disabled>
+              <List className="h-4 w-4 mr-2" />
+              Lista
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate("/orcamentos/kanban")}>
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Kanban
+            </Button>
             <Button variant="outline" onClick={() => navigate("/orcamentos/dashboard")}>
               <BarChart3 className="h-4 w-4 mr-2" />
               Dashboard
