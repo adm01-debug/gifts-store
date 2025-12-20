@@ -49,7 +49,8 @@ import {
   Filter,
   User,
   LayoutGrid,
-  List
+  List,
+  Download
 } from "lucide-react";
 import { QuoteTemplate, useQuoteTemplates } from "@/hooks/useQuoteTemplates";
 import { format } from "date-fns";
@@ -58,6 +59,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { exportTemplatesToJson, exportSingleTemplate } from "@/utils/templateExport";
 
 interface AdminTemplatesManagerProps {
   onEditTemplate?: (template: QuoteTemplate) => void;
@@ -210,6 +212,17 @@ export function AdminTemplatesManager({ onEditTemplate }: AdminTemplatesManagerP
             </SelectContent>
           </Select>
 
+          {filteredTemplates.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => exportTemplatesToJson(filteredTemplates, `templates-all-${new Date().toISOString().split('T')[0]}.json`)}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+          )}
+
           <div className="flex items-center border rounded-md">
             <Button
               variant={viewMode === "table" ? "secondary" : "ghost"}
@@ -321,6 +334,10 @@ export function AdminTemplatesManager({ onEditTemplate }: AdminTemplatesManagerP
                             <UserPlus className="h-4 w-4 mr-2" />
                             Clonar para Vendedor
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => exportSingleTemplate(template)}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Exportar JSON
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             onClick={() => setDeleteConfirmId(template.id)}
@@ -391,6 +408,10 @@ export function AdminTemplatesManager({ onEditTemplate }: AdminTemplatesManagerP
                             <DropdownMenuItem onClick={() => openCloneDialog(template.id)}>
                               <UserPlus className="h-4 w-4 mr-2" />
                               Clonar para Vendedor
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => exportSingleTemplate(template)}>
+                              <Download className="h-4 w-4 mr-2" />
+                              Exportar JSON
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 

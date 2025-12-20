@@ -32,9 +32,11 @@ import {
   Plus,
   Package,
   Users,
-  UserPlus
+  UserPlus,
+  Download
 } from "lucide-react";
 import { QuoteTemplate, useQuoteTemplates } from "@/hooks/useQuoteTemplates";
+import { exportTemplatesToJson, exportSingleTemplate } from "@/utils/templateExport";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -149,6 +151,15 @@ export function QuoteTemplatesList({
             className="pl-9"
           />
         </div>
+        {templates.length > 0 && (
+          <Button 
+            variant="outline" 
+            onClick={() => exportTemplatesToJson(templates)}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Exportar
+          </Button>
+        )}
         {onCreateTemplate && (
           <Button onClick={onCreateTemplate}>
             <Plus className="h-4 w-4 mr-2" />
@@ -258,6 +269,10 @@ export function QuoteTemplatesList({
                           </>
                         )}
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => exportSingleTemplate(template)}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Exportar JSON
+                        </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => setDeleteConfirmId(template.id)}
                           className="text-destructive focus:text-destructive"
