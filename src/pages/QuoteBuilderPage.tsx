@@ -1,0 +1,701 @@
+import { useState, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { 
+  FileText, 
+  Plus, 
+  Trash2,
+  Search,
+  User,
+  Calendar,
+  Save,
+  Send,
+  Package,
+  Loader2,
+  BookTemplate,
+  ArrowLeft,
+} from "lucide-react";
+import { toast } from "sonner";
+import { format, addDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useQuotes, QuoteItem } from "@/hooks/useQuotes";
+import { useQuoteTemplates, QuoteTemplate, QuoteTemplateItem } from "@/hooks/useQuoteTemplates";
+import { QuoteTemplateSelector } from "@/components/quotes/QuoteTemplateSelector";
+import { SaveAsTemplateButton } from "@/components/quotes/SaveAsTemplateButton";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface Product {
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
+  images: string[] | null;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+}
+
+export default function QuoteBuilderPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { createQuote, techniques, isLoading: quotesLoading } = useQuotes();
+  const { templates } = useQuoteTemplates();
+
+  // Quote state
+  const [clientId, setClientId] = useState<string>("");
+  const [validUntil, setValidUntil] = useState<string>(
+    format(addDays(new Date(), 30), "yyyy-MM-dd")
+  );
+  const [discountType, setDiscountType] = useState<"percent" | "amount">("percent");
+  const [discountValue, setDiscountValue] = useState<number>(0);
+  const [notes, setNotes] = useState<string>("");
+  const [internalNotes, setInternalNotes] = useState<string>("");
+  const [items, setItems] = useState<QuoteItem[]>([]);
+
+  // Product search modal
+  const [productSearchOpen, setProductSearchOpen] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
+
+  // Template applied notification
+  const [templateApplied, setTemplateApplied] = useState<string | null>(null);
+
+  // Fetch products
+  const { data: products } = useQuery({
+    queryKey: ["quote-products"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, sku, price, images")
+        .eq("is_active", true)
+        .order("name")
+        .limit(500);
+      if (error) throw error;
+      return data as Product[];
+    },
+  });
+
+  // Fetch clients
+  const { data: clients } = useQuery({
+    queryKey: ["quote-clients"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bitrix_clients")
+        .select("id, name, email, phone")
+        .order("name");
+      if (error) throw error;
+      return data as Client[];
+    },
+  });
+
+  const filteredProducts = useMemo(() => {
+    if (!productSearch.trim()) return products?.slice(0, 20) || [];
+    const search = productSearch.toLowerCase();
+    return products?.filter(
+      (p) =>
+        p.name.toLowerCase().includes(search) ||
+        p.sku.toLowerCase().includes(search)
+    ).slice(0, 20) || [];
+  }, [products, productSearch]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
+  // Calculations
+  const subtotal = useMemo(() => {
+    return items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+  }, [items]);
+
+  const discountAmount = useMemo(() => {
+    if (discountType === "percent") {
+      return subtotal * (discountValue / 100);
+    }
+    return discountValue;
+  }, [subtotal, discountType, discountValue]);
+
+  const total = useMemo(() => {
+    return Math.max(0, subtotal - discountAmount);
+  }, [subtotal, discountAmount]);
+
+  // Add product to quote
+  const addProduct = useCallback((product: Product) => {
+    const existingIndex = items.findIndex((i) => i.product_id === product.id);
+    if (existingIndex >= 0) {
+      setItems((prev) =>
+        prev.map((item, idx) =>
+          idx === existingIndex
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
+    } else {
+      const imageUrl = Array.isArray(product.images) && product.images.length > 0
+        ? product.images[0]
+        : undefined;
+      
+      setItems((prev) => [
+        ...prev,
+        {
+          product_id: product.id,
+          product_name: product.name,
+          product_sku: product.sku,
+          product_image_url: imageUrl,
+          quantity: 1,
+          unit_price: product.price,
+        },
+      ]);
+    }
+    setProductSearchOpen(false);
+    setProductSearch("");
+  }, [items]);
+
+  // Update item quantity
+  const updateItemQuantity = useCallback((index: number, quantity: number) => {
+    if (quantity < 1) return;
+    setItems((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, quantity } : item))
+    );
+  }, []);
+
+  // Update item price
+  const updateItemPrice = useCallback((index: number, price: number) => {
+    setItems((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, unit_price: price } : item))
+    );
+  }, []);
+
+  // Remove item
+  const removeItem = useCallback((index: number) => {
+    setItems((prev) => prev.filter((_, idx) => idx !== index));
+  }, []);
+
+  // Apply template
+  const applyTemplate = useCallback((template: QuoteTemplate) => {
+    // Convert template items to quote items
+    const newItems: QuoteItem[] = template.items_data.map((item) => ({
+      product_id: item.productId || "",
+      product_name: item.productName,
+      product_sku: item.productSku,
+      product_image_url: item.productImageUrl,
+      quantity: item.quantity,
+      unit_price: item.unitPrice,
+      color_name: item.colorName,
+      color_hex: item.colorHex,
+      personalizations: item.personalizations?.map((p) => ({
+        technique_id: p.techniqueId,
+        technique_name: p.techniqueName,
+        colors_count: p.colorsCount,
+        positions_count: p.positionsCount,
+        unit_cost: p.unitCost,
+        setup_cost: p.setupCost,
+      })),
+    }));
+
+    setItems(newItems);
+    
+    if (template.discount_percent > 0) {
+      setDiscountType("percent");
+      setDiscountValue(template.discount_percent);
+    } else if (template.discount_amount > 0) {
+      setDiscountType("amount");
+      setDiscountValue(template.discount_amount);
+    }
+    
+    if (template.notes) setNotes(template.notes);
+    if (template.internal_notes) setInternalNotes(template.internal_notes);
+    if (template.validity_days) {
+      setValidUntil(format(addDays(new Date(), template.validity_days), "yyyy-MM-dd"));
+    }
+
+    setTemplateApplied(template.name);
+    toast.success(`Template "${template.name}" aplicado!`);
+  }, []);
+
+  // Get items for template saving
+  const getTemplateItems = useCallback((): QuoteTemplateItem[] => {
+    return items.map((item) => ({
+      productId: item.product_id,
+      productSku: item.product_sku,
+      productName: item.product_name,
+      productImageUrl: item.product_image_url,
+      quantity: item.quantity,
+      unitPrice: item.unit_price,
+      colorName: item.color_name,
+      colorHex: item.color_hex,
+      personalizations: item.personalizations?.map((p) => ({
+        techniqueId: p.technique_id,
+        techniqueName: p.technique_name || "",
+        colorsCount: p.colors_count,
+        positionsCount: p.positions_count,
+        unitCost: p.unit_cost,
+        setupCost: p.setup_cost,
+      })),
+    }));
+  }, [items]);
+
+  // Save quote
+  const handleSaveQuote = async (status: "draft" | "pending" = "draft") => {
+    if (items.length === 0) {
+      toast.error("Adicione pelo menos um item ao orçamento");
+      return;
+    }
+
+    const quote = await createQuote(
+      {
+        client_id: clientId || undefined,
+        status,
+        discount_percent: discountType === "percent" ? discountValue : 0,
+        discount_amount: discountType === "amount" ? discountValue : 0,
+        notes: notes || undefined,
+        internal_notes: internalNotes || undefined,
+        valid_until: validUntil || undefined,
+      },
+      items
+    );
+
+    if (quote) {
+      navigate("/orcamentos");
+    }
+  };
+
+  // Get default template on load
+  const defaultTemplate = useMemo(() => {
+    return templates.find((t) => t.is_default);
+  }, [templates]);
+
+  return (
+    <MainLayout>
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="font-display text-2xl font-bold text-foreground flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                Novo Orçamento
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Crie um orçamento com produtos e personalizações
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <QuoteTemplateSelector
+              onSelectTemplate={applyTemplate}
+              trigger={
+                <Button variant="outline">
+                  <BookTemplate className="h-4 w-4 mr-2" />
+                  Usar Template
+                  {templates.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {templates.length}
+                    </Badge>
+                  )}
+                </Button>
+              }
+            />
+            {items.length > 0 && (
+              <SaveAsTemplateButton
+                items={getTemplateItems()}
+                discountPercent={discountType === "percent" ? discountValue : 0}
+                discountAmount={discountType === "amount" ? discountValue : 0}
+                notes={notes}
+                internalNotes={internalNotes}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Template applied notification */}
+        {templateApplied && (
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookTemplate className="h-4 w-4 text-primary" />
+                <span className="text-sm">
+                  Template <strong>"{templateApplied}"</strong> aplicado
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setTemplateApplied(null)}
+              >
+                Fechar
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Default template suggestion */}
+        {defaultTemplate && items.length === 0 && !templateApplied && (
+          <Card className="bg-muted/50 border-dashed">
+            <CardContent className="py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <BookTemplate className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">Template padrão disponível</p>
+                  <p className="text-sm text-muted-foreground">
+                    Use "{defaultTemplate.name}" para começar rapidamente
+                  </p>
+                </div>
+              </div>
+              <Button variant="outline" onClick={() => applyTemplate(defaultTemplate)}>
+                Aplicar Template
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Main content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Client and Date */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Informações do Orçamento</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Cliente
+                    </Label>
+                    <Select value={clientId} onValueChange={setClientId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um cliente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Sem cliente</SelectItem>
+                        {clients?.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Válido até
+                    </Label>
+                    <Input
+                      type="date"
+                      value={validUntil}
+                      onChange={(e) => setValidUntil(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Items */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Itens do Orçamento</CardTitle>
+                  <CardDescription>
+                    {items.length} {items.length === 1 ? "item" : "itens"} adicionados
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setProductSearchOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Produto
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {items.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Nenhum item adicionado</p>
+                    <p className="text-sm">Clique em "Adicionar Produto" ou use um template</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {items.map((item, index) => (
+                      <div
+                        key={`${item.product_id}-${index}`}
+                        className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg"
+                      >
+                        {item.product_image_url ? (
+                          <img
+                            src={item.product_image_url}
+                            alt={item.product_name}
+                            className="h-16 w-16 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="h-16 w-16 bg-muted rounded-lg flex items-center justify-center">
+                            <Package className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{item.product_name}</p>
+                          <p className="text-sm text-muted-foreground">{item.product_sku}</p>
+                          {item.personalizations && item.personalizations.length > 0 && (
+                            <div className="flex gap-1 mt-1">
+                              {item.personalizations.map((p, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">
+                                  {p.technique_name}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="w-20">
+                            <Label className="text-xs text-muted-foreground">Qtd</Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={item.quantity}
+                              onChange={(e) =>
+                                updateItemQuantity(index, parseInt(e.target.value) || 1)
+                              }
+                              className="h-8 text-center"
+                            />
+                          </div>
+                          <div className="w-28">
+                            <Label className="text-xs text-muted-foreground">Preço Un.</Label>
+                            <Input
+                              type="number"
+                              min={0}
+                              step={0.01}
+                              value={item.unit_price}
+                              onChange={(e) =>
+                                updateItemPrice(index, parseFloat(e.target.value) || 0)
+                              }
+                              className="h-8"
+                            />
+                          </div>
+                          <div className="w-28 text-right">
+                            <Label className="text-xs text-muted-foreground">Subtotal</Label>
+                            <p className="font-medium">
+                              {formatCurrency(item.quantity * item.unit_price)}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => removeItem(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Notes */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Observações</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Observações para o Cliente</Label>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Observações que aparecerão na proposta..."
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Notas Internas</Label>
+                  <Textarea
+                    value={internalNotes}
+                    onChange={(e) => setInternalNotes(e.target.value)}
+                    placeholder="Notas visíveis apenas para a equipe..."
+                    rows={2}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar - Summary */}
+          <div className="space-y-6">
+            <Card className="sticky top-6">
+              <CardHeader>
+                <CardTitle className="text-lg">Resumo</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal</span>
+                    <span>{formatCurrency(subtotal)}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={discountType}
+                      onValueChange={(v) => setDiscountType(v as "percent" | "amount")}
+                    >
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percent">%</SelectItem>
+                        <SelectItem value="amount">R$</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={discountType === "percent" ? 1 : 0.01}
+                      max={discountType === "percent" ? 100 : undefined}
+                      value={discountValue || ""}
+                      onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
+                      placeholder="Desconto"
+                    />
+                  </div>
+
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-destructive">
+                      <span>Desconto</span>
+                      <span>-{formatCurrency(discountAmount)}</span>
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  <div className="flex justify-between font-bold text-lg">
+                    <span>Total</span>
+                    <span>{formatCurrency(total)}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-4">
+                  <Button
+                    className="w-full"
+                    onClick={() => handleSaveQuote("pending")}
+                    disabled={quotesLoading || items.length === 0}
+                  >
+                    {quotesLoading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4 mr-2" />
+                    )}
+                    Criar e Enviar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => handleSaveQuote("draft")}
+                    disabled={quotesLoading || items.length === 0}
+                  >
+                    {quotesLoading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    Salvar Rascunho
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Product Search Dialog */}
+      <Dialog open={productSearchOpen} onOpenChange={setProductSearchOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Adicionar Produto</DialogTitle>
+            <DialogDescription>Busque e selecione um produto para adicionar ao orçamento</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou SKU..."
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                className="pl-9"
+                autoFocus
+              />
+            </div>
+            <div className="max-h-96 overflow-y-auto space-y-2">
+              {filteredProducts.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">
+                  Nenhum produto encontrado
+                </p>
+              ) : (
+                filteredProducts.map((product) => (
+                  <button
+                    key={product.id}
+                    onClick={() => addProduct(product)}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
+                  >
+                    {product.images && product.images.length > 0 ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="h-12 w-12 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 bg-muted rounded flex items-center justify-center">
+                        <Package className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{product.name}</p>
+                      <p className="text-sm text-muted-foreground">{product.sku}</p>
+                    </div>
+                    <span className="font-medium">{formatCurrency(product.price)}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </MainLayout>
+  );
+}
