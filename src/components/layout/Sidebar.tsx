@@ -19,6 +19,7 @@ import {
   BarChart3,
   TrendingUp,
   FileText,
+  ShoppingCart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ const mainNavItems = [
   { icon: FolderOpen, label: "Coleções", href: "/colecoes" },
   { icon: Users, label: "Clientes", href: "/clientes" },
   { icon: FileText, label: "Orçamentos", href: "/orcamentos" },
+  { icon: ShoppingCart, label: "Pedidos", href: "/pedidos" },
   { icon: Calculator, label: "Simulador", href: "/simulador" },
   { icon: Wand2, label: "Mockups", href: "/mockup" },
   { icon: Filter, label: "Filtros", href: "/filtros" },
