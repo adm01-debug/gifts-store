@@ -1188,6 +1188,63 @@ export type Database = {
           },
         ]
       }
+      quote_templates: {
+        Row: {
+          created_at: string
+          delivery_time: string | null
+          description: string | null
+          discount_amount: number | null
+          discount_percent: number | null
+          id: string
+          internal_notes: string | null
+          is_default: boolean | null
+          items_data: Json
+          name: string
+          notes: string | null
+          payment_terms: string | null
+          seller_id: string
+          template_data: Json
+          updated_at: string
+          validity_days: number | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_time?: string | null
+          description?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          internal_notes?: string | null
+          is_default?: boolean | null
+          items_data?: Json
+          name: string
+          notes?: string | null
+          payment_terms?: string | null
+          seller_id: string
+          template_data?: Json
+          updated_at?: string
+          validity_days?: number | null
+        }
+        Update: {
+          created_at?: string
+          delivery_time?: string | null
+          description?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
+          id?: string
+          internal_notes?: string | null
+          is_default?: boolean | null
+          items_data?: Json
+          name?: string
+          notes?: string | null
+          payment_terms?: string | null
+          seller_id?: string
+          template_data?: Json
+          updated_at?: string
+          validity_days?: number | null
+        }
+        Relationships: []
+      }
       quotes: {
         Row: {
           bitrix_deal_id: string | null
