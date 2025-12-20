@@ -317,6 +317,74 @@ export function useQuotes() {
     }
   };
 
+  // Duplicate quote
+  const duplicateQuote = async (quoteId: string): Promise<Quote | null> => {
+    if (!user) {
+      toast.error("Usuário não autenticado");
+      return null;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Fetch original quote with items
+      const original = await fetchQuote(quoteId);
+      if (!original) {
+        throw new Error("Orçamento não encontrado");
+      }
+
+      // Create new quote with same data
+      const items: QuoteItem[] = original.items?.map((item) => ({
+        product_id: item.product_id,
+        product_name: item.product_name,
+        product_sku: item.product_sku,
+        product_image_url: item.product_image_url,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        color_name: item.color_name,
+        color_hex: item.color_hex,
+        notes: item.notes,
+        personalizations: item.personalizations?.map((p) => ({
+          technique_id: p.technique_id,
+          colors_count: p.colors_count,
+          positions_count: p.positions_count,
+          area_cm2: p.area_cm2,
+          setup_cost: p.setup_cost,
+          unit_cost: p.unit_cost,
+          total_cost: p.total_cost,
+          notes: p.notes,
+        })),
+      })) || [];
+
+      const newQuote = await createQuote(
+        {
+          client_id: original.client_id,
+          status: "draft",
+          discount_percent: original.discount_percent,
+          discount_amount: original.discount_amount,
+          notes: original.notes,
+          internal_notes: original.internal_notes ? `[Duplicado de ${original.quote_number}] ${original.internal_notes}` : `Duplicado de ${original.quote_number}`,
+          valid_until: original.valid_until,
+        },
+        items
+      );
+
+      if (newQuote) {
+        toast.success("Orçamento duplicado com sucesso!", {
+          description: `Novo número: ${newQuote.quote_number}`,
+        });
+      }
+
+      return newQuote;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao duplicar orçamento";
+      toast.error("Erro ao duplicar orçamento", { description: message });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Sync quote to Bitrix via N8N
   const syncQuoteToBitrix = async (quoteId: string): Promise<boolean> => {
     try {
@@ -396,6 +464,7 @@ export function useQuotes() {
     createQuote,
     updateQuoteStatus,
     deleteQuote,
+    duplicateQuote,
     fetchTechniques,
     syncQuoteToBitrix,
     testWebhookConnection,
