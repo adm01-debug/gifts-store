@@ -316,6 +316,67 @@ export function QuoteTemplatesList({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Clone Template Dialog */}
+      <Dialog open={cloneDialogOpen} onOpenChange={setCloneDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Clonar Template para Vendedor
+            </DialogTitle>
+            <DialogDescription>
+              Selecione o vendedor que receberá uma cópia deste template.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <label className="text-sm font-medium mb-2 block">
+              Vendedor Destino
+            </label>
+            <Select value={targetSellerId} onValueChange={setTargetSellerId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um vendedor..." />
+              </SelectTrigger>
+              <SelectContent>
+                {sellers.map((seller) => (
+                  <SelectItem key={seller.id} value={seller.id}>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>{seller.full_name || seller.email}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {sellers.length === 0 && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Nenhum vendedor disponível para clonagem.
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setCloneDialogOpen(false);
+                setCloneTemplateId(null);
+                setTargetSellerId("");
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleClone}
+              disabled={!targetSellerId}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Clonar Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
