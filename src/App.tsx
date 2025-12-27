@@ -37,6 +37,7 @@ import PublicQuoteApproval from "./pages/PublicQuoteApproval";
 import OrdersListPage from "./pages/OrdersListPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import QuotesKanbanPage from "./pages/QuotesKanbanPage";
+import RewardsStorePage from "./pages/RewardsStorePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -181,6 +182,11 @@ const App = () => (
                     <Route path="/pedidos/:id" element={
                       <ProtectedRoute>
                         <OrderDetailPage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/loja" element={
+                      <ProtectedRoute>
+                        <RewardsStorePage />
                       </ProtectedRoute>
                     } />
                     

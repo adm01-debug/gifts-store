@@ -20,6 +20,7 @@ import {
   TrendingUp,
   FileText,
   ShoppingCart,
+  ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ const mainNavItems = [
   { icon: ShoppingCart, label: "Pedidos", href: "/pedidos" },
   { icon: Calculator, label: "Simulador", href: "/simulador" },
   { icon: Wand2, label: "Mockups", href: "/mockup" },
+  { icon: ShoppingBag, label: "Loja", href: "/loja" },
   { icon: Filter, label: "Filtros", href: "/filtros" },
   { icon: Heart, label: "Favoritos", href: "/favoritos" },
   { icon: GitCompare, label: "Comparar", href: "/comparar" },

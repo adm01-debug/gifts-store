@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Flame, Coins, Zap, Trophy } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useGamification } from "@/hooks/useGamification";
@@ -53,17 +54,20 @@ export function GamificationIndicators() {
         <TooltipContent>XP Total</TooltipContent>
       </Tooltip>
 
-      {/* Coins */}
+      {/* Coins - Link to store */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-500/10 hover:bg-yellow-500/20 transition-colors cursor-default">
+          <Link 
+            to="/loja"
+            className="flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-500/10 hover:bg-yellow-500/20 transition-colors"
+          >
             <Coins className="h-3.5 w-3.5 text-yellow-500" />
             <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
               {coins.toLocaleString()}
             </span>
-          </div>
+          </Link>
         </TooltipTrigger>
-        <TooltipContent>Moedas</TooltipContent>
+        <TooltipContent>Clique para abrir a Loja</TooltipContent>
       </Tooltip>
 
       {/* Streak */}
