@@ -164,12 +164,13 @@ serve(async (req) => {
       }
     )
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Erro ao processar aprovação:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     return new Response(
       JSON.stringify({ 
         error: 'Erro ao processar aprovação',
-        details: error.message 
+        details: errorMessage 
       }),
       { 
         status: 500, 

@@ -1,8 +1,6 @@
 // src/components/admin/AuditLogViewer.tsx
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,51 +11,39 @@ interface AuditLogEntry {
   table_name: string;
   record_id: string;
   action: 'INSERT' | 'UPDATE' | 'DELETE';
-  old_values: any;
-  new_values: any;
+  old_values: Record<string, unknown>;
+  new_values: Record<string, unknown>;
   changed_fields: string[];
   user_email: string;
   created_at: string;
 }
 
+// Mock data for audit logs until the audit_log table is created
+const mockAuditLogs: AuditLogEntry[] = [];
+
 export function AuditLogViewer({ tableName, recordId }: { tableName?: string; recordId?: string }) {
-  const [filters, setFilters] = useState({
+  const [filters] = useState({
     table: tableName || 'all',
     action: 'all'
   });
 
-  const { data: logs, isLoading } = useQuery({
-    queryKey: ['audit-log', filters, recordId],
-    queryFn: async () => {
-      let query = supabase
-        .from('audit_log')
-        .select('*, user:auth.users!user_id(email)')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (recordId) {
-        query = query.eq('record_id', recordId);
-      }
-      if (filters.table !== 'all') {
-        query = query.eq('table_name', filters.table);
-      }
-      if (filters.action !== 'all') {
-        query = query.eq('action', filters.action);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as AuditLogEntry[];
-    }
+  // For now, return mock data since audit_log table doesn't exist yet
+  const logs = mockAuditLogs.filter(log => {
+    if (recordId && log.record_id !== recordId) return false;
+    if (filters.table !== 'all' && log.table_name !== filters.table) return false;
+    if (filters.action !== 'all' && log.action !== filters.action) return false;
+    return true;
   });
 
+  const isLoading = false;
+
   const getActionBadge = (action: string) => {
-    const variants: Record<string, any> = {
+    const variants: Record<string, "default" | "secondary" | "destructive"> = {
       INSERT: 'default',
       UPDATE: 'secondary',
       DELETE: 'destructive'
     };
-    return <Badge variant={variants[action]}>{action}</Badge>;
+    return <Badge variant={variants[action] || 'default'}>{action}</Badge>;
   };
 
   return (

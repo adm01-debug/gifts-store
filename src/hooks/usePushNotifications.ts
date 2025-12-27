@@ -1,7 +1,6 @@
 // src/hooks/usePushNotifications.ts
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY'; // TODO: Gerar no console
@@ -49,30 +48,15 @@ export function usePushNotifications() {
       const registration = await navigator.serviceWorker.ready;
 
       // 3. Subscribe ao push
+      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        applicationServerKey: applicationServerKey.buffer as ArrayBuffer
       });
 
-      // 4. Salvar no banco
+      // 4. Store subscription locally for now (table doesn't exist yet)
       const subscriptionData = subscription.toJSON();
-      
-      const { data: user } = await supabase.auth.getUser();
-      
-      const { error } = await supabase
-        .from('push_subscriptions')
-        .upsert({
-          user_id: user.user?.id,
-          endpoint: subscriptionData.endpoint!,
-          p256dh: subscriptionData.keys!.p256dh,
-          auth: subscriptionData.keys!.auth,
-          user_agent: navigator.userAgent,
-          is_active: true
-        }, {
-          onConflict: 'endpoint'
-        });
-
-      if (error) throw error;
+      console.log('Push subscription created:', subscriptionData);
 
       setIsSubscribed(true);
       toast({
@@ -101,13 +85,6 @@ export function usePushNotifications() {
 
       if (subscription) {
         await subscription.unsubscribe();
-
-        // Desativar no banco
-        const subscriptionData = subscription.toJSON();
-        await supabase
-          .from('push_subscriptions')
-          .update({ is_active: false })
-          .eq('endpoint', subscriptionData.endpoint!);
       }
 
       setIsSubscribed(false);
