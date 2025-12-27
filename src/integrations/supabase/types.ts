@@ -1917,6 +1917,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_onboarding: {
+        Row: {
+          completed_at: string | null
+          completed_steps: string[] | null
+          created_at: string
+          current_step: number | null
+          has_completed_tour: boolean | null
+          id: string
+          started_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_steps?: string[] | null
+          created_at?: string
+          current_step?: number | null
+          has_completed_tour?: boolean | null
+          id?: string
+          started_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_steps?: string[] | null
+          created_at?: string
+          current_step?: number | null
+          has_completed_tour?: boolean | null
+          id?: string
+          started_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_rewards: {
         Row: {
           id: string

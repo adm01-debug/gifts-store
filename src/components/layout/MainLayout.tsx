@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { PageTransition } from "@/components/effects";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
+import { RestartTourButton } from "@/components/onboarding/RestartTourButton";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -13,6 +15,9 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Onboarding Tour Overlay */}
+      <OnboardingTour />
+      
       <div className="flex">
         <Sidebar 
           isOpen={sidebarOpen} 
@@ -31,6 +36,11 @@ export function MainLayout({ children }: MainLayoutProps) {
               {children}
             </PageTransition>
           </main>
+          
+          {/* Restart Tour Button - fixed position */}
+          <div className="fixed bottom-4 right-4 z-50">
+            <RestartTourButton />
+          </div>
         </div>
       </div>
     </div>

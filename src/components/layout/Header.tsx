@@ -84,14 +84,16 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
         </div>
 
         {/* Center section - Global Search */}
-        <div className="flex-1 max-w-md mx-4 hidden md:block">
+        <div className="flex-1 max-w-md mx-4 hidden md:block" data-tour="search">
           <GlobalSearchPalette />
         </div>
 
         {/* Right section */}
         <div className="flex items-center gap-1.5">
           {/* Gamification indicators */}
-          <GamificationIndicators />
+          <div data-tour="gamification">
+            <GamificationIndicators />
+          </div>
 
           {/* Mobile search trigger */}
           <Button 
@@ -119,11 +121,11 @@ export function Header({ onMenuToggle, searchQuery, onSearchChange }: HeaderProp
             <span className="sr-only">Alternar tema</span>
           </Button>
 
-          {/* Follow-up Reminders */}
-          <FollowUpRemindersPopover />
-
-          {/* Notifications */}
-          <NotificationsPopover />
+          {/* Follow-up Reminders & Notifications */}
+          <div className="flex items-center gap-1" data-tour="notifications">
+            <FollowUpRemindersPopover />
+            <NotificationsPopover />
+          </div>
 
           {/* Stock Alerts */}
           <StockAlertsIndicator />
