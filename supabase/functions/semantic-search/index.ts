@@ -5,6 +5,140 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ========================================
+// CACHE IMPLEMENTATION - TTL 5 minutes
+// ========================================
+
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+
+class TTLCache<T> {
+  private cache = new Map<string, CacheEntry<T>>();
+  private readonly ttlMs: number;
+  private readonly maxEntries: number;
+  private hits = 0;
+  private misses = 0;
+
+  constructor(ttlMs: number = 5 * 60 * 1000, maxEntries: number = 1000) {
+    this.ttlMs = ttlMs;
+    this.maxEntries = maxEntries;
+  }
+
+  // Generate cache key using hash
+  generateKey(query: string): string {
+    const normalized = query.toLowerCase().trim();
+    const encoder = new TextEncoder();
+    const data = encoder.encode(normalized);
+    // Simple hash for cache key
+    let hash = 0;
+    for (let i = 0; i < data.length; i++) {
+      const char = data[i];
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return `search:${hash.toString(16)}`;
+  }
+
+  get(key: string): T | null {
+    const entry = this.cache.get(key);
+    
+    if (!entry) {
+      this.misses++;
+      return null;
+    }
+
+    // Check if expired
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      this.misses++;
+      return null;
+    }
+
+    this.hits++;
+    return entry.data;
+  }
+
+  set(key: string, data: T): void {
+    // Enforce LRU-like behavior by removing oldest entries when at capacity
+    if (this.cache.size >= this.maxEntries) {
+      this.evictOldest();
+    }
+
+    this.cache.set(key, {
+      data,
+      expiresAt: Date.now() + this.ttlMs
+    });
+  }
+
+  private evictOldest(): void {
+    const now = Date.now();
+    let oldestKey: string | null = null;
+    let oldestTime = Infinity;
+
+    // First, try to remove expired entries
+    for (const [key, entry] of this.cache.entries()) {
+      if (now > entry.expiresAt) {
+        this.cache.delete(key);
+        return;
+      }
+      if (entry.expiresAt < oldestTime) {
+        oldestTime = entry.expiresAt;
+        oldestKey = key;
+      }
+    }
+
+    // If no expired entries, remove the oldest one
+    if (oldestKey) {
+      this.cache.delete(oldestKey);
+    }
+  }
+
+  // Cleanup expired entries (called periodically)
+  cleanup(): number {
+    const now = Date.now();
+    let cleaned = 0;
+
+    for (const [key, entry] of this.cache.entries()) {
+      if (now > entry.expiresAt) {
+        this.cache.delete(key);
+        cleaned++;
+      }
+    }
+
+    return cleaned;
+  }
+
+  getStats(): { hits: number; misses: number; size: number; hitRate: string } {
+    const total = this.hits + this.misses;
+    const hitRate = total > 0 ? ((this.hits / total) * 100).toFixed(1) + '%' : '0%';
+    return {
+      hits: this.hits,
+      misses: this.misses,
+      size: this.cache.size,
+      hitRate
+    };
+  }
+
+  // Reset stats (useful for monitoring)
+  resetStats(): void {
+    this.hits = 0;
+    this.misses = 0;
+  }
+}
+
+// ========================================
+// GLOBAL CACHE INSTANCE
+// ========================================
+
+// 5 minutes TTL, max 1000 entries
+const searchCache = new TTLCache<SearchIntent>(5 * 60 * 1000, 1000);
+
+// Cleanup expired entries every minute (roughly)
+let lastCleanup = Date.now();
+const CLEANUP_INTERVAL = 60 * 1000; // 1 minute
+
 interface SearchIntent {
   type: 'product' | 'client' | 'quote' | 'order' | 'mixed';
   filters: {
@@ -35,12 +169,45 @@ serve(async (req) => {
       );
     }
 
+    // Periodic cleanup (probabilistic, ~1% of requests)
+    if (Date.now() - lastCleanup > CLEANUP_INTERVAL) {
+      const cleaned = searchCache.cleanup();
+      if (cleaned > 0) {
+        console.log(`[Cache] Cleaned ${cleaned} expired entries`);
+      }
+      lastCleanup = Date.now();
+    }
+
+    // ========================================
+    // CHECK CACHE FIRST
+    // ========================================
+    const cacheKey = searchCache.generateKey(query);
+    const cachedResult = searchCache.get(cacheKey);
+
+    if (cachedResult) {
+      const stats = searchCache.getStats();
+      console.log(`[Cache HIT] Query: "${query}" | Stats: ${JSON.stringify(stats)}`);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          intent: cachedResult,
+          cached: true,
+          cacheStats: stats
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ========================================
+    // CACHE MISS - Call AI
+    // ========================================
+    console.log(`[Cache MISS] Query: "${query}" - Calling AI...`);
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
-
-    console.log("Processing semantic search query:", query);
 
     const systemPrompt = `Você é um assistente de busca inteligente para um sistema de catálogo de produtos promocionais e brindes corporativos.
 
@@ -141,7 +308,7 @@ Responda APENAS com JSON válido no formato especificado.`;
     }
 
     const aiResponse = await response.json();
-    console.log("AI Response:", JSON.stringify(aiResponse));
+    console.log("[AI Response]:", JSON.stringify(aiResponse));
 
     let searchIntent: SearchIntent = {
       type: 'mixed',
@@ -160,19 +327,29 @@ Responda APENAS com JSON válido no formato especificado.`;
           originalQuery: query
         };
       } catch (e) {
-        console.error("Error parsing tool response:", e);
+        console.error("[Error] Parsing tool response:", e);
       }
     }
 
-    console.log("Parsed search intent:", searchIntent);
+    // ========================================
+    // STORE IN CACHE
+    // ========================================
+    searchCache.set(cacheKey, searchIntent);
+    const stats = searchCache.getStats();
+    console.log(`[Cache SET] Query: "${query}" | Cache size: ${stats.size} | Hit rate: ${stats.hitRate}`);
 
     return new Response(
-      JSON.stringify({ success: true, intent: searchIntent }),
+      JSON.stringify({ 
+        success: true, 
+        intent: searchIntent,
+        cached: false,
+        cacheStats: stats
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error("Error in semantic-search:", error);
+    console.error("[Error] semantic-search:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
