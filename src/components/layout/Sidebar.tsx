@@ -34,12 +34,12 @@ interface SidebarProps {
 }
 
 const mainNavItems = [
-  { icon: BarChart3, label: "Dashboard BI", href: "/bi" },
+  { icon: BarChart3, label: "Dashboard BI", href: "/bi", tourId: "bi" },
   { icon: TrendingUp, label: "Tendências", href: "/tendencias" },
-  { icon: Package, label: "Produtos", href: "/" },
+  { icon: Package, label: "Produtos", href: "/", tourId: "products" },
   { icon: FolderOpen, label: "Coleções", href: "/colecoes" },
-  { icon: Users, label: "Clientes", href: "/clientes" },
-  { icon: FileText, label: "Orçamentos", href: "/orcamentos" },
+  { icon: Users, label: "Clientes", href: "/clientes", tourId: "clients" },
+  { icon: FileText, label: "Orçamentos", href: "/orcamentos", tourId: "quotes" },
   { icon: ShoppingCart, label: "Pedidos", href: "/pedidos" },
   { icon: Calculator, label: "Simulador", href: "/simulador" },
   { icon: Wand2, label: "Mockups", href: "/mockup" },
@@ -78,6 +78,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
       {/* Sidebar */}
       <aside
+        data-tour="sidebar"
         className={cn(
           "fixed left-0 top-0 z-50 h-full bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-out",
           "lg:static lg:z-auto",
@@ -111,6 +112,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               const linkContent = (
                 <NavLink
                   to={item.href}
+                  data-tour={item.tourId}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
                     "hover:bg-orange/10 hover:text-orange",
