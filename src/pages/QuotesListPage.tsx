@@ -1,17 +1,24 @@
 import { useState } from "react";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +44,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   FileText, 
   Plus, 
@@ -56,11 +64,14 @@ import {
   List,
 } from "lucide-react";
 import { useQuotes, Quote } from "@/hooks/useQuotes";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ptBR } from "date-fns/locale";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const statusConfig: Record<Quote["status"], { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   draft: { label: "Rascunho", variant: "secondary" },
