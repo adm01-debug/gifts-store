@@ -153,3 +153,56 @@ async function syncQuotes() {
 }
 
 console.log('[SW] Service Worker loaded');
+
+// Cache de Imagens - Cache First Strategy
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Cache imagens
+  if (request.destination === 'image' || 
+      /\.(jpg|jpeg|png|gif|webp|svg|ico)$/i.test(url.pathname)) {
+    event.respondWith(
+      caches.open('images-cache-v1').then((cache) => {
+        return cache.match(request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+
+          return fetch(request).then((networkResponse) => {
+            // Cache apenas imagens com status 200
+            if (networkResponse && networkResponse.status === 200) {
+              cache.put(request, networkResponse.clone());
+            }
+            return networkResponse;
+          }).catch(() => {
+            // Fallback para imagem offline se disponível
+            return cache.match('/offline-image.png') || 
+                   new Response('Imagem não disponível offline', { 
+                     status: 503,
+                     statusText: 'Service Unavailable'
+                   });
+          });
+        });
+      })
+    );
+  }
+});
+
+// Limpar caches antigos
+self.addEventListener('activate', (event) => {
+  const cacheWhitelist = ['app-cache-v1', 'images-cache-v1'];
+  
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (!cacheWhitelist.includes(cacheName)) {
+            console.log('Deletando cache antigo:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
