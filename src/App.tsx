@@ -11,6 +11,7 @@ import { ComparisonProvider } from "@/contexts/ComparisonContext";
 import { CollectionsProvider } from "@/contexts/CollectionsContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { CompareBar } from "@/components/compare/CompareBar";
+import { ErrorBoundary } from "@/components/errors/ErrorBoundary";
 
 // ⚡ LAZY LOADING: Todas as páginas carregadas sob demanda
 // Isso reduz o bundle inicial em ~60% e melhora o First Contentful Paint
@@ -87,16 +88,17 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <TooltipProvider>
-          <AuthProvider>
-            <FavoritesProvider>
-              <ComparisonProvider>
-                <CollectionsProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
+    <ErrorBoundary showDetails={import.meta.env.DEV}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <TooltipProvider>
+            <AuthProvider>
+              <FavoritesProvider>
+                <ComparisonProvider>
+                  <CollectionsProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
                     <CompareBar />
                     <Suspense fallback={<PageLoader />}>
                       <Routes>
@@ -159,13 +161,14 @@ function App() {
                       </Routes>
                     </Suspense>
                   </BrowserRouter>
-                </CollectionsProvider>
-              </ComparisonProvider>
-            </FavoritesProvider>
-          </AuthProvider>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+                  </CollectionsProvider>
+                </ComparisonProvider>
+              </FavoritesProvider>
+            </AuthProvider>
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
