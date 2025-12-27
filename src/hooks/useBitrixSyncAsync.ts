@@ -4,6 +4,14 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+interface SyncJob {
+  id: string;
+  status: string;
+  progress: number;
+  total: number;
+  error?: string;
+}
+
 export function useBitrixSyncAsync() {
   const [isLoading, setIsLoading] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -14,14 +22,15 @@ export function useBitrixSyncAsync() {
     setIsLoading(true);
 
     try {
+      // Use the existing bitrix_sync_logs table instead of sync_jobs
       const { data: user } = await supabase.auth.getUser();
       
       const { data: job, error } = await supabase
-        .from('sync_jobs')
+        .from('bitrix_sync_logs')
         .insert({
-          type: 'bitrix_clients',
           status: 'pending',
-          created_by: user.user?.id
+          synced_by: user.user?.id,
+          started_at: new Date().toISOString()
         })
         .select()
         .single();
@@ -61,10 +70,10 @@ export function useBitrixSyncAsync() {
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
-        table: 'sync_jobs',
+        table: 'bitrix_sync_logs',
         filter: `id=eq.${id}`
       }, (payload) => {
-        const job = payload.new;
+        const job = payload.new as SyncJob;
         if (job.total > 0) {
           setProgress((job.progress / job.total) * 100);
         }
