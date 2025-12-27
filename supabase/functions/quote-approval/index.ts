@@ -1,267 +1,180 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { rateLimiters, applyRateLimit } from '../_shared/rate-limiter.ts'
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-interface ApprovalRequest {
-  action: "get_quote" | "approve" | "reject";
-  token: string;
-  notes?: string;
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    const { action, token, notes }: ApprovalRequest = await req.json();
-
-    console.log(`[quote-approval] Action: ${action}, Token: ${token?.substring(0, 8)}...`);
-
+    // 1. RATE LIMITING: 5 req/min por token
+    const url = new URL(req.url)
+    const token = url.searchParams.get('token')
+    
     if (!token) {
       return new Response(
-        JSON.stringify({ error: "Token é obrigatório" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+        JSON.stringify({ error: 'Token não fornecido' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    // Validate token
+    const rateLimitResponse = await applyRateLimit(
+      req,
+      rateLimiters.approval,
+      () => token // Usar token como identificador
+    )
+    
+    if (rateLimitResponse) {
+      return rateLimitResponse // HTTP 429 se excedeu
+    }
+
+    // 2. DADOS DA REQUISIÇÃO
+    const { approved, rejectionReason } = await req.json()
+    
+    // Coletar dados de auditoria
+    const ipAddress = req.headers.get('x-forwarded-for') || 
+                      req.headers.get('x-real-ip') || 
+                      'unknown'
+    const userAgent = req.headers.get('user-agent') || 'unknown'
+
+    // 3. SUPABASE CLIENT
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // 4. VALIDAR TOKEN
     const { data: tokenData, error: tokenError } = await supabase
-      .from("quote_approval_tokens")
-      .select("*, quotes(*)")
-      .eq("token", token)
-      .maybeSingle();
+      .from('quote_approval_tokens')
+      .select('*, quotes(*)')
+      .eq('token', token)
+      .single()
 
     if (tokenError || !tokenData) {
-      console.error("[quote-approval] Token not found:", tokenError);
-      return new Response(
-        JSON.stringify({ error: "Link inválido ou expirado" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check if token is expired
-    if (new Date(tokenData.expires_at) < new Date()) {
-      console.log("[quote-approval] Token expired");
-      return new Response(
-        JSON.stringify({ error: "Este link expirou. Solicite um novo link ao vendedor." }),
-        { status: 410, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check if token was already used
-    if (tokenData.used_at && action !== "get_quote") {
-      console.log("[quote-approval] Token already used");
-      return new Response(
-        JSON.stringify({ error: "Este link já foi utilizado." }),
-        { status: 410, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const quote = tokenData.quotes;
-    
-    if (!quote) {
-      return new Response(
-        JSON.stringify({ error: "Orçamento não encontrado" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Handle different actions
-    if (action === "get_quote") {
-      // Fetch quote with items
-      const { data: quoteItems, error: itemsError } = await supabase
-        .from("quote_items")
-        .select(`
-          *,
-          quote_item_personalizations (
-            *,
-            personalization_techniques (id, name, code)
-          )
-        `)
-        .eq("quote_id", quote.id)
-        .order("sort_order");
-
-      if (itemsError) {
-        console.error("[quote-approval] Error fetching items:", itemsError);
-      }
-
-      // Fetch client info
-      const { data: client } = await supabase
-        .from("bitrix_clients")
-        .select("id, name, email, phone")
-        .eq("id", quote.client_id)
-        .maybeSingle();
-
-      // Create notification for quote viewed (only once per token)
-      if (!tokenData.used_at && quote.seller_id) {
-        const clientName = client?.name || "Cliente";
-        await supabase.from("notifications").insert([{
-          user_id: quote.seller_id,
-          type: "quote_viewed",
-          title: "Orçamento visualizado",
-          message: `${clientName} abriu o orçamento ${quote.quote_number}`,
-          metadata: {
-            quote_id: quote.id,
-            quote_number: quote.quote_number,
-            client_id: quote.client_id,
-            client_name: clientName,
-          },
-        }]);
-        console.log(`[quote-approval] Notification sent: quote ${quote.quote_number} viewed`);
-      }
-
-      // Format items for response
-      const items = quoteItems?.map((item: any) => ({
-        id: item.id,
-        product_name: item.product_name,
-        product_sku: item.product_sku,
-        product_image_url: item.product_image_url,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        color_name: item.color_name,
-        color_hex: item.color_hex,
-        notes: item.notes,
-        personalizations: item.quote_item_personalizations?.map((p: any) => ({
-          technique_name: p.personalization_techniques?.name,
-          colors_count: p.colors_count,
-          area_cm2: p.area_cm2,
-          setup_cost: p.setup_cost,
-          unit_cost: p.unit_cost,
-        })),
-      })) || [];
-
-      return new Response(
-        JSON.stringify({
-          quote: {
-            id: quote.id,
-            quote_number: quote.quote_number,
-            status: quote.status,
-            subtotal: quote.subtotal,
-            discount_percent: quote.discount_percent,
-            discount_amount: quote.discount_amount,
-            total: quote.total,
-            notes: quote.notes,
-            valid_until: quote.valid_until,
-            created_at: quote.created_at,
-            client_response: quote.client_response,
-            client_response_at: quote.client_response_at,
-            client_response_notes: quote.client_response_notes,
-          },
-          client,
-          items,
-          token_used: !!tokenData.used_at,
-          token_expires_at: tokenData.expires_at,
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (action === "approve" || action === "reject") {
-      const newStatus = action === "approve" ? "approved" : "rejected";
-      const responseText = action === "approve" ? "Aprovado" : "Rejeitado";
-
-      // Update quote status
-      const { error: updateError } = await supabase
-        .from("quotes")
-        .update({
-          status: newStatus,
-          client_response: responseText,
-          client_response_at: new Date().toISOString(),
-          client_response_notes: notes || null,
+      // Registrar tentativa falhada
+      await supabase
+        .from('quote_approval_tokens')
+        .update({ 
+          attempts: supabase.rpc('increment', { row_id: tokenData?.id })
         })
-        .eq("id", quote.id);
-
-      if (updateError) {
-        console.error("[quote-approval] Error updating quote:", updateError);
-        return new Response(
-          JSON.stringify({ error: "Erro ao processar resposta" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Mark token as used
-      await supabase
-        .from("quote_approval_tokens")
-        .update({ used_at: new Date().toISOString() })
-        .eq("id", tokenData.id);
-
-      // Add to quote history
-      await supabase
-        .from("quote_history")
-        .insert({
-          quote_id: quote.id,
-          user_id: tokenData.created_by,
-          action: "status_changed",
-          description: `Cliente ${responseText.toLowerCase()} o orçamento via link público${notes ? `: "${notes}"` : ""}`,
-          field_changed: "status",
-          old_value: quote.status,
-          new_value: newStatus,
-        });
-
-      // Fetch client name for notification
-      const { data: client } = await supabase
-        .from("bitrix_clients")
-        .select("name")
-        .eq("id", quote.client_id)
-        .maybeSingle();
-
-      const clientName = client?.name || "Cliente";
-
-      // Create notification for quote approved/rejected
-      if (quote.seller_id) {
-        const notificationType = action === "approve" ? "quote_approved" : "quote_rejected";
-        const notificationTitle = action === "approve" ? "Orçamento aprovado!" : "Orçamento rejeitado";
-        const notificationMessage = action === "approve"
-          ? `${clientName} aprovou o orçamento ${quote.quote_number}`
-          : `${clientName} rejeitou o orçamento ${quote.quote_number}`;
-
-        await supabase.from("notifications").insert([{
-          user_id: quote.seller_id,
-          type: notificationType,
-          title: notificationTitle,
-          message: notificationMessage + (notes ? `. Comentário: "${notes}"` : ""),
-          metadata: {
-            quote_id: quote.id,
-            quote_number: quote.quote_number,
-            client_id: quote.client_id,
-            client_name: clientName,
-            client_notes: notes,
-          },
-        }]);
-        console.log(`[quote-approval] Notification sent: quote ${quote.quote_number} ${responseText}`);
-      }
-
-      console.log(`[quote-approval] Quote ${quote.quote_number} ${responseText}`);
+        .eq('token', token)
 
       return new Response(
-        JSON.stringify({
-          success: true,
-          message: `Orçamento ${responseText.toLowerCase()} com sucesso!`,
-          status: newStatus,
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+        JSON.stringify({ error: 'Token inválido' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
+    // 5. VALIDAÇÕES DE SEGURANÇA
+    
+    // Já foi usado?
+    if (tokenData.is_used) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Token já foi utilizado',
+          used_at: tokenData.used_at
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Expirou?
+    if (new Date(tokenData.expires_at) < new Date()) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Token expirado',
+          expires_at: tokenData.expires_at
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Já foi aprovado/rejeitado antes?
+    if (tokenData.approved !== null) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Orçamento já foi processado',
+          status: tokenData.approved ? 'aprovado' : 'rejeitado'
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // 6. PROCESSAR APROVAÇÃO/REJEIÇÃO
+    const { error: updateError } = await supabase
+      .from('quote_approval_tokens')
+      .update({
+        approved,
+        rejection_reason: rejectionReason,
+        approved_at: new Date().toISOString(),
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        attempts: (tokenData.attempts || 0) + 1,
+        is_used: true, // Invalidar após uso
+        used_at: new Date().toISOString()
+      })
+      .eq('id', tokenData.id)
+
+    if (updateError) {
+      throw updateError
+    }
+
+    // 7. ATUALIZAR STATUS DO ORÇAMENTO
+    const newStatus = approved ? 'approved' : 'rejected'
+    
+    await supabase
+      .from('quotes')
+      .update({ 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', tokenData.quote_id)
+
+    // 8. REGISTRAR NO HISTÓRICO
+    await supabase
+      .from('quote_history')
+      .insert({
+        quote_id: tokenData.quote_id,
+        action: approved ? 'approved_by_client' : 'rejected_by_client',
+        details: {
+          via: 'approval_link',
+          ip_address: ipAddress,
+          rejection_reason: rejectionReason
+        }
+      })
+
+    // 9. RESPOSTA DE SUCESSO
     return new Response(
-      JSON.stringify({ error: "Ação inválida" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+      JSON.stringify({ 
+        success: true,
+        quote_number: tokenData.quotes.quote_number,
+        status: newStatus,
+        message: approved 
+          ? 'Orçamento aprovado com sucesso!' 
+          : 'Orçamento rejeitado.'
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
 
   } catch (error) {
-    console.error("[quote-approval] Error:", error);
+    console.error('Erro ao processar aprovação:', error)
     return new Response(
-      JSON.stringify({ error: "Erro interno do servidor" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+      JSON.stringify({ 
+        error: 'Erro ao processar aprovação',
+        details: error.message 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
   }
-});
+})
