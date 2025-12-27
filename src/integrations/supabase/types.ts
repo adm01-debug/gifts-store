@@ -1869,6 +1869,86 @@ export type Database = {
         }
         Relationships: []
       }
+      store_rewards: {
+        Row: {
+          category: string
+          code: string
+          coin_cost: number
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean | null
+          name: string
+          reward_data: Json | null
+          reward_type: string
+          sort_order: number | null
+          stock: number | null
+        }
+        Insert: {
+          category?: string
+          code: string
+          coin_cost?: number
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          reward_data?: Json | null
+          reward_type?: string
+          sort_order?: number | null
+          stock?: number | null
+        }
+        Update: {
+          category?: string
+          code?: string
+          coin_cost?: number
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          reward_data?: Json | null
+          reward_type?: string
+          sort_order?: number | null
+          stock?: number | null
+        }
+        Relationships: []
+      }
+      user_rewards: {
+        Row: {
+          id: string
+          is_active: boolean | null
+          purchased_at: string
+          reward_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_active?: boolean | null
+          purchased_at?: string
+          reward_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_active?: boolean | null
+          purchased_at?: string
+          reward_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_rewards_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "store_rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
