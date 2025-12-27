@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
+import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { useAuth } from "@/contexts/AuthContext";
+import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { supabase } from "@/integrations/supabase/client";
+import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { toast } from "sonner";
+import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import {
   Table,
   TableBody,
@@ -12,9 +17,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { Badge } from "@/components/ui/badge";
+import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { Shield, ShieldCheck, Users, UserCog, Loader2 } from "lucide-react";
+import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import {
   AlertDialog,
   AlertDialogAction,
