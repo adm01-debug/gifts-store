@@ -1,10 +1,10 @@
 import { ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, Outlet } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
-  children: ReactNode;
+  children?: ReactNode;
   requireAdmin?: boolean;
 }
 
@@ -21,12 +21,13 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
   }
 
   if (!user) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (requireAdmin && role !== "admin") {
     return <Navigate to="/" replace />;
   }
 
-  return <>{children}</>;
+  // Suporta tanto nested routes (Outlet) quanto children diretos
+  return children ? <>{children}</> : <Outlet />;
 }
