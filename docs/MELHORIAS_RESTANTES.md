@@ -1,8 +1,8 @@
 # 📋 MELHORIAS RESTANTES - PLANO DE IMPLEMENTAÇÃO DEFINITIVO
 
 > **Projeto:** Gifts Store  
-> **Análise atualizada em:** 27/12/2025  
-> **Metodologia:** Varredura exaustiva do código-fonte + verificação linha a linha
+> **Análise atualizada em:** 27/12/2025 (16:30)  
+> **Metodologia:** Varredura exaustiva do código-fonte + verificação linha a linha  
 > **Revisor:** Claude AI (Análise Perfeccionista)
 
 ---
@@ -11,24 +11,24 @@
 
 | Status | Quantidade |
 |--------|------------|
-| ✅ Já Implementado | **18 funcionalidades** |
-| 🔴 Pendente - Alta Prioridade | **8 melhorias** |
+| ✅ Já Implementado | **21 funcionalidades** |
+| 🔴 Pendente - Alta Prioridade | **6 melhorias** |
 | 🟡 Pendente - Média Prioridade | **10 melhorias** |
 | 🟢 Pendente - Baixa Prioridade | **8 melhorias** |
-| **TOTAL PENDENTE** | **26 melhorias** |
+| **TOTAL PENDENTE** | **24 melhorias** |
 
 ---
 
-## ✅ FUNCIONALIDADES JÁ IMPLEMENTADAS (Verificado em 27/12/2025)
+## ✅ FUNCIONALIDADES JÁ IMPLEMENTADAS (Verificado em 27/12/2025 16:30)
 
-| # | Funcionalidade | Arquivo | Status |
+| # | Funcionalidade | Arquivo(s) | Status |
 |---|----------------|---------|--------|
 | 1 | ✅ PWA (Progressive Web App) | `public/manifest.json`, `public/sw.js`, `src/lib/sw-register.ts` | COMPLETO |
 | 2 | ✅ Lazy Loading de Rotas | `src/App.tsx` (linhas 19-68 usam React.lazy) | COMPLETO |
 | 3 | ✅ Rate Limiting Edge Functions | `supabase/functions/_shared/rate-limiter.ts` | COMPLETO |
 | 4 | ✅ Exportação Excel Genérica | `src/utils/excelExport.ts`, `src/components/export/ExportExcelButton.tsx` | COMPLETO |
 | 5 | ✅ Sistema de Gamificação | `src/hooks/useGamification.ts`, `src/components/gamification/*` | COMPLETO |
-| 6 | ✅ Onboarding Interativo | `src/hooks/useOnboarding.ts` (16 passos), `src/components/onboarding/*` | COMPLETO |
+| 6 | ✅ Onboarding Interativo | `src/hooks/useOnboarding.ts`, `src/components/onboarding/*` | COMPLETO |
 | 7 | ✅ Loja de Recompensas | `src/hooks/useRewardsStore.ts`, `src/pages/RewardsStorePage.tsx` | COMPLETO |
 | 8 | ✅ Metas de Vendas | `src/hooks/useSalesGoals.ts`, `src/components/goals/SalesGoalsCard.tsx` | COMPLETO |
 | 9 | ✅ Follow-up Reminders | `src/hooks/useFollowUpReminders.ts`, `src/components/reminders/*` | COMPLETO |
@@ -41,10 +41,13 @@
 | 16 | ✅ Minhas Recompensas | `src/components/gamification/MyRewards.tsx` | COMPLETO |
 | 17 | ✅ Loja de Recompensas (UI) | `src/components/gamification/RewardsStore.tsx` | COMPLETO |
 | 18 | ✅ Configuração Locale pt-BR | `src/lib/locale-config.ts`, `src/lib/date-utils.ts` | COMPLETO |
+| 19 | ✅ **Cache de Busca Semântica** | `supabase/functions/semantic-search/index.ts` (TTLCache com Map, 5min TTL, 1000 entries LRU) | COMPLETO |
+| 20 | ✅ **Error Handling Centralizado** | `src/components/errors/ErrorBoundary.tsx`, `src/hooks/useErrorHandler.ts` | COMPLETO |
+| 21 | ✅ **ErrorBoundary Global** | `src/App.tsx` (linha 91 envolve toda aplicação) | COMPLETO |
 
 ---
 
-## 🔴 PENDENTES ALTA PRIORIDADE (8 itens)
+## 🔴 PENDENTES ALTA PRIORIDADE (6 itens)
 
 ### 1. Testes Automatizados
 **Status:** ❌ NÃO IMPLEMENTADO  
@@ -59,9 +62,9 @@ src/test/setup.ts
 src/hooks/__tests__/useGamification.test.ts
 src/hooks/__tests__/useQuotes.test.ts
 src/hooks/__tests__/useSalesGoals.test.ts
-src/hooks/__tests__/useAuth.test.ts
+src/hooks/__tests__/useErrorHandler.test.ts
 src/components/__tests__/QuoteKanbanBoard.test.tsx
-src/components/__tests__/SalesGoalsCard.test.tsx
+src/components/__tests__/ErrorBoundary.test.tsx
 .github/workflows/test.yml
 ```
 
@@ -99,62 +102,23 @@ src/hooks/useQuoteApproval.ts
 
 ---
 
-### 3. Cache de Busca Semântica
-**Status:** ❌ NÃO IMPLEMENTADO  
-**Evidência:** `supabase/functions/semantic-search/index.ts` sem cache  
-**Impacto:** Performance degradada, latência alta, custo de embedding  
-**Tempo Estimado:** 6-8 horas
-
-**Arquivos a editar:**
-```
-supabase/functions/semantic-search/index.ts
-+ Opcional: Migration para índice HNSW
-```
-
-**Tarefas Detalhadas:**
-1. ❑ Implementar cache em memória com Map + TTL (5min)
-2. ❑ Hash SHA-256 da query como chave de cache
-3. ❑ Limitar cache a 1000 entradas (LRU)
-4. ❑ Invalidar cache via webhook de produto atualizado
-5. ❑ Adicionar métricas de hit/miss rate
-6. ❑ Considerar índice HNSW para performance vetorial
-
----
-
-### 4. Error Handling Centralizado
-**Status:** ❌ NÃO IMPLEMENTADO  
-**Evidência:** Nenhum `ErrorBoundary.tsx` ou `useErrorHandler.ts` encontrado  
-**Impacto:** UX inconsistente em erros, difícil debugging em produção  
-**Tempo Estimado:** 3-4 horas
-
-**Arquivos a criar:**
-```
-src/components/ErrorBoundary.tsx
-src/hooks/useErrorHandler.ts
-```
-
-**Tarefas Detalhadas:**
-1. ❑ Criar Error Boundary React global
-2. ❑ Criar hook `useErrorHandler` para erros assíncronos
-3. ❑ Fallback UI elegante com opção de "Tentar novamente"
-4. ❑ Logging estruturado (console em dev, opcional Sentry em prod)
-5. ❑ Integrar em `App.tsx` envolvendo Routes
-
----
-
-### 5. Validação de Formulários Completa
+### 3. Validação de Formulários Completa
 **Status:** ⚠️ PARCIAL  
 **Evidência:** Zod instalado mas schemas incompletos  
 **Impacto:** Dados inválidos podem ser enviados ao backend  
 **Tempo Estimado:** 4-6 horas
 
-**Arquivos a editar:**
+**Arquivos a criar/editar:**
 ```
-src/pages/QuoteBuilderPage.tsx
-src/pages/Auth.tsx
-src/pages/ProfilePage.tsx
-src/components/goals/SalesGoalsCard.tsx
-src/components/reminders/FollowUpRemindersPopover.tsx
+src/lib/validations/quoteSchema.ts
+src/lib/validations/authSchema.ts
+src/lib/validations/profileSchema.ts
+src/lib/validations/goalSchema.ts
+src/lib/validations/reminderSchema.ts
+src/lib/validations/index.ts
+src/pages/QuoteBuilderPage.tsx (integrar)
+src/pages/Auth.tsx (integrar)
+src/pages/ProfilePage.tsx (integrar)
 ```
 
 **Tarefas Detalhadas:**
@@ -167,7 +131,7 @@ src/components/reminders/FollowUpRemindersPopover.tsx
 
 ---
 
-### 6. Notificações Push Web
+### 4. Notificações Push Web
 **Status:** ❌ NÃO IMPLEMENTADO  
 **Evidência:** Service Worker tem handler mas não há subscription  
 **Impacto:** Usuário não recebe alertas fora do app  
@@ -191,7 +155,7 @@ supabase/functions/send-push/index.ts
 
 ---
 
-### 7. Audit Log Universal
+### 5. Audit Log Universal
 **Status:** ⚠️ PARCIAL  
 **Evidência:** Apenas `quote_history` e `order_history` existem  
 **Impacto:** Auditoria incompleta, compliance problemático  
@@ -215,7 +179,7 @@ src/hooks/useAuditLog.ts
 
 ---
 
-### 8. Sincronização Bitrix24 Assíncrona
+### 6. Sincronização Bitrix24 Assíncrona
 **Status:** ❌ NÃO IMPLEMENTADO  
 **Evidência:** `supabase/functions/bitrix-sync/index.ts` é síncrono, pode travar  
 **Impacto:** Usuário esperando muito tempo, timeouts frequentes  
@@ -240,7 +204,7 @@ src/pages/BitrixSyncPage.tsx
 
 ## 🟡 PENDENTES MÉDIA PRIORIDADE (10 itens)
 
-### 9. Duplicar Orçamento
+### 7. Duplicar Orçamento
 **Status:** ❌ NÃO IMPLEMENTADO  
 **Evidência:** Não há função de duplicação no hook ou UI  
 **Tempo Estimado:** 2-3 horas
@@ -261,7 +225,7 @@ src/pages/QuotesListPage.tsx (adicionar ação)
 
 ---
 
-### 10. Comentários em Orçamentos
+### 8. Comentários em Orçamentos
 **Status:** ❌ NÃO IMPLEMENTADO  
 **Evidência:** Apenas notas internas, sem thread de comentários  
 **Tempo Estimado:** 4-6 horas
@@ -281,7 +245,7 @@ src/hooks/useQuoteComments.ts
 
 ---
 
-### 11. Bulk Actions (Ações em Massa)
+### 9. Bulk Actions (Ações em Massa)
 **Status:** ❌ NÃO IMPLEMENTADO  
 **Evidência:** Nenhum arquivo relacionado a seleção múltipla  
 **Tempo Estimado:** 6-8 horas
@@ -301,7 +265,7 @@ src/hooks/useBulkSelection.ts
 
 ---
 
-### 12. Filtros Salvos por Usuário
+### 10. Filtros Salvos por Usuário
 **Status:** ❌ NÃO IMPLEMENTADO  
 **Evidência:** `FilterPresets.ts` existe mas é estático  
 **Tempo Estimado:** 4-5 horas
@@ -321,7 +285,7 @@ src/components/filters/SavedFiltersDropdown.tsx
 
 ---
 
-### 13. Histórico de Preços de Produtos
+### 11. Histórico de Preços de Produtos
 **Status:** ❌ NÃO IMPLEMENTADO  
 **Evidência:** Apenas preço atual é armazenado  
 **Tempo Estimado:** 4-6 horas
@@ -340,7 +304,7 @@ src/components/products/PriceHistoryChart.tsx
 
 ---
 
-### 14. Dashboard Bitrix Sync Melhorado
+### 12. Dashboard Bitrix Sync Melhorado
 **Status:** ⚠️ PARCIAL  
 **Evidência:** `BitrixSyncPage.tsx` existe mas sem status em tempo real  
 **Tempo Estimado:** 4-6 horas
@@ -359,7 +323,7 @@ src/hooks/useBitrixSync.ts
 
 ---
 
-### 15. Versionamento de Orçamentos
+### 13. Versionamento de Orçamentos
 **Status:** ❌ NÃO IMPLEMENTADO  
 **Evidência:** Editar orçamento sobrescreve original  
 **Tempo Estimado:** 8-10 horas
@@ -379,7 +343,7 @@ src/components/quotes/QuoteVersionHistory.tsx
 
 ---
 
-### 16. Importação CSV de Produtos
+### 14. Importação CSV de Produtos
 **Status:** ❌ NÃO IMPLEMENTADO  
 **Evidência:** Produtos só via webhook/API  
 **Tempo Estimado:** 6-8 horas
@@ -398,7 +362,7 @@ supabase/functions/import-products/index.ts
 
 ---
 
-### 17. Integração Google Calendar
+### 15. Integração Google Calendar
 **Status:** ❌ NÃO IMPLEMENTADO  
 **Evidência:** Lembretes só no sistema  
 **Tempo Estimado:** 6-8 horas
@@ -416,7 +380,7 @@ supabase/functions/google-calendar/index.ts
 
 ---
 
-### 18. Dashboard Personalizável
+### 16. Dashboard Personalizável
 **Status:** ❌ NÃO IMPLEMENTADO  
 **Evidência:** Dashboard BI fixo  
 **Tempo Estimado:** 1 dia
@@ -437,7 +401,7 @@ src/hooks/useDashboardLayout.ts
 
 ## 🟢 PENDENTES BAIXA PRIORIDADE (8 itens)
 
-### 19. Relatórios Agendados
+### 17. Relatórios Agendados
 **Tempo Estimado:** 1 dia
 
 **Tarefas:**
@@ -447,7 +411,7 @@ src/hooks/useDashboardLayout.ts
 
 ---
 
-### 20. Temas White-label
+### 18. Temas White-label
 **Tempo Estimado:** 1 semana
 
 **Tarefas:**
@@ -457,7 +421,7 @@ src/hooks/useDashboardLayout.ts
 
 ---
 
-### 21. Integração WhatsApp Business
+### 19. Integração WhatsApp Business
 **Tempo Estimado:** 1 semana
 
 **Tarefas:**
@@ -467,7 +431,7 @@ src/hooks/useDashboardLayout.ts
 
 ---
 
-### 22. Fine-tuning de Modelo IA
+### 20. Fine-tuning de Modelo IA
 **Tempo Estimado:** 2-4 semanas
 
 **Tarefas:**
@@ -477,7 +441,7 @@ src/hooks/useDashboardLayout.ts
 
 ---
 
-### 23. Marketplace de Integrações
+### 21. Marketplace de Integrações
 **Tempo Estimado:** 2-3 meses
 
 **Tarefas:**
@@ -487,7 +451,7 @@ src/hooks/useDashboardLayout.ts
 
 ---
 
-### 24. API Pública Documentada
+### 22. API Pública Documentada
 **Tempo Estimado:** 2-3 semanas
 
 **Tarefas:**
@@ -498,142 +462,93 @@ src/hooks/useDashboardLayout.ts
 
 ---
 
-### 25. App Mobile Nativo
+### 23. App Mobile Nativo
 **Tempo Estimado:** 2-3 meses
 
 **Tarefas:**
 1. ❑ React Native ou Flutter
 2. ❑ Push notifications nativas
-3. ❑ Offline-first
+3. ❑ Offline-first com sync
+4. ❑ Publicar nas lojas
 
 ---
 
-### 26. Previsão de Vendas com ML
-**Tempo Estimado:** 2-3 semanas
+### 24. Multi-tenancy
+**Tempo Estimado:** 1-2 meses
 
 **Tarefas:**
-1. ❑ Modelo de previsão baseado em histórico
-2. ❑ Dashboard de previsões
-3. ❑ Alertas de oportunidade
+1. ❑ Arquitetura multi-tenant
+2. ❑ Isolamento de dados por empresa
+3. ❑ Configurações por tenant
 
 ---
 
-## 📅 CRONOGRAMA DE IMPLEMENTAÇÃO SUGERIDO
+## 📅 CRONOGRAMA SUGERIDO (8 SEMANAS)
 
-### Semana 1 (Segurança + Infraestrutura) - ~35h
-| Dia | Item | Tempo | Prioridade |
-|-----|------|-------|------------|
-| D1 | 2. Tokens Seguros | 5h | 🔴 Alta |
-| D1 | 4. Error Handling | 4h | 🔴 Alta |
-| D2 | 3. Cache Semântico | 8h | 🔴 Alta |
-| D3 | 5. Validação Formulários | 6h | 🔴 Alta |
-| D4 | 9. Duplicar Orçamento | 3h | 🟡 Média |
-| D4 | 11. Bulk Actions | 6h | 🟡 Média |
-| D5 | 12. Filtros Salvos | 5h | 🟡 Média |
+### Semana 1-2: Fundamentos
+| Item | Prioridade | Tempo |
+|------|------------|-------|
+| Testes Automatizados (setup + hooks críticos) | 🔴 Alta | 3 dias |
+| Validação de Formulários | 🔴 Alta | 1 dia |
 
-### Semana 2 (Testes + Features) - ~40h
-| Dia | Item | Tempo | Prioridade |
-|-----|------|-------|------------|
-| D6-D8 | 1. Testes Automatizados | 20h | 🔴 Alta |
-| D9 | 7. Audit Log | 8h | 🔴 Alta |
-| D10 | 10. Comentários Orçamentos | 6h | 🟡 Média |
-| D10 | 13. Histórico Preços | 6h | 🟡 Média |
+### Semana 3-4: Segurança
+| Item | Prioridade | Tempo |
+|------|------------|-------|
+| Tokens de Aprovação Seguros | 🔴 Alta | 1 dia |
+| Audit Log Universal | 🔴 Alta | 1 dia |
+| Notificações Push Web | 🔴 Alta | 2 dias |
 
-### Semana 3 (Notificações + Sync) - ~30h
-| Dia | Item | Tempo | Prioridade |
-|-----|------|-------|------------|
-| D11-D12 | 6. Push Notifications | 10h | 🔴 Alta |
-| D13-D14 | 8. Sync Bitrix Assíncrono | 12h | 🔴 Alta |
-| D15 | 14. Dashboard Bitrix | 6h | 🟡 Média |
+### Semana 5-6: UX e Produtividade
+| Item | Prioridade | Tempo |
+|------|------------|-------|
+| Duplicar Orçamento | 🟡 Média | 0.5 dia |
+| Bulk Actions | 🟡 Média | 1 dia |
+| Filtros Salvos | 🟡 Média | 0.5 dia |
+| Comentários em Orçamentos | 🟡 Média | 1 dia |
 
-### Semana 4+ (Features Avançadas) - ~40h
-| Dia | Item | Tempo | Prioridade |
-|-----|------|-------|------------|
-| D16-D17 | 15. Versionamento | 10h | 🟡 Média |
-| D18 | 16. Importação CSV | 8h | 🟡 Média |
-| D19 | 17. Google Calendar | 8h | 🟡 Média |
-| D20 | 18. Dashboard Personalizável | 8h | 🟡 Média |
+### Semana 7-8: Integrações e Melhorias
+| Item | Prioridade | Tempo |
+|------|------------|-------|
+| Sincronização Bitrix Assíncrona | 🔴 Alta | 2 dias |
+| Versionamento de Orçamentos | 🟡 Média | 1 dia |
+| Dashboard Bitrix Melhorado | 🟡 Média | 1 dia |
+
+---
+
+## 📊 MÉTRICAS DE SUCESSO
+
+| Métrica | Meta |
+|---------|------|
+| Cobertura de Testes | > 30% |
+| Tempo de Resposta Cache | < 50ms hit |
+| Token Expiration | 48h (atual 7d) |
+| Audit Log Coverage | 100% tabelas críticas |
+| Uptime Push Notifications | > 99% |
+| Taxa de Erros Capturados | 100% (ErrorBoundary) |
 
 ---
 
 ## 🔗 DEPENDÊNCIAS ENTRE MELHORIAS
 
-```
-1. Testes Automatizados
-   └── Nenhuma dependência (pode começar imediatamente)
-
-2. Tokens Seguros
-   └── Depende de: Rate Limiting (✅ implementado)
-
-3. Cache Semântico
-   └── Nenhuma dependência
-
-4. Error Handling
-   └── Nenhuma dependência
-
-5. Validação Formulários
-   └── Nenhuma dependência
-
-6. Push Notifications
-   └── Depende de: PWA (✅ implementado)
-
-7. Audit Log
-   └── Nenhuma dependência
-
-8. Sync Bitrix Assíncrono
-   └── Depende de: 7. Audit Log (para logging)
-   └── Depende de: 6. Push Notifications (para notificar conclusão)
-
-9-18. Features Médias
-   └── Independentes entre si
+```mermaid
+graph TD
+    A[Testes Automatizados] --> B[Todas as melhorias]
+    C[PWA ✅] --> D[Push Notifications]
+    E[Error Handling ✅] --> F[Melhor debugging]
+    G[Cache Semântica ✅] --> H[Performance OK]
+    I[Audit Log] --> J[Compliance]
+    K[Tokens Seguros] --> J
 ```
 
 ---
 
-## 📈 MÉTRICAS DE SUCESSO
+## ✍️ NOTAS FINAIS
 
-### Após Alta Prioridade:
-- [ ] 30%+ cobertura de testes
-- [ ] 0 vulnerabilidades críticas de segurança
-- [ ] Latência de busca < 500ms (com cache)
-- [ ] 0 erros não tratados na UI
-
-### Após Implementação Completa:
-- [ ] 60%+ cobertura de testes
-- [ ] Tempo de sync Bitrix < 30s para 1000 registros
-- [ ] 90%+ de adoção de push notifications
-- [ ] NPS de vendedores > 8.0
+1. **Priorizar Testes** - Sem testes, todas as outras melhorias têm risco de regressão
+2. **Segurança Primeiro** - Tokens e Audit Log são críticos para produção
+3. **UX Incremental** - Melhorias de UX podem ser feitas em paralelo
+4. **Documentar Tudo** - Cada melhoria deve ter documentação atualizada
 
 ---
 
-## ✅ CHECKLIST FINAL
-
-### Verificações de Segurança:
-- [x] PWA implementado corretamente
-- [x] Rate limiting em todas as edge functions
-- [ ] Tokens de aprovação seguros
-- [ ] Audit log universal
-- [ ] Validação completa de formulários
-
-### Verificações de Performance:
-- [x] Lazy loading de rotas
-- [ ] Cache de busca semântica
-- [ ] Sync Bitrix assíncrono
-- [ ] Compressão de imagens
-
-### Verificações de UX:
-- [x] Onboarding interativo (16 passos)
-- [ ] Error boundaries implementados
-- [ ] Notificações push funcionando
-- [ ] Ações em massa disponíveis
-
----
-
-## 📝 NOTAS FINAIS
-
-1. **Prioridade recomendada:** Segurança > Performance > Features
-2. **Começar por:** Testes automatizados (base para refatorações)
-3. **Quick wins:** Duplicar orçamento, Filtros salvos
-4. **Maior impacto:** Push notifications, Sync assíncrono
-
-**Última atualização:** 27/12/2025 - Claude AI (Análise Perfeccionista)
+*Documento gerado automaticamente por análise de código em 27/12/2025 16:30*
