@@ -1,15 +1,27 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { TagManager } from "@/components/quotes/TagManager";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { TagManager } from "@/components/quotes/TagManager";
 import { useQuery } from "@tanstack/react-query";
+import { TagManager } from "@/components/quotes/TagManager";
 import { supabase } from "@/integrations/supabase/client";
+import { TagManager } from "@/components/quotes/TagManager";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { TagManager } from "@/components/quotes/TagManager";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { TagManager } from "@/components/quotes/TagManager";
 import { Button } from "@/components/ui/button";
+import { TagManager } from "@/components/quotes/TagManager";
 import { Input } from "@/components/ui/input";
+import { TagManager } from "@/components/quotes/TagManager";
 import { Label } from "@/components/ui/label";
+import { TagManager } from "@/components/quotes/TagManager";
 import { Badge } from "@/components/ui/badge";
+import { TagManager } from "@/components/quotes/TagManager";
 import { Textarea } from "@/components/ui/textarea";
+import { TagManager } from "@/components/quotes/TagManager";
 import { Separator } from "@/components/ui/separator";
+import { TagManager } from "@/components/quotes/TagManager";
 import {
   Select,
   SelectContent,
@@ -43,14 +55,23 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
+import { TagManager } from "@/components/quotes/TagManager";
 import { format, addDays, parseISO } from "date-fns";
+import { TagManager } from "@/components/quotes/TagManager";
 import { ptBR } from "date-fns/locale";
+import { TagManager } from "@/components/quotes/TagManager";
 import { useQuotes, QuoteItem, QuoteItemPersonalization } from "@/hooks/useQuotes";
+import { TagManager } from "@/components/quotes/TagManager";
 import { useQuoteTemplates, QuoteTemplate, QuoteTemplateItem } from "@/hooks/useQuoteTemplates";
+import { TagManager } from "@/components/quotes/TagManager";
 import { QuoteTemplateSelector } from "@/components/quotes/QuoteTemplateSelector";
+import { TagManager } from "@/components/quotes/TagManager";
 import { SaveAsTemplateButton } from "@/components/quotes/SaveAsTemplateButton";
+import { TagManager } from "@/components/quotes/TagManager";
 import { QuotePersonalizationSelector } from "@/components/quotes/QuotePersonalizationSelector";
+import { TagManager } from "@/components/quotes/TagManager";
 import { useAuth } from "@/contexts/AuthContext";
+import { TagManager } from "@/components/quotes/TagManager";
 import {
   Collapsible,
   CollapsibleContent,
