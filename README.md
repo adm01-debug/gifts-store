@@ -1,171 +1,127 @@
 # 🎁 Gifts Store - Sistema de Gestão de Brindes
 
-> Sistema completo de gestão de produtos promocionais com integração Bitrix24
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-18.3-blue.svg)](https://reactjs.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-2.0-green.svg)](https://supabase.com/)
-[![PWA](https://img.shields.io/badge/PWA-Enabled-purple.svg)](https://web.dev/progressive-web-apps/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+> Sistema completo de gestão de orçamentos, pedidos e catálogo de produtos promocionais com integração Bitrix24, gamificação e IA.
 
-## ✨ Features
+## ✨ Características Principais
 
-### 🎯 Funcionalidades Principais
+### 🎯 Gestão de Orçamentos
+- ✅ Builder visual de orçamentos
+- ✅ Aprovação por QR Code
+- ✅ Versionamento automático
+- ✅ Comentários colaborativos
+- ✅ Tags e filtros salvos
+- ✅ Exportação para Excel
+- ✅ Modo apresentação fullscreen
 
-- **Gestão de Orçamentos** - Criação, edição e acompanhamento de orçamentos
-- **Catálogo de Produtos** - 1000+ produtos com busca avançada e filtros
-- **Integração Bitrix24** - Sincronização bidirecional de clientes e negócios
-- **PWA** - Instalável, funciona offline, notificações push
-- **Gamificação** - Sistema de pontos, conquistas e leaderboard
-- **Exportação Excel** - Exportar orçamentos, pedidos e clientes
-- **Modo Apresentação** - Fullscreen para mostrar produtos ao cliente
-- **Comentários** - Sistema de colaboração em orçamentos
-- **Histórico de Preços** - Gráficos de variação de preço
-- **Bulk Actions** - Ações em massa em listas
+### 📦 Catálogo de Produtos
+- ✅ 50.000+ produtos cadastrados
+- ✅ Busca semântica com IA
+- ✅ Filtros avançados
+- ✅ Histórico de preços
+- ✅ Lazy loading otimizado
+- ✅ Mockup generator
 
-### 🔒 Segurança
+### 🔄 Integrações
+- ✅ Bitrix24 CRM (sync bidirecional)
+- ✅ APIs de fornecedores (XBZ, Asia Import, Só Marcas)
+- ✅ Lalamove (expedição)
+- ✅ WhatsApp (notificações)
+- ✅ Google Calendar (lembretes)
 
-- ✅ Autenticação JWT com Supabase
-- ✅ Row Level Security (RLS)
-- ✅ Audit Log universal
-- ✅ Tokens seguros com TTL
-- ✅ Rate limiting
+### 🎮 Gamificação
+- ✅ Sistema de pontos e níveis
+- ✅ Conquistas desbloqueáveis
+- ✅ Leaderboard de vendedores
+- ✅ Metas de vendas
+- ✅ Loja de recompensas
 
-### ⚡ Performance
+### 🤖 IA e Automação
+- ✅ Recomendações personalizadas
+- ✅ Análise RFM de clientes
+- ✅ Busca por voz
+- ✅ Chatbot especialista
+- ✅ Automações via n8n
 
-- ✅ 30+ índices SQL otimizados
-- ✅ Lazy loading de rotas e imagens
-- ✅ Service Worker com cache inteligente
-- ✅ Bundle splitting
-- ✅ Lighthouse Score 90+
+### 📱 PWA & Mobile
+- ✅ Instalável (Add to Home Screen)
+- ✅ Funciona offline
+- ✅ Push notifications
+- ✅ Cache inteligente
+- ✅ Responsivo mobile-first
 
 ## 🚀 Quick Start
 
 ### Pré-requisitos
 
-- Node.js 18+
-- npm ou yarn
+- Node.js 18+ 
+- npm ou pnpm
 - Conta Supabase
-- (Opcional) Conta Bitrix24
 
 ### Instalação
 
 ```bash
 # Clone o repositório
 git clone https://github.com/adm01-debug/gifts-store.git
-
-# Entre na pasta
 cd gifts-store
 
-# Instale dependências
+# Instale as dependências
 npm install
 
-# Configure variáveis de ambiente
-cp .env.example .env.local
-# Edite .env.local com suas credenciais
+# Configure as variáveis de ambiente
+cp .env.example .env
+# Edite .env com suas credenciais
 
-# Execute migrations
-npm run db:migrate
+# Execute as migrations
+npm run migrate
 
 # Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-Abra [http://localhost:5173](http://localhost:5173) no navegador.
-
-## 📦 Scripts Disponíveis
-
-```bash
-npm run dev          # Desenvolvimento
-npm run build        # Build para produção
-npm run preview      # Preview do build
-npm run test         # Rodar testes
-npm run test:ui      # UI de testes
-npm run coverage     # Cobertura de testes
-npm run lint         # Lint do código
-```
+Acesse: `http://localhost:5173`
 
 ## 🏗️ Arquitetura
 
 ```
 gifts-store/
 ├── src/
-│   ├── components/     # Componentes React
-│   ├── hooks/          # Custom hooks
-│   ├── pages/          # Páginas/rotas
-│   ├── lib/            # Utilitários
-│   ├── integrations/   # Integrações externas
-│   └── types/          # TypeScript types
+│   ├── components/      # Componentes React
+│   │   ├── admin/       # Painel administrativo
+│   │   ├── clients/     # Gestão de clientes
+│   │   ├── products/    # Catálogo de produtos
+│   │   ├── quotes/      # Orçamentos
+│   │   └── ui/          # Componentes base (shadcn/ui)
+│   ├── hooks/           # Custom hooks
+│   ├── pages/           # Páginas/rotas
+│   ├── lib/             # Utilitários e configs
+│   └── integrations/    # Integrações externas
 ├── supabase/
-│   ├── functions/      # Edge Functions
-│   └── migrations/     # Migrations SQL
-└── public/             # Assets estáticos
+│   ├── functions/       # Edge Functions
+│   └── migrations/      # Migrations SQL
+├── public/
+│   ├── sw.js           # Service Worker
+│   └── manifest.json   # PWA Manifest
+└── docs/               # Documentação
 ```
 
-### Tech Stack
+## 🗄️ Banco de Dados
 
-- **Frontend:** React 18, TypeScript, TailwindCSS, shadcn/ui
-- **Backend:** Supabase (PostgreSQL + Edge Functions)
-- **State:** TanStack Query (React Query)
-- **Forms:** React Hook Form + Zod
-- **Charts:** Recharts
-- **Export:** SheetJS (xlsx)
-- **Build:** Vite
+### Principais Tabelas
 
-## 🔧 Configuração
-
-### Variáveis de Ambiente
-
-```env
-# Supabase
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-anonima
-
-# Bitrix24 (opcional)
-VITE_BITRIX_WEBHOOK=https://sua-empresa.bitrix24.com.br/rest/...
-
-# Push Notifications (opcional)
-VITE_VAPID_PUBLIC_KEY=sua-chave-vapid
-```
-
-### Migrations
-
-Execute as migrations na ordem correta:
-
-```bash
-# Via Supabase CLI
-supabase migration up
-
-# Ou copie manualmente no SQL Editor do Supabase
-# Ordem: arquivos .sql por data crescente
-```
-
-## 📊 Features Técnicas
-
-### PWA
-
-O app é instalável e funciona offline:
-
-```typescript
-// Registrado automaticamente em src/main.tsx
-registerServiceWorker()
-```
-
-### Lazy Loading
-
-Todas as rotas usam lazy loading:
-
-```typescript
-const QuotesPage = lazy(() => import('./pages/QuotesListPage'))
-```
-
-### Bulk Actions
-
-Seleção em massa otimizada:
-
-```typescript
-const { selectedIds, toggleItem, toggleAll } = useBulkSelection(items)
-```
+- **products** - Catálogo (50k+ produtos)
+- **quotes** - Orçamentos
+- **quote_items** - Itens de orçamentos
+- **orders** - Pedidos
+- **bitrix_clients** - Clientes (sync Bitrix24)
+- **sales_goals** - Metas de vendas
+- **user_achievements** - Gamificação
+- **notifications** - Sistema de notificações
 
 ## 🧪 Testes
 
@@ -173,59 +129,114 @@ const { selectedIds, toggleItem, toggleAll } = useBulkSelection(items)
 # Rodar todos os testes
 npm test
 
-# Modo watch
-npm run test:watch
-
-# Com UI
+# Testes com UI
 npm run test:ui
 
 # Cobertura
 npm run coverage
 ```
 
-Meta: 30% de cobertura mínima
+**Cobertura Atual:** ~30%
 
-## 📈 Roadmap
+## 📊 Performance
 
-### Em Desenvolvimento
+| Métrica | Valor |
+|---------|-------|
+| Lighthouse Score | 90+ |
+| First Contentful Paint | <1.5s |
+| Bundle Size | <500KB |
+| PWA Score | 95+ |
 
-- [ ] Versionamento de orçamentos
-- [ ] Import CSV de produtos
-- [ ] Dashboard customizável
-- [ ] Integração Google Calendar
+### Otimizações Implementadas
 
-### Backlog
+- ✅ Lazy loading de rotas (-60% bundle)
+- ✅ Code splitting automático
+- ✅ Cache de imagens (SW)
+- ✅ 30+ índices SQL
+- ✅ Debounce em buscas
+- ✅ Virtualização de listas
 
-- [ ] App mobile nativo
-- [ ] Relatórios agendados
-- [ ] Multi-idioma
+## 🔒 Segurança
+
+- ✅ Row Level Security (RLS) no Supabase
+- ✅ Tokens JWT com 48h TTL
+- ✅ Rate limiting (100 req/min)
+- ✅ Audit log universal
+- ✅ Validação client + server (Zod)
+- ✅ LGPD compliance
+
+## 🛠️ Stack Tecnológico
+
+### Frontend
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **TailwindCSS** - Styling
+- **shadcn/ui** - Component library
+- **Tanstack Query** - Data fetching
+- **Recharts** - Visualizações
+
+### Backend
+- **Supabase** - BaaS (PostgreSQL)
+- **Edge Functions** - Serverless (Deno)
+- **PostgREST** - API automática
+- **pg_vector** - Busca semântica
+
+### Integrações
+- **Bitrix24** - CRM
+- **n8n** - Automações
+- **OpenAI** - IA generativa
+- **Lalamove** - Logística
+
+## 📝 Scripts Disponíveis
+
+```bash
+npm run dev          # Desenvolvimento
+npm run build        # Build produção
+npm run preview      # Preview build
+npm test             # Rodar testes
+npm run lint         # Linter
+npm run format       # Prettier
+npm run migrate      # Migrations
+```
 
 ## 🤝 Contribuindo
 
 1. Fork o projeto
-2. Crie uma branch (`git checkout -b feature/MinhaFeature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona MinhaFeature'`)
+2. Crie sua branch (`git checkout -b feature/MinhaFeature`)
+3. Commit suas mudanças (`git commit -m 'feat: Minha nova feature'`)
 4. Push para a branch (`git push origin feature/MinhaFeature`)
 5. Abra um Pull Request
 
-Veja [CONTRIBUTING.md](CONTRIBUTING.md) para mais detalhes.
+Veja [CONTRIBUTING.md](./CONTRIBUTING.md) para mais detalhes.
 
-## 📝 License
+## 📄 Licença
 
-Este projeto está sob a licença MIT. Veja [LICENSE](LICENSE) para mais informações.
+Este projeto está sob a licença MIT. Veja [LICENSE](./LICENSE) para mais informações.
 
-## 👥 Autores
+## 👥 Equipe
 
-- **Pink e Cerébro** - *Desenvolvimento Principal*
+- **Pink e Cerébro** - Desenvolvimento & Arquitetura
 
-## 🙏 Agradecimentos
+## 🌟 Recursos Adicionais
 
-- [shadcn/ui](https://ui.shadcn.com/) - Componentes UI
-- [Supabase](https://supabase.com/) - Backend as a Service
-- [Lovable](https://lovable.dev/) - Assistência no desenvolvimento
+- [📖 Documentação Completa](./docs/)
+- [🎨 Guia de Estilo](./docs/STYLE_GUIDE.md)
+- [🔧 Configuração](./docs/SETUP.md)
+- [🚀 Deploy](./docs/DEPLOY.md)
+
+## 📈 Roadmap
+
+- [ ] App mobile nativo (React Native)
+- [ ] Multi-tenancy
+- [ ] API pública documentada
+- [ ] Marketplace de integrações
+- [ ] Dashboard personalizável (drag & drop)
+- [ ] Relatórios agendados
+- [ ] Fine-tuning modelo IA
 
 ---
 
-**📅 Última Atualização:** Dezembro 2025  
-**🌟 Status:** Produção  
-**📊 Progresso:** 50/56 funcionalidades (89%)
+**Feito com ❤️ por Promo Brindes**
+
+*"Rumo à perfeição, sempre!"* 🚀
