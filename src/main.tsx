@@ -1,10 +1,8 @@
 import { createRoot } from "react-dom/client";
 import { registerServiceWorker } from "@/lib/sw-register";
 import App from "./App.tsx";
-import { registerServiceWorker } from "@/lib/sw-register";
 import "./index.css";
 import { setupLocale } from "./lib/locale-config";
-import { registerServiceWorker } from "@/lib/sw-register";
 
 // Configurar locale pt-BR antes de renderizar
 setupLocale();
