@@ -27,7 +27,7 @@ interface UseErrorHandlerReturn {
 const defaultOptions: UseErrorHandlerOptions = {
   showToast: true,
   toastDuration: 5000,
-  logToConsole: true,
+  logToConsole: import.meta.env.DEV, // ✅ CORREÇÃO: Só loga em desenvolvimento
 };
 
 /**
@@ -125,8 +125,8 @@ export function useErrorHandler(
         message: friendlyMessage,
       });
 
-      // Log no console
-      if (opts.logToConsole) {
+      // ✅ CORREÇÃO: Log apenas em desenvolvimento
+      if (opts.logToConsole && import.meta.env.DEV) {
         console.error("[useErrorHandler]", normalizedError);
       }
 
