@@ -1,30 +1,37 @@
-import Redis from 'ioredis';
+// Redis cache service - Browser-compatible version using Map
+// In production, connect to Redis via Edge Function
 
-export class CacheService {{
-  private redis: Redis;
+export class CacheService {
+  private cache = new Map<string, { value: any; expires: number }>();
   private defaultTTL = 3600;
 
-  constructor() {{
-    this.redis = new Redis(process.env.VITE_REDIS_URL || 'redis://localhost:6379');
-  }}
+  async get<T>(key: string): Promise<T | null> {
+    const item = this.cache.get(key);
+    if (!item) return null;
+    if (Date.now() > item.expires) {
+      this.cache.delete(key);
+      return null;
+    }
+    return item.value as T;
+  }
 
-  async get<T>(key: string): Promise<T | null> {{
-    const data = await this.redis.get(key);
-    return data ? JSON.parse(data) : null;
-  }}
+  async set(key: string, value: any, ttl?: number): Promise<void> {
+    const expires = Date.now() + ((ttl || this.defaultTTL) * 1000);
+    this.cache.set(key, { value, expires });
+  }
 
-  async set(key: string, value: any, ttl?: number): Promise<void> {{
-    await this.redis.setex(key, ttl || this.defaultTTL, JSON.stringify(value));
-  }}
+  async invalidate(pattern: string): Promise<void> {
+    const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+    for (const key of this.cache.keys()) {
+      if (regex.test(key)) {
+        this.cache.delete(key);
+      }
+    }
+  }
 
-  async invalidate(pattern: string): Promise<void> {{
-    const keys = await this.redis.keys(pattern);
-    if (keys.length > 0) await this.redis.del(...keys);
-  }}
-
-  async flush(): Promise<void> {{
-    await this.redis.flushall();
-  }}
-}}
+  async flush(): Promise<void> {
+    this.cache.clear();
+  }
+}
 
 export const cache = new CacheService();
