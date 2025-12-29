@@ -58,7 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole(roleData.role as AppRole);
       }
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      // ✅ CORREÇÃO: Log apenas em desenvolvimento
+      if (import.meta.env.DEV) {
+        console.error("Error fetching user data:", error);
+      }
     }
   };
 
