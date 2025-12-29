@@ -1,16 +1,24 @@
 {
   "files": [],
-  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
-    "noImplicitAny": false,
-    "noUnusedParameters": false,
+    "noImplicitAny": true,
+    "noUnusedParameters": true,
     "skipLibCheck": true,
     "allowJs": true,
-    "noUnusedLocals": false,
-    "strictNullChecks": false
+    "noUnusedLocals": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": true,
+    "alwaysStrict": true
   }
 }
