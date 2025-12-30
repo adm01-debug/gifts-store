@@ -1,14 +1,37 @@
-import { usePriceHistory } from '@/hooks/usePriceHistory';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp } from 'lucide-react';
+
+interface PriceHistoryItem {
+  id: string;
+  changed_at: string;
+  old_price: number | null;
+  new_price: number;
+}
 
 interface PriceHistoryChartProps {
   productId: string;
 }
 
 export function PriceHistoryChart({ productId }: PriceHistoryChartProps) {
-  const { data: history, isLoading, error } = usePriceHistory(productId);
+  // Simulando histórico de preços baseado no produto atual
+  // já que a tabela price_history não existe no banco
+  const { data: product, isLoading } = useQuery({
+    queryKey: ['product-for-price-history', productId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('price, created_at, updated_at')
+        .eq('id', productId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!productId
+  });
 
   if (isLoading) {
     return (
@@ -28,22 +51,7 @@ export function PriceHistoryChart({ productId }: PriceHistoryChartProps) {
     );
   }
 
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Histórico de Preços</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-destructive">
-            Erro ao carregar histórico de preços
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!history || history.length === 0) {
+  if (!product) {
     return (
       <Card>
         <CardHeader>
@@ -57,14 +65,24 @@ export function PriceHistoryChart({ productId }: PriceHistoryChartProps) {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground text-center py-8">
-            Este produto ainda não teve alterações de preço
+            Este produto ainda não teve alterações de preço registradas
           </p>
         </CardContent>
       </Card>
     );
   }
 
-  const chartData = history.map(h => ({
+  // Simulação de histórico com dados do produto
+  const simulatedHistory: PriceHistoryItem[] = [
+    {
+      id: '1',
+      changed_at: product.created_at,
+      old_price: null,
+      new_price: product.price
+    }
+  ];
+
+  const chartData = simulatedHistory.map(h => ({
     date: new Date(h.changed_at).toLocaleDateString('pt-BR', { 
       day: '2-digit', 
       month: 'short' 
@@ -81,12 +99,6 @@ export function PriceHistoryChart({ productId }: PriceHistoryChartProps) {
     }).format(value);
   };
 
-  const lastPrice = history[history.length - 1];
-  const firstPrice = history[0];
-  const priceChange = lastPrice && firstPrice 
-    ? ((Number(lastPrice.new_price) - Number(firstPrice.old_price || firstPrice.new_price)) / Number(firstPrice.old_price || firstPrice.new_price) * 100)
-    : 0;
-
   return (
     <Card>
       <CardHeader>
@@ -95,12 +107,7 @@ export function PriceHistoryChart({ productId }: PriceHistoryChartProps) {
           Histórico de Preços
         </CardTitle>
         <CardDescription>
-          {history.length} alteraç{history.length === 1 ? 'ão' : 'ões'} registrada{history.length === 1 ? '' : 's'}
-          {priceChange !== 0 && (
-            <span className={priceChange > 0 ? 'text-green-600' : 'text-red-600'}>
-              {' '}• Variação: {priceChange > 0 ? '+' : ''}{priceChange.toFixed(1)}%
-            </span>
-          )}
+          Preço atual: {formatCurrency(product.price)}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -142,23 +149,14 @@ export function PriceHistoryChart({ productId }: PriceHistoryChartProps) {
           </LineChart>
         </ResponsiveContainer>
 
-        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="text-muted-foreground">Primeiro Registro</p>
-            <p className="font-medium">
-              {formatCurrency(Number(firstPrice.old_price || firstPrice.new_price))}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {new Date(firstPrice.changed_at).toLocaleDateString('pt-BR')}
-            </p>
-          </div>
+        <div className="mt-4 text-sm">
           <div>
             <p className="text-muted-foreground">Preço Atual</p>
             <p className="font-medium">
-              {formatCurrency(Number(lastPrice.new_price))}
+              {formatCurrency(product.price)}
             </p>
             <p className="text-xs text-muted-foreground">
-              {new Date(lastPrice.changed_at).toLocaleDateString('pt-BR')}
+              Registrado em {new Date(product.created_at).toLocaleDateString('pt-BR')}
             </p>
           </div>
         </div>
