@@ -18,27 +18,17 @@ export async function registerServiceWorker(): Promise<void> {
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
+        newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               console.log('🔄 Nova versão do Service Worker disponível');
-              
-              // Opcional: mostrar notificação ao usuário para recarregar
-              if (confirm('Nova versão disponível! Deseja atualizar?')) {
-                window.location.reload();
-              }
+              // Reload automático removido para evitar auto-refresh intermitente
             }
           });
         }
       });
 
-      // Recarregar quando novo SW assumir o controle
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
-          refreshing = true;
-          window.location.reload();
-        }
-      });
+      // Controllerchange listener removido para evitar auto-refresh
+      console.log('✅ Service Worker configurado sem auto-reload');
 
     } catch (error) {
       console.error('❌ Falha ao registrar Service Worker:', error);
