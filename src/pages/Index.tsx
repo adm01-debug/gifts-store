@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, TrendingUp, Users, Layers, Filter, ArrowUpDown, LayoutGrid, List, User, X, Palette, Sparkles, Loader2 } from "lucide-react";
-import { PresentationMode, PresentationModeButton } from "@/components/products/PresentationMode";
 import { ExpertChatButton } from "@/components/expert/ExpertChatButton";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
