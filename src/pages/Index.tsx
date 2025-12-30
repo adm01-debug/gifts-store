@@ -208,227 +208,234 @@ export default function Index() {
     return filteredProducts.slice(0, displayCount);
   }, [filteredProducts, displayCount]);
 
-  const hasMoreProducts = displayCount < filteredProducts.length;
+  // Has more products to load
+  const hasMoreProducts = useMemo(() => {
+    return paginatedProducts.length < filteredProducts.length;
+  }, [paginatedProducts, filteredProducts]);
 
-  // Apply quick filter
-  const handleApplyQuickFilter = (quickFilter: QuickFilter["filter"]) => {
-    const newFilters = { ...defaultFilters };
+  // Quick filters
+  const quickFilters: QuickFilter[] = useMemo(
+    () => [
+      {
+        id: 'all',
+        label: 'Todos',
+        icon: <Layers className="h-4 w-4" />,
+        filter: {},
+      },
+      {
+        id: 'featured',
+        label: 'Destaques',
+        icon: <Sparkles className="h-4 w-4" />,
+        filter: { featured: true },
+      },
+      {
+        id: 'new',
+        label: 'Novidades',
+        icon: <TrendingUp className="h-4 w-4" />,
+        filter: { newArrival: true },
+      },
+      {
+        id: 'kits',
+        label: 'Kits',
+        icon: <Package className="h-4 w-4" />,
+        filter: { isKit: true },
+      },
+    ],
+    []
+  );
+
+  // Stats
+  const stats = useMemo(
+    () => [
+      {
+        label: 'Total de Produtos',
+        value: filteredProducts.length,
+        icon: <Package className="h-4 w-4" />,
+      },
+      {
+        label: 'Categorias',
+        value: CATEGORIES.length,
+        icon: <Layers className="h-4 w-4" />,
+      },
+      {
+        label: 'Fornecedores',
+        value: SUPPLIERS.length,
+        icon: <Users className="h-4 w-4" />,
+      },
+      {
+        label: 'Favoritos',
+        value: favoriteCount,
+        icon: <TrendingUp className="h-4 w-4" />,
+      },
+    ],
+    [filteredProducts, favoriteCount]
+  );
+
+  // Handlers
+  const handleQuickFilter = (filter: QuickFilter) => {
+    setActiveQuickFilterId(filter.id);
     
-    if (quickFilter.datasComemorativas) {
-      newFilters.datasComemorativas = quickFilter.datasComemorativas;
+    if (filter.id === 'all') {
+      setFilters(defaultFilters);
+      setSortBy('name');
+      return;
     }
-    if (quickFilter.nichos) {
-      newFilters.nichos = quickFilter.nichos;
-    }
-    if (quickFilter.publicoAlvo) {
-      newFilters.publicoAlvo = quickFilter.publicoAlvo;
-    }
-    if (quickFilter.priceRange) {
-      newFilters.priceRange = quickFilter.priceRange;
-    }
-    if (quickFilter.featured) {
-      newFilters.featured = quickFilter.featured;
-    }
-    if (quickFilter.isKit) {
-      newFilters.isKit = quickFilter.isKit;
-    }
+    
+    const newFilters = { ...defaultFilters };
+    if ('featured' in filter.filter) newFilters.featured = true;
+    if ('isKit' in filter.filter) newFilters.isKit = true;
     
     setFilters(newFilters);
-    // Find the quick filter id for highlighting
-    const quickFilters = [
-      { id: "fim-de-ano", filter: { datasComemorativas: ["Natal", "Ano Novo", "Confraternização"] } },
-      { id: "dia-das-maes", filter: { datasComemorativas: ["Dia das Mães"], publicoAlvo: ["Mulheres"] } },
-      { id: "eventos-corporativos", filter: { nichos: ["Eventos", "Corporativo"], publicoAlvo: ["Executivos"] } },
-      { id: "onboarding", filter: { isKit: true, nichos: ["RH", "Onboarding"] } },
-      { id: "destaques", filter: { featured: true } },
-      { id: "ate-50", filter: { priceRange: [0, 50] } },
-    ];
-    const matched = quickFilters.find(qf => JSON.stringify(qf.filter) === JSON.stringify(quickFilter));
-    setActiveQuickFilterId(matched?.id);
-  };
-
-  const handleClearQuickFilter = () => {
-    setFilters(defaultFilters);
-    setActiveQuickFilterId(undefined);
-  };
-
-  const handleViewProduct = (product: Product) => {
-    navigate(`/produto/${product.id}`);
-  };
-
-  const handleShareProduct = (product: Product) => {
-    toast({
-      title: "Compartilhar",
-      description: `Preparando ${product.name} para envio via A-Ticket`,
-    });
-  };
-
-  const handleFavoriteProduct = (product: Product) => {
-    toast({
-      title: "Favoritos",
-      description: `${product.name} adicionado aos favoritos`,
-    });
+    
+    if ('newArrival' in filter.filter) {
+      setSortBy('newest');
+    }
   };
 
   const resetFilters = () => {
     setFilters(defaultFilters);
     setActiveQuickFilterId(undefined);
-    setSearchQuery("");
+    setSortBy('name');
   };
 
-  // Stats
-  const stats = {
-    totalProducts: PRODUCTS.length,
-    inStock: PRODUCTS.filter((p) => p.stockStatus === 'in-stock').length,
-    categories: CATEGORIES.length,
-    suppliers: SUPPLIERS.length,
+  const handleViewProduct = (productId: string) => {
+    navigate(`/produto/${productId}`);
+  };
+
+  const handleShareProduct = (productId: string) => {
+    const product = PRODUCTS.find((p) => p.id === productId);
+    if (!product) return;
+
+    const shareUrl = `${window.location.origin}/produto/${productId}`;
+    const shareText = `Confira ${product.name} por R$ ${product.price.toFixed(2)}`;
+
+    if (navigator.share) {
+      navigator
+        .share({
+          title: product.name,
+          text: shareText,
+          url: shareUrl,
+        })
+        .then(() => {
+          toast({
+            title: "Compartilhado!",
+            description: "Produto compartilhado com sucesso",
+          });
+        })
+        .catch(() => {});
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link copiado!",
+        description: "O link do produto foi copiado para a área de transferência",
+      });
+    }
+  };
+
+  const handleFavoriteProduct = (productId: string) => {
+    toggleFavorite(productId);
   };
 
   return (
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground">
-              Vitrine de Produtos
+            <h1 className="font-display text-2xl lg:text-3xl font-bold">
+              Catálogo de Produtos
             </h1>
             <p className="text-muted-foreground mt-1">
-              Encontre o brinde ideal para seu cliente
+              Explore nossa coleção completa de brindes corporativos
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Client filter button */}
-            <Button
-              variant={selectedClient ? "default" : "outline"}
-              size="sm"
-              onClick={() => setClientModalOpen(true)}
-              className="gap-2"
-            >
-              <User className="h-4 w-4" />
-              {selectedClient ? selectedClient.name : "Filtrar por cliente"}
-            </Button>
-
-            {/* Selected client indicator */}
-            {selectedClient && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-                <Palette className="h-3 w-3 text-primary" />
-                <div className="flex items-center gap-1">
-                  <div
-                    className="w-4 h-4 rounded-full border border-border"
-                    style={{ backgroundColor: selectedClient.primaryColor.hex }}
-                    title={selectedClient.primaryColor.name}
-                  />
-                  {selectedClient.secondaryColors.slice(0, 2).map((color, idx) => (
-                    <div
-                      key={idx}
-                      className="w-4 h-4 rounded-full border border-border"
-                      style={{ backgroundColor: color.hex }}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5 ml-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedClient(null);
-                  }}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
-
-            <Badge variant="secondary" className="text-sm">
-              {filteredProducts.length} produtos
-            </Badge>
+          {/* Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat, index) => (
+              <Card key={index} className="card-interactive">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    {stat.icon}
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
 
-        {/* Quick Filters Bar */}
-        <QuickFiltersBar
-          onApplyFilter={handleApplyQuickFilter}
-          activeFilterId={activeQuickFilterId}
-          onClearFilter={handleClearQuickFilter}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
+        {/* Client Filter Section */}
+        {selectedClient && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary text-primary-foreground">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Filtrando para:</p>
+                    <p className="text-sm text-muted-foreground">{selectedClient.name}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Palette className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex gap-1">
+                      {[selectedClient.primaryColor, ...selectedClient.secondaryColors].map((color, i) => (
+                        <div
+                          key={i}
+                          className="w-6 h-6 rounded-full border-2 border-background shadow-sm"
+                          style={{ backgroundColor: color.hex }}
+                          title={color.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedClient(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="card-interactive">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Package className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalProducts}</p>
-                <p className="text-sm text-muted-foreground">Total de Produtos</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="card-interactive">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-success/10 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.inStock}</p>
-                <p className="text-sm text-muted-foreground">Em Estoque</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="card-interactive">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center">
-                <Layers className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.categories}</p>
-                <p className="text-sm text-muted-foreground">Categorias</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="card-interactive">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center">
-                <Users className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.suppliers}</p>
-                <p className="text-sm text-muted-foreground">Fornecedores</p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Quick Filters and Client Selector */}
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1">
+            <QuickFiltersBar
+              filters={quickFilters}
+              activeFilterId={activeQuickFilterId}
+              onFilterClick={handleQuickFilter}
+            />
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setClientModalOpen(true)}
+            className="lg:w-auto"
+          >
+            <User className="h-4 w-4 mr-2" />
+            {selectedClient ? 'Trocar Cliente' : 'Filtrar por Cliente'}
+          </Button>
         </div>
 
-        {/* Main content */}
-        <div className="flex gap-6">
-          {/* Sidebar filters (desktop) */}
-          <aside className="hidden lg:block w-72 shrink-0">
-            <div className="sticky top-24 card-base p-4 max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-thin">
-              <FilterPanel
-                filters={filters}
-                onFilterChange={setFilters}
-                onReset={resetFilters}
-                activeFiltersCount={activeFiltersCount}
-              />
-            </div>
-          </aside>
-
-          {/* Products */}
-          <div className="flex-1 space-y-4">
-            {/* Toolbar */}
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                {/* Mobile filter button */}
+        {/* Main Content */}
+        <div className="space-y-6">
+          <div className="space-y-4">
+            {/* Filters and controls */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Filter button */}
                 <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
                   <SheetTrigger asChild>
-                    <Button variant="outline" className="lg:hidden">
+                    <Button variant="outline" size="sm">
                       <Filter className="h-4 w-4 mr-2" />
                       Filtros
                       {activeFiltersCount > 0 && (
