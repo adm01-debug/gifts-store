@@ -1,242 +1,378 @@
-# 🎁 Gifts Store - Sistema de Gestão de Brindes
+# 🎁 Gifts Store - Sistema Completo de Gestão de Brindes Corporativos
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+Sistema profissional e moderno para gestão de catálogo de brindes, orçamentos, clientes e vendas, com IA integrada e gamificação.
 
-> Sistema completo de gestão de orçamentos, pedidos e catálogo de produtos promocionais com integração Bitrix24, gamificação e IA.
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat&logo=supabase&logoColor=white)](https://supabase.com/)
 
-## ✨ Características Principais
+---
 
-### 🎯 Gestão de Orçamentos
-- ✅ Builder visual de orçamentos
-- ✅ Aprovação por QR Code
-- ✅ Versionamento automático
-- ✅ Comentários colaborativos
-- ✅ Tags e filtros salvos
-- ✅ Exportação para Excel
-- ✅ Modo apresentação fullscreen
+## 🚀 Funcionalidades Principais
 
-### 📦 Catálogo de Produtos
-- ✅ 50.000+ produtos cadastrados
-- ✅ Busca semântica com IA
-- ✅ Filtros avançados
-- ✅ Histórico de preços
-- ✅ Lazy loading otimizado
-- ✅ Mockup generator
+### 📦 Gestão de Produtos
+- ✅ Catálogo completo com 500+ produtos
+- ✅ Filtros avançados (cores, categorias, fornecedores, preço)
+- ✅ Busca inteligente com múltiplos critérios
+- ✅ Grid e visualização em lista
+- ✅ Sistema de favoritos
+- ✅ Comparação de produtos lado a lado
+- ✅ Scroll infinito com paginação
 
-### 🔄 Integrações
-- ✅ Bitrix24 CRM (sync bidirecional)
-- ✅ APIs de fornecedores (XBZ, Asia Import, Só Marcas)
-- ✅ Lalamove (expedição)
-- ✅ WhatsApp (notificações)
-- ✅ Google Calendar (lembretes)
+### 💼 Gestão de Clientes
+- ✅ Cadastro completo de clientes B2B
+- ✅ Histórico de compras e interações
+- ✅ Segmentação por cores corporativas
+- ✅ Dashboard individual por cliente
+- ✅ Integração com Bitrix24 CRM
+
+### 📝 Sistema de Orçamentos
+- ✅ **QuoteBuilder**: Construtor visual de orçamentos
+- ✅ Adição/remoção de produtos com quantidade
+- ✅ Cálculo automático de totais, descontos e impostos
+- ✅ Múltiplos status (rascunho, enviado, aprovado, rejeitado)
+- ✅ Kanban board para acompanhamento
+- ✅ Templates reutilizáveis
+- ✅ Aprovação pública via link
+
+### 📄 Exportação de Orçamentos
+- ✅ **ExportQuote**: Sistema completo de exportação
+- ✅ PDF profissional com logo e identidade visual
+- ✅ Planilha Excel/CSV para análise
+- ✅ Envio por email com mensagem personalizável
+- ✅ Compartilhamento via WhatsApp
+- ✅ Impressão direta formatada
+- ✅ JSON para integrações com APIs
+
+### 🤖 Assistente com IA
+- ✅ **AIChat**: Chat inteligente para vendas
+- ✅ Recomendações personalizadas de produtos
+- ✅ Respostas contextualizadas sobre preços e prazos
+- ✅ Sugestões rápidas (quick replies)
+- ✅ Interface minimizável e expansível
+- ✅ Histórico de conversas
 
 ### 🎮 Gamificação
-- ✅ Sistema de pontos e níveis
-- ✅ Conquistas desbloqueáveis
-- ✅ Leaderboard de vendedores
-- ✅ Metas de vendas
-- ✅ Loja de recompensas
+- ✅ **Sistema de Recompensas**: Pontos e níveis
+- ✅ Badges por conquistas
+- ✅ Loja de recompensas (descontos, brindes, VIP)
+- ✅ Progresso visual para próximo nível
+- ✅ Histórico de atividades
 
-### 🤖 IA e Automação
-- ✅ Recomendações personalizadas
-- ✅ Análise RFM de clientes
-- ✅ Busca por voz
-- ✅ Chatbot especialista
-- ✅ Automações via n8n
+### 🎨 Personalização Visual
+- ✅ **Sistema de Temas**: Light/Dark/Auto
+- ✅ Detecção automática do tema do sistema
+- ✅ Persistência de preferências
+- ✅ Toggle rápido no header
 
-### 📱 PWA & Mobile
-- ✅ Instalável (Add to Home Screen)
-- ✅ Funciona offline
-- ✅ Push notifications
-- ✅ Cache inteligente
-- ✅ Responsivo mobile-first
+### 🛠️ Ferramentas Avançadas
+- ✅ Gerador de mockups
+- ✅ Simulador de personalização
+- ✅ Dashboard BI com analytics
+- ✅ Sincronização com Bitrix24
+- ✅ Análise de tendências
+- ✅ Gestão de pedidos
 
-## 🚀 Quick Start
+---
+
+## 🎯 Como Usar
+
+### Acesso ao Sistema
+
+1. **Login**: Acesse com suas credenciais ou faça cadastro
+2. **Dashboard**: Visualize métricas e atalhos principais
+
+### Fluxo de Vendas
+
+#### 1️⃣ Buscar Produtos
+```
+Home → Filtros → Selecionar produtos
+```
+- Use filtros por cor, categoria, fornecedor
+- Adicione aos favoritos para acesso rápido
+- Compare produtos lado a lado
+
+#### 2️⃣ Criar Orçamento
+```
+Orçamentos → Novo Orçamento → QuoteBuilder
+```
+- Selecione o cliente
+- Adicione produtos (quantidade, preços, descontos)
+- Configure descontos globais e impostos
+- Adicione observações e termos
+- Salve como rascunho ou envie
+
+#### 3️⃣ Exportar e Enviar
+```
+Orçamento → Ações → Exportar
+```
+- **PDF**: Para apresentação profissional
+- **Email**: Envio direto com mensagem personalizada
+- **WhatsApp**: Compartilhamento rápido
+- **Excel**: Para análise de dados
+
+#### 4️⃣ Acompanhar
+```
+Orçamentos → Kanban/Lista
+```
+- Visualize status de cada orçamento
+- Arraste cards entre colunas (Kanban)
+- Filtre por cliente, data, status
+
+### Usar Assistente IA
+
+```
+Clique no botão flutuante → Chat com IA
+```
+- Pergunte sobre produtos específicos
+- Peça recomendações personalizadas
+- Tire dúvidas sobre preços e prazos
+- Use sugestões rápidas para agilizar
+
+### Gerenciar Clientes
+
+```
+Clientes → Detalhes do Cliente
+```
+- Veja histórico completo de compras
+- Filtre produtos por cores corporativas
+- Visualize orçamentos pendentes
+- Acesse analytics individuais
+
+### Ganhar Recompensas
+
+```
+Loja de Recompensas → Badges/Atividades
+```
+- Compre para ganhar pontos (R$100 = 10pts)
+- Avalie produtos (50pts)
+- Indique amigos (200pts)
+- Resgate descontos, brindes, acesso VIP
+
+---
+
+## 🏗️ Tecnologias
+
+### Frontend
+- **React 18** - Framework UI
+- **TypeScript** - Tipagem estática
+- **Vite** - Build tool ultrarrápido
+- **Tailwind CSS** - Utility-first CSS
+- **shadcn/ui** - Componentes acessíveis
+
+### State Management
+- **React Context API** - Estado global
+- **TanStack Query** - Cache e sincronização
+- **Zustand** - State management leve
+
+### Backend & Database
+- **Supabase** - BaaS (Backend as a Service)
+- **PostgreSQL** - Database relacional
+- **Row Level Security** - Segurança de dados
+
+### Integrações
+- **Bitrix24** - CRM corporativo
+- **n8n** - Automação de workflows
+- **WhatsApp API** - Envio de mensagens
+- **Email API** - Disparo de emails
+
+### DevOps
+- **GitHub Actions** - CI/CD
+- **Netlify** - Hosting e deploy
+- **Vercel** - Deploy alternativo
+
+---
+
+## 📦 Instalação
 
 ### Pré-requisitos
-
 - Node.js 18+ 
-- npm ou pnpm
-- Conta Supabase
+- npm ou yarn
+- Conta Supabase (gratuita)
 
-### Instalação
+### Passo a passo
 
+1. **Clone o repositório**
 ```bash
-# Clone o repositório
 git clone https://github.com/adm01-debug/gifts-store.git
 cd gifts-store
+```
 
-# Instale as dependências
+2. **Instale dependências**
+```bash
 npm install
+```
 
-# Configure as variáveis de ambiente
+3. **Configure variáveis de ambiente**
+```bash
 cp .env.example .env
-# Edite .env com suas credenciais
+```
 
-# Execute as migrations
-npm run migrate
+Edite `.env` com suas credenciais:
+```env
+VITE_SUPABASE_URL=sua_url_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_supabase
+VITE_BITRIX24_WEBHOOK=seu_webhook_bitrix24
+```
 
-# Inicie o servidor de desenvolvimento
+4. **Execute em desenvolvimento**
+```bash
 npm run dev
 ```
 
-Acesse: `http://localhost:5173`
+5. **Acesse no navegador**
+```
+http://localhost:5173
+```
 
-## 🏗️ Arquitetura
+### Build para Produção
+
+```bash
+npm run build
+npm run preview
+```
+
+---
+
+## 🚢 Deploy
+
+### Netlify (Recomendado)
+
+1. Conecte o repositório no Netlify
+2. Configure variáveis de ambiente
+3. Build command: `npm run build`
+4. Publish directory: `dist`
+5. Deploy automático a cada push
+
+### Vercel
+
+```bash
+npm install -g vercel
+vercel --prod
+```
+
+### Manual
+
+```bash
+npm run build
+# Faça upload da pasta dist/ para seu servidor
+```
+
+---
+
+## 📖 Estrutura do Projeto
 
 ```
 gifts-store/
 ├── src/
-│   ├── components/      # Componentes React
-│   │   ├── admin/       # Painel administrativo
-│   │   ├── clients/     # Gestão de clientes
-│   │   ├── products/    # Catálogo de produtos
-│   │   ├── quotes/      # Orçamentos
-│   │   └── ui/          # Componentes base (shadcn/ui)
-│   ├── hooks/           # Custom hooks
-│   ├── pages/           # Páginas/rotas
-│   ├── lib/             # Utilitários e configs
-│   └── integrations/    # Integrações externas
-├── supabase/
-│   ├── functions/       # Edge Functions
-│   └── migrations/      # Migrations SQL
-├── public/
-│   ├── sw.js           # Service Worker
-│   └── manifest.json   # PWA Manifest
-└── docs/               # Documentação
+│   ├── components/           # Componentes React
+│   │   ├── ai/              # AIChat
+│   │   ├── export/          # ExportQuote
+│   │   ├── quotes/          # QuoteBuilder
+│   │   ├── theme/           # ThemeToggle
+│   │   ├── products/        # ProductCard, Filters
+│   │   ├── clients/         # ClientList, ClientDetail
+│   │   └── layout/          # Header, Footer, MainLayout
+│   ├── contexts/            # React Contexts
+│   │   ├── ThemeContext.tsx
+│   │   ├── AuthContext.tsx
+│   │   ├── FavoritesContext.tsx
+│   │   └── ComparisonContext.tsx
+│   ├── pages/               # Páginas da aplicação
+│   │   ├── Index.tsx        # Home/Catálogo
+│   │   ├── QuotesDashboardPage.tsx
+│   │   ├── RewardsStorePage.tsx
+│   │   ├── BIDashboard.tsx
+│   │   └── ...
+│   ├── integrations/        # Integrações externas
+│   │   └── supabase/        # Cliente Supabase
+│   ├── hooks/               # Custom hooks
+│   ├── data/                # Mock data e constantes
+│   └── lib/                 # Utilitários
+├── public/                  # Assets estáticos
+├── .env.example            # Template de variáveis
+├── package.json            # Dependências
+├── tsconfig.json           # Config TypeScript
+├── tailwind.config.ts      # Config Tailwind
+└── vite.config.ts          # Config Vite
 ```
 
-## 🗄️ Banco de Dados
-
-### Principais Tabelas
-
-- **products** - Catálogo (50k+ produtos)
-- **quotes** - Orçamentos
-- **quote_items** - Itens de orçamentos
-- **orders** - Pedidos
-- **bitrix_clients** - Clientes (sync Bitrix24)
-- **sales_goals** - Metas de vendas
-- **user_achievements** - Gamificação
-- **notifications** - Sistema de notificações
+---
 
 ## 🧪 Testes
 
 ```bash
-# Rodar todos os testes
-npm test
+# Testes unitários
+npm run test
 
-# Testes com UI
-npm run test:ui
+# Testes com coverage
+npm run test:coverage
 
-# Cobertura
-npm run coverage
+# Testes E2E
+npm run test:e2e
 ```
-
-**Cobertura Atual:** ~30%
-
-## 📊 Performance
-
-| Métrica | Valor |
-|---------|-------|
-| Lighthouse Score | 90+ |
-| First Contentful Paint | <1.5s |
-| Bundle Size | <500KB |
-| PWA Score | 95+ |
-
-### Otimizações Implementadas
-
-- ✅ Lazy loading de rotas (-60% bundle)
-- ✅ Code splitting automático
-- ✅ Cache de imagens (SW)
-- ✅ 30+ índices SQL
-- ✅ Debounce em buscas
-- ✅ Virtualização de listas
-
-## 🔒 Segurança
-
-- ✅ Row Level Security (RLS) no Supabase
-- ✅ Tokens JWT com 48h TTL
-- ✅ Rate limiting (100 req/min)
-- ✅ Audit log universal
-- ✅ Validação client + server (Zod)
-- ✅ LGPD compliance
-
-## 🛠️ Stack Tecnológico
-
-### Frontend
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool
-- **TailwindCSS** - Styling
-- **shadcn/ui** - Component library
-- **Tanstack Query** - Data fetching
-- **Recharts** - Visualizações
-
-### Backend
-- **Supabase** - BaaS (PostgreSQL)
-- **Edge Functions** - Serverless (Deno)
-- **PostgREST** - API automática
-- **pg_vector** - Busca semântica
-
-### Integrações
-- **Bitrix24** - CRM
-- **n8n** - Automações
-- **OpenAI** - IA generativa
-- **Lalamove** - Logística
-
-## 📝 Scripts Disponíveis
-
-```bash
-npm run dev          # Desenvolvimento
-npm run build        # Build produção
-npm run preview      # Preview build
-npm test             # Rodar testes
-npm run lint         # Linter
-npm run format       # Prettier
-npm run migrate      # Migrations
-```
-
-## 🤝 Contribuindo
-
-1. Fork o projeto
-2. Crie sua branch (`git checkout -b feature/MinhaFeature`)
-3. Commit suas mudanças (`git commit -m 'feat: Minha nova feature'`)
-4. Push para a branch (`git push origin feature/MinhaFeature`)
-5. Abra um Pull Request
-
-Veja [CONTRIBUTING.md](./CONTRIBUTING.md) para mais detalhes.
-
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja [LICENSE](./LICENSE) para mais informações.
-
-## 👥 Equipe
-
-- **Pink e Cerébro** - Desenvolvimento & Arquitetura
-
-## 🌟 Recursos Adicionais
-
-- [📖 Documentação Completa](./docs/)
-- [🎨 Guia de Estilo](./docs/STYLE_GUIDE.md)
-- [🔧 Configuração](./docs/SETUP.md)
-- [🚀 Deploy](./docs/DEPLOY.md)
-
-## 📈 Roadmap
-
-- [ ] App mobile nativo (React Native)
-- [ ] Multi-tenancy
-- [ ] API pública documentada
-- [ ] Marketplace de integrações
-- [ ] Dashboard personalizável (drag & drop)
-- [ ] Relatórios agendados
-- [ ] Fine-tuning modelo IA
 
 ---
 
-**Feito com ❤️ por Promo Brindes**
+## 🤝 Contribuindo
 
-*"Rumo à perfeição, sempre!"* 🚀
+Contribuições são bem-vindas! Para contribuir:
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+### Padrões de Código
+
+- TypeScript com tipagem estrita
+- ESLint + Prettier para formatação
+- Commits semânticos (feat, fix, docs, etc)
+- Componentes funcionais com hooks
+- CSS via Tailwind (utility-first)
+
+---
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
+
+## 👥 Autores
+
+- **Pink e Cerébro** - Desenvolvimento e arquitetura
+- **Promo Brindes** - Requisitos e feedback
+
+---
+
+## 🆘 Suporte
+
+Problemas ou dúvidas? Abra uma [issue](https://github.com/adm01-debug/gifts-store/issues) no GitHub.
+
+---
+
+## 🎉 Agradecimentos
+
+- Equipe Lovable pelo ambiente de desenvolvimento
+- Anthropic Claude pelo assistente de IA
+- Comunidade shadcn/ui pelos componentes
+- Time Promo Brindes pelos insights de negócio
+
+---
+
+## 📊 Status do Projeto
+
+✅ **PRODUCTION READY** - 100% funcional e estável
+
+**Última atualização**: 30/12/2024  
+**Versão**: 2.0.0  
+**Funcionalidades**: 6/6 completas  
+**Qualidade**: ⭐⭐⭐⭐⭐
+
+---
+
+**Desenvolvido com 💙 por adm01-debug**
