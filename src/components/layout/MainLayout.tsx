@@ -4,6 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { PageTransition } from "@/components/effects";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { RestartTourButton } from "@/components/onboarding/RestartTourButton";
+import { ExpertChatButton } from "@/components/expert/ExpertChatButton";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -41,6 +42,9 @@ export function MainLayout({ children }: MainLayoutProps) {
           <div className="fixed bottom-4 right-4 z-50">
             <RestartTourButton />
           </div>
+          
+          {/* Expert Chat Button - fixed position */}
+          <ExpertChatButton />
         </div>
       </div>
     </div>

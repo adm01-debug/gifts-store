@@ -1,5 +1,8 @@
-import type { Meta } from '@storybook/react';
-import { ClientAnalytics } from '@/components/clients/ClientAnalytics';
-const meta: Meta = { title: 'Clients/ClientAnalytics', component: ClientAnalytics };
-export default meta;
-export const Default = {};
+// Storybook stories placeholder - requires @storybook/react
+// Component: ClientAnalytics
+
+export default {
+  title: 'Clients/ClientAnalytics',
+};
+
+export const Default = () => null;

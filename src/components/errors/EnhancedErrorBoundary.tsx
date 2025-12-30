@@ -1,32 +1,24 @@
-import React, { Component, ReactNode } from 'react';
-import * as Sentry from '@sentry/react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
   resetOnPropsChange?: any[];
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
-  errorInfo: React.ErrorInfo | null;
+  errorInfo: ErrorInfo | null;
   errorCount: number;
 }
 
 /**
  * Enhanced Error Boundary with Retry and Reset Capabilities
- * 
- * Features:
- * - Automatic error reporting to Sentry
- * - Retry functionality with exponential backoff
- * - Reset on props change
- * - Custom fallback UI
- * - Error count tracking
- * - Development mode error details
  */
 export class EnhancedErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
@@ -46,35 +38,18 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    // Log to console in development
-    if (import.meta.env.DEV) {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
-    }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    console.error('EnhancedErrorBoundary caught an error:', error, errorInfo);
 
-    // Report to Sentry in production
-    if (import.meta.env.PROD) {
-      Sentry.captureException(error, {
-        contexts: {
-          react: {
-            componentStack: errorInfo.componentStack,
-          },
-        },
-      });
-    }
-
-    // Update state
     this.setState((prevState) => ({
       errorInfo,
       errorCount: prevState.errorCount + 1,
     }));
 
-    // Call custom error handler if provided
     this.props.onError?.(error, errorInfo);
   }
 
   componentDidUpdate(prevProps: Props): void {
-    // Reset error boundary when specific props change
     if (
       this.props.resetOnPropsChange &&
       this.state.hasError &&
@@ -109,85 +84,71 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
 
   render(): ReactNode {
     if (this.state.hasError) {
-      // Use custom fallback if provided
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
-      // Default error UI
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 space-y-4">
-            <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mx-auto">
-              <AlertTriangle className="w-6 h-6 text-red-600" />
-            </div>
-
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Algo deu errado
-              </h1>
-              <p className="text-gray-600 mb-4">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <Card className="w-full max-w-lg">
+            <CardHeader className="text-center">
+              <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="w-8 h-8 text-destructive" />
+              </div>
+              <CardTitle className="text-2xl">Algo deu errado</CardTitle>
+              <CardDescription>
                 Ocorreu um erro inesperado. Por favor, tente novamente.
-              </p>
-
-              {import.meta.env.DEV && this.state.error && (
-                <div className="text-left bg-gray-100 rounded p-4 mb-4 overflow-auto max-h-40">
-                  <p className="text-sm font-mono text-red-600 break-all">
-                    {this.state.error.toString()}
-                  </p>
-                  {this.state.errorInfo && (
-                    <details className="mt-2">
-                      <summary className="text-sm font-semibold cursor-pointer">
-                        Stack Trace
-                      </summary>
-                      <pre className="text-xs mt-2 overflow-auto">
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              {this.state.error && (
+                <details className="group">
+                  <summary className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground">
+                    <Bug className="w-4 h-4" />
+                    Detalhes técnicos
+                  </summary>
+                  <div className="mt-2 p-3 bg-muted rounded-lg">
+                    <p className="text-sm font-mono break-all">
+                      {this.state.error.message}
+                    </p>
+                    {this.state.errorInfo?.componentStack && (
+                      <pre className="mt-2 text-xs text-muted-foreground overflow-auto max-h-32">
                         {this.state.errorInfo.componentStack}
                       </pre>
-                    </details>
-                  )}
-                </div>
+                    )}
+                  </div>
+                </details>
               )}
 
               {this.state.errorCount > 2 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4">
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
                   <p className="text-sm text-yellow-800">
-                    ⚠️ Este erro ocorreu {this.state.errorCount} vezes. 
-                    Considere recarregar a página.
+                    ⚠️ Este erro ocorreu {this.state.errorCount} vezes. Considere recarregar a página.
                   </p>
                 </div>
               )}
-            </div>
+            </CardContent>
 
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                onClick={this.handleReset}
-                className="flex-1"
-                variant="default"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Tentar Novamente
-              </Button>
-
-              <Button
-                onClick={this.handleGoHome}
-                className="flex-1"
-                variant="outline"
-              >
-                <Home className="w-4 h-4 mr-2" />
-                Ir para Início
-              </Button>
-            </div>
-
-            {this.state.errorCount > 2 && (
-              <Button
-                onClick={this.handleReload}
-                className="w-full"
-                variant="secondary"
-              >
-                Recarregar Página
-              </Button>
-            )}
-          </div>
+            <CardFooter className="flex flex-col gap-2">
+              <div className="flex gap-2 w-full">
+                <Button onClick={this.handleReset} variant="default" className="flex-1 gap-2">
+                  <RefreshCw className="w-4 h-4" />
+                  Tentar Novamente
+                </Button>
+                <Button onClick={this.handleGoHome} variant="outline" className="flex-1 gap-2">
+                  <Home className="w-4 h-4" />
+                  Ir para Início
+                </Button>
+              </div>
+              {this.state.errorCount > 2 && (
+                <Button onClick={this.handleReload} variant="secondary" className="w-full gap-2">
+                  <RefreshCw className="w-4 h-4" />
+                  Recarregar Página
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
         </div>
       );
     }
@@ -196,21 +157,4 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
   }
 }
 
-/**
- * Wrapper for Sentry Error Boundary with enhanced features
- */
-export const ErrorBoundaryWithSentry: React.FC<{
-  children: ReactNode;
-  fallback?: ReactNode;
-}> = ({ children, fallback }) => {
-  return (
-    <Sentry.ErrorBoundary
-      fallback={fallback || <EnhancedErrorBoundary>{children}</EnhancedErrorBoundary>}
-      showDialog={false}
-    >
-      <EnhancedErrorBoundary fallback={fallback}>
-        {children}
-      </EnhancedErrorBoundary>
-    </Sentry.ErrorBoundary>
-  );
-};
+export default EnhancedErrorBoundary;

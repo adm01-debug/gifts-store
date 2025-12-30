@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,10 +11,53 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Bookmark, Trash2 } from 'lucide-react';
 
+interface FilterPreset {
+  id: string;
+  name: string;
+  filters: any;
+}
+
 interface SavedFiltersDropdownProps {
   context: string;
   currentFilters: any;
   onApplyFilters: (filters: any) => void;
+}
+
+// Armazenamento local de filtros (sem dependência de tabela no banco)
+const STORAGE_KEY = 'saved_filter_presets';
+
+function getStoredPresets(context: string): FilterPreset[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return [];
+    const all = JSON.parse(stored);
+    return all.filter((p: any) => p.context === context);
+  } catch {
+    return [];
+  }
+}
+
+function saveToStorage(context: string, preset: FilterPreset) {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const all = stored ? JSON.parse(stored) : [];
+    all.push({ ...preset, context });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  } catch (e) {
+    console.error('Error saving preset:', e);
+  }
+}
+
+function removeFromStorage(id: string) {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return;
+    const all = JSON.parse(stored);
+    const filtered = all.filter((p: any) => p.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  } catch (e) {
+    console.error('Error removing preset:', e);
+  }
 }
 
 export function SavedFiltersDropdown({ 
@@ -25,77 +66,41 @@ export function SavedFiltersDropdown({
   onApplyFilters 
 }: SavedFiltersDropdownProps) {
   const [newPresetName, setNewPresetName] = useState('');
-  const queryClient = useQueryClient();
+  const [presets, setPresets] = useState<FilterPreset[]>(() => getStoredPresets(context));
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: async () => {
-      const { data } = await supabase.auth.getUser();
-      return data.user;
-    }
-  });
+  const handleSavePreset = () => {
+    if (!newPresetName.trim()) return;
+    
+    setIsSaving(true);
+    
+    const newPreset: FilterPreset = {
+      id: crypto.randomUUID(),
+      name: newPresetName.trim(),
+      filters: currentFilters
+    };
+    
+    saveToStorage(context, newPreset);
+    setPresets(prev => [...prev, newPreset]);
+    setNewPresetName('');
+    setIsSaving(false);
+    
+    toast({
+      title: 'Filtro salvo!',
+      description: 'Você pode reutilizar este filtro a qualquer momento'
+    });
+  };
 
-  const { data: presets } = useQuery({
-    queryKey: ['filter-presets', context, user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('user_filter_presets')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('context', context)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id
-  });
-
-  const savePreset = useMutation({
-    mutationFn: async (name: string) => {
-      if (!user?.id) throw new Error('Usuário não autenticado');
-
-      const { error } = await supabase
-        .from('user_filter_presets')
-        .insert({
-          user_id: user.id,
-          name,
-          context,
-          filters: currentFilters
-        });
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['filter-presets', context] });
-      setNewPresetName('');
-      toast({
-        title: 'Filtro salvo!',
-        description: 'Você pode reutilizar este filtro a qualquer momento'
-      });
-    }
-  });
-
-  const deletePreset = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('user_filter_presets')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['filter-presets', context] });
-      toast({
-        title: 'Filtro removido',
-        description: 'O filtro foi excluído com sucesso'
-      });
-    }
-  });
+  const handleDeletePreset = (id: string) => {
+    removeFromStorage(id);
+    setPresets(prev => prev.filter(p => p.id !== id));
+    
+    toast({
+      title: 'Filtro removido',
+      description: 'O filtro foi excluído com sucesso'
+    });
+  };
 
   return (
     <DropdownMenu>
@@ -103,7 +108,7 @@ export function SavedFiltersDropdown({
         <Button variant="outline" size="sm">
           <Bookmark className="w-4 h-4 mr-2" />
           Filtros Salvos
-          {presets && presets.length > 0 && (
+          {presets.length > 0 && (
             <span className="ml-2 text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">
               {presets.length}
             </span>
@@ -111,7 +116,7 @@ export function SavedFiltersDropdown({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-64">
-        {presets && presets.length > 0 ? (
+        {presets.length > 0 ? (
           <>
             {presets.map((preset) => (
               <DropdownMenuItem
@@ -130,7 +135,7 @@ export function SavedFiltersDropdown({
                   className="h-6 w-6 p-0"
                   onClick={(e) => {
                     e.stopPropagation();
-                    deletePreset.mutate(preset.id);
+                    handleDeletePreset(preset.id);
                   }}
                 >
                   <Trash2 className="w-3 h-3" />
@@ -152,17 +157,17 @@ export function SavedFiltersDropdown({
             onChange={(e) => setNewPresetName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && newPresetName.trim()) {
-                savePreset.mutate(newPresetName);
+                handleSavePreset();
               }
             }}
           />
           <Button
             className="w-full"
             size="sm"
-            onClick={() => savePreset.mutate(newPresetName)}
-            disabled={!newPresetName.trim() || savePreset.isPending}
+            onClick={handleSavePreset}
+            disabled={!newPresetName.trim() || isSaving}
           >
-            {savePreset.isPending ? 'Salvando...' : 'Salvar Filtro Atual'}
+            {isSaving ? 'Salvando...' : 'Salvar Filtro Atual'}
           </Button>
         </div>
       </DropdownMenuContent>
