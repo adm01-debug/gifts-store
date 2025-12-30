@@ -1,0 +1,62 @@
+[build]
+  # Comando para build de produção
+  command = "npm run build"
+  
+  # Diretório de saída do build
+  publish = "dist"
+  
+  # Versão do Node.js
+  [build.environment]
+    NODE_VERSION = "20"
+
+# Configurações de deploy
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.html]
+  pretty_urls = true
+
+[build.processing.images]
+  compress = true
+
+# Redirects e Rewrites para SPA (Single Page Application)
+# Isso garante que todas as rotas do React Router funcionem corretamente
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers de segurança
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    X-XSS-Protection = "1; mode=block"
+
+# Cache para assets estáticos (JavaScript, CSS, imagens)
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Preview contexts (deploy de preview para PRs)
+[context.deploy-preview]
+  command = "npm run build:dev"
+
+[context.branch-deploy]
+  command = "npm run build:dev"
+
+# Configuração de plugins (opcional)
+[[plugins]]
+  package = "@netlify/plugin-lighthouse"
