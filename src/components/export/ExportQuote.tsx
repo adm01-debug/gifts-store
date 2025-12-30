@@ -8,7 +8,33 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { type QuoteData } from "./QuoteBuilder";
+
+// Type definition for Quote data structure
+export interface QuoteData {
+  quoteNumber: string;
+  createdAt: string;
+  validUntil: string;
+  client?: {
+    name: string;
+    email: string;
+    phone: string;
+  } | null;
+  items: Array<{
+    product: { name: string };
+    quantity: number;
+    unitPrice: number;
+    discount: number;
+    subtotal: number;
+  }>;
+  subtotal: number;
+  discountPercent: number;
+  discountAmount: number;
+  taxPercent: number;
+  taxAmount: number;
+  total: number;
+  notes?: string;
+  terms?: string;
+}
 
 interface ExportQuoteProps {
   quote: QuoteData;
