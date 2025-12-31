@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -37,6 +38,7 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -231,6 +233,11 @@ export default function Auth() {
 
           {/* Auth Card */}
           <Card className="border-border bg-card shadow-xl">
+            {showForgotPassword ? (
+              <CardContent className="pt-6 pb-6">
+                <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
+              </CardContent>
+            ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <CardHeader className="pb-4">
                 <TabsList className="grid w-full grid-cols-2 bg-muted/50">
@@ -301,6 +308,17 @@ export default function Auth() {
                           {loginForm.formState.errors.password.message}
                         </p>
                       )}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="p-0 h-auto text-sm text-orange hover:text-orange/80"
+                        onClick={() => setShowForgotPassword(true)}
+                      >
+                        Esqueci minha senha
+                      </Button>
                     </div>
 
                     <Button 
@@ -431,6 +449,7 @@ export default function Auth() {
                 </TabsContent>
               </CardContent>
             </Tabs>
+            )}
           </Card>
 
           <p className="text-center text-sm text-muted-foreground">
