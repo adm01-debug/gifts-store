@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Loader2, Sparkles, Mail, Lock, User, Package, Factory, SlidersHorizontal, Brain, LucideIcon, ShieldAlert } from "lucide-react";
+import { Eye, EyeOff, Loader2, Sparkles, Mail, Lock, User, Package, Factory, SlidersHorizontal, Brain, ShieldAlert } from "lucide-react";
+import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -546,6 +547,7 @@ export default function Auth() {
                           {signupForm.formState.errors.password.message}
                         </p>
                       )}
+                      <PasswordStrengthIndicator password={signupForm.watch("password")} />
                     </div>
 
                     <div className="space-y-2">
