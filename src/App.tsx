@@ -59,6 +59,10 @@ const MockupGenerator = lazy(() => import("./pages/MockupGenerator"));
 // User Pages
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const SecurityPage = lazy(() => import("./pages/Security"));
+const RolesPage = lazy(() => import("./pages/RolesPage"));
+const PermissionsPage = lazy(() => import("./pages/PermissionsPage"));
+const RateLimitDashboardPage = lazy(() => import("./pages/RateLimitDashboardPage"));
+const SSOCallbackPage = lazy(() => import("./pages/SSOCallbackPage"));
 
 // Integration Pages
 const BitrixSyncPage = lazy(() => import("./pages/BitrixSyncPage"));
@@ -152,7 +156,10 @@ function App() {
                           {/* User Routes */}
                           <Route path="/perfil" element={<ProfilePage />} />
                           <Route path="/seguranca" element={<SecurityPage />} />
-                          
+                          <Route path="/roles" element={<RolesPage />} />
+                          <Route path="/permissoes" element={<PermissionsPage />} />
+                          <Route path="/rate-limit" element={<RateLimitDashboardPage />} />
+                          <Route path="/sso-callback" element={<SSOCallbackPage />} />
                           {/* Integration Routes */}
                           <Route path="/bitrix-sync" element={<BitrixSyncPage />} />
                           
