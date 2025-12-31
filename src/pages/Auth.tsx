@@ -15,6 +15,7 @@ import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { useIPValidation } from "@/hooks/useIPValidation";
 import { useCaptcha } from "@/hooks/useCaptcha";
 import { CaptchaWidget } from "@/components/auth/CaptchaWidget";
+import { PasskeyLogin } from "@/components/auth/PasskeyLogin";
 import { supabase } from "@/integrations/supabase/client";
 
 const loginSchema = z.object({
@@ -450,6 +451,28 @@ export default function Auth() {
                         "Entrar"
                       )}
                     </Button>
+
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-2 text-muted-foreground">ou</span>
+                      </div>
+                    </div>
+
+                    <PasskeyLogin
+                      email={loginForm.watch("email")}
+                      disabled={isSubmitting}
+                      onSuccess={async (userId) => {
+                        // Sign in with custom token or redirect
+                        toast({
+                          title: "Autenticação biométrica",
+                          description: "Autenticado com sucesso via passkey!",
+                        });
+                        navigate("/");
+                      }}
+                    />
                   </form>
                 </TabsContent>
 
