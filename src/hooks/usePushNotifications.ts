@@ -1,141 +1,188 @@
-// src/hooks/usePushNotifications.ts
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
-import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-
-const VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY'; // TODO: Gerar no console
-
-export function usePushNotifications() {
-  const [isSupported, setIsSupported] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    setIsSupported(
-      'serviceWorker' in navigator &&
-      'PushManager' in window &&
-      'Notification' in window
-    );
-  }, []);
-
-  const subscribe = async () => {
-    if (!isSupported) {
-      toast({
-        title: 'Não suportado',
-        description: 'Seu navegador não suporta notificações push',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // 1. Solicitar permissão
-      const permission = await Notification.requestPermission();
-      
-      if (permission !== 'granted') {
-        toast({
-          title: 'Permissão negada',
-          description: 'Você precisa permitir notificações',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // 2. Registrar service worker
-      const registration = await navigator.serviceWorker.ready;
-
-      // 3. Subscribe ao push
-      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: applicationServerKey.buffer as ArrayBuffer
-      });
-
-      // 4. Store subscription locally for now (table doesn't exist yet)
-      const subscriptionData = subscription.toJSON();
-      console.log('Push subscription created:', subscriptionData);
-
-      setIsSubscribed(true);
-      toast({
-        title: '✅ Notificações ativadas!',
-        description: 'Você receberá alertas importantes'
-      });
-
-    } catch (error) {
-      console.error('Erro ao subscribir:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível ativar notificações',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const unsubscribe = async () => {
-    setIsLoading(true);
-
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-
-      if (subscription) {
-        await subscription.unsubscribe();
-      }
-
-      setIsSubscribed(false);
-      toast({
-        title: 'Notificações desativadas',
-        description: 'Você não receberá mais alertas'
-      });
-
-    } catch (error) {
-      console.error('Erro ao unsubscribe:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const checkSubscription = async () => {
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-      setIsSubscribed(subscription !== null);
-    } catch (error) {
-      console.error('Erro ao verificar subscription:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (isSupported) {
-      checkSubscription();
-    }
-  }, [isSupported]);
-
-  return {
-    isSupported,
-    isSubscribed,
-    isLoading,
-    subscribe,
-    unsubscribe
-  };
+interface NotificationPermissionState {
+  permission: NotificationPermission;
+  isSupported: boolean;
+  isEnabled: boolean;
 }
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
+export function usePushNotifications() {
+  const { user } = useAuth();
+  const [state, setState] = useState<NotificationPermissionState>({
+    permission: 'default',
+    isSupported: false,
+    isEnabled: false,
+  });
 
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
+  useEffect(() => {
+    const isSupported = 'Notification' in window;
+    setState(prev => ({
+      ...prev,
+      isSupported,
+      permission: isSupported ? Notification.permission : 'denied',
+      isEnabled: isSupported && Notification.permission === 'granted',
+    }));
+  }, []);
 
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
+  const requestPermission = useCallback(async (): Promise<boolean> => {
+    if (!state.isSupported) {
+      console.warn('Push notifications not supported');
+      return false;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      setState(prev => ({
+        ...prev,
+        permission,
+        isEnabled: permission === 'granted',
+      }));
+      
+      if (permission === 'granted') {
+        console.log('Push notification permission granted');
+        return true;
+      } else {
+        console.log('Push notification permission denied');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+      return false;
+    }
+  }, [state.isSupported]);
+
+  const showNotification = useCallback((title: string, options?: NotificationOptions) => {
+    if (!state.isEnabled) {
+      console.warn('Notifications not enabled');
+      return null;
+    }
+
+    try {
+      const notification = new Notification(title, {
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        vibrate: [200, 100, 200],
+        ...options,
+      });
+
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+
+      return notification;
+    } catch (error) {
+      console.error('Error showing notification:', error);
+      return null;
+    }
+  }, [state.isEnabled]);
+
+  const showSecurityAlert = useCallback((title: string, message: string, type: 'info' | 'warning' | 'critical' = 'warning') => {
+    const icons: Record<string, string> = {
+      info: '🔵',
+      warning: '🟡',
+      critical: '🔴',
+    };
+
+    return showNotification(`${icons[type]} ${title}`, {
+      body: message,
+      tag: 'security-alert',
+      requireInteraction: type === 'critical',
+      silent: type === 'info',
+    });
+  }, [showNotification]);
+
+  // Subscribe to real-time security notifications
+  useEffect(() => {
+    if (!user || !state.isEnabled) return;
+
+    console.log('Subscribing to security notifications for user:', user.id);
+
+    const channel = supabase
+      .channel('security-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const notification = payload.new as {
+            title: string;
+            message: string;
+            type: string;
+          };
+
+          if (notification.type === 'security') {
+            showSecurityAlert(
+              notification.title,
+              notification.message,
+              'warning'
+            );
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'device_login_notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const deviceNotif = payload.new as {
+            ip_address: string;
+            location: string | null;
+          };
+
+          showSecurityAlert(
+            'Novo login detectado',
+            `Login de ${deviceNotif.ip_address}${deviceNotif.location ? ` (${deviceNotif.location})` : ''}`,
+            'warning'
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'login_attempts',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const attempt = payload.new as {
+            success: boolean;
+            ip_address: string;
+            failure_reason: string | null;
+          };
+
+          if (!attempt.success) {
+            showSecurityAlert(
+              'Tentativa de login falha',
+              `Tentativa de ${attempt.ip_address}: ${attempt.failure_reason || 'Credenciais inválidas'}`,
+              'critical'
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Unsubscribing from security notifications');
+      supabase.removeChannel(channel);
+    };
+  }, [user, state.isEnabled, showSecurityAlert]);
+
+  return {
+    ...state,
+    requestPermission,
+    showNotification,
+    showSecurityAlert,
+  };
 }
