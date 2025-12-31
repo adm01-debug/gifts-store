@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Loader2, Sparkles, Mail, Lock, User, Package, Factory, SlidersHorizontal, Brain, LucideIcon } from "lucide-react";
+import { Eye, EyeOff, Loader2, Sparkles, Mail, Lock, User, Package, Factory, SlidersHorizontal, Brain, LucideIcon, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
+import { useIPValidation } from "@/hooks/useIPValidation";
+import { supabase } from "@/integrations/supabase/client";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -34,11 +36,14 @@ type SignupForm = z.infer<typeof signupSchema>;
 export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, isLoading: authLoading, signIn, signUp } = useAuth();
+  const { user, isLoading: authLoading, signIn, signUp, signOut } = useAuth();
+  const { validateIPForAuthenticatedUser, logLoginAttempt, fetchCurrentIP } = useIPValidation();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [ipBlocked, setIpBlocked] = useState(false);
+  const [blockedIP, setBlockedIP] = useState<string | null>(null);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -59,10 +64,16 @@ export default function Auth() {
 
   const handleLogin = async (data: LoginForm) => {
     setIsSubmitting(true);
+    setIpBlocked(false);
+    
     try {
+      // Primeiro, fazer o login para obter o user_id
       const { error } = await signIn(data.email, data.password);
       
       if (error) {
+        // Registrar tentativa de login falha
+        await logLoginAttempt(data.email, null, false, error.message);
+        
         if (error.message.includes("Invalid login credentials")) {
           toast({
             variant: "destructive",
@@ -77,6 +88,35 @@ export default function Auth() {
           });
         }
         return;
+      }
+
+      // Obter o usuário atual após login bem-sucedido
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+
+      if (userId) {
+        // Validar IP após login bem-sucedido
+        const ipValidation = await validateIPForAuthenticatedUser(userId);
+        
+        if (!ipValidation.isAllowed && ipValidation.hasRestrictions) {
+          // IP bloqueado - fazer logout e mostrar erro
+          await signOut();
+          await logLoginAttempt(data.email, userId, false, 'IP não autorizado: ' + ipValidation.currentIP);
+          
+          setIpBlocked(true);
+          setBlockedIP(ipValidation.currentIP);
+          
+          toast({
+            variant: "destructive",
+            title: "Acesso Bloqueado",
+            description: `Seu IP (${ipValidation.currentIP}) não está autorizado para acessar esta conta.`,
+            duration: 10000,
+          });
+          return;
+        }
+
+        // Login bem-sucedido e IP permitido
+        await logLoginAttempt(data.email, userId, true);
       }
 
       toast({
@@ -231,8 +271,43 @@ export default function Auth() {
             </div>
           </div>
 
+          {/* IP Blocked Alert */}
+          {ipBlocked && (
+            <Card className="border-destructive bg-destructive/10 shadow-lg">
+              <CardContent className="pt-6 pb-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0">
+                    <ShieldAlert className="h-6 w-6 text-destructive" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold text-destructive">
+                      Acesso Bloqueado
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Seu endereço IP (<span className="font-mono font-semibold text-foreground">{blockedIP}</span>) não está autorizado a acessar esta conta.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Entre em contato com o administrador do sistema para liberar seu acesso.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => {
+                        setIpBlocked(false);
+                        setBlockedIP(null);
+                      }}
+                    >
+                      Tentar novamente
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Auth Card */}
-          <Card className="border-border bg-card shadow-xl">
+          <Card className={`border-border bg-card shadow-xl ${ipBlocked ? 'opacity-50 pointer-events-none' : ''}`}>
             {showForgotPassword ? (
               <CardContent className="pt-6 pb-6">
                 <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
