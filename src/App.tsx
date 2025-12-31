@@ -12,6 +12,7 @@ import { CollectionsProvider } from "@/contexts/CollectionsContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { CompareBar } from "@/components/compare/CompareBar";
 import { ErrorBoundary } from "@/components/errors/ErrorBoundary";
+import { AdminRealtimeNotifications } from "@/components/admin/AdminRealtimeNotifications";
 
 // ⚡ LAZY LOADING: Todas as páginas carregadas sob demanda
 // Isso reduz o bundle inicial em ~60% e melhora o First Contentful Paint
@@ -100,6 +101,7 @@ function App() {
                   <CollectionsProvider>
                     <Toaster />
                     <Sonner />
+                    <AdminRealtimeNotifications />
                     <BrowserRouter>
                     <CompareBar />
                     <Suspense fallback={<PageLoader />}>
