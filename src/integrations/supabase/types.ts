@@ -191,6 +191,50 @@ export type Database = {
         }
         Relationships: []
       }
+      device_login_notifications: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          email_sent: boolean | null
+          id: string
+          ip_address: string
+          location: string | null
+          notification_sent_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          email_sent?: boolean | null
+          id?: string
+          ip_address: string
+          location?: string | null
+          notification_sent_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          email_sent?: boolean | null
+          id?: string
+          ip_address?: string
+          location?: string | null
+          notification_sent_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_login_notifications_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "user_known_devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expert_conversations: {
         Row: {
           client_id: string | null
@@ -2133,6 +2177,54 @@ export type Database = {
           ip_address?: string
           is_active?: boolean
           label?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_known_devices: {
+        Row: {
+          browser_name: string | null
+          created_at: string
+          device_fingerprint: string
+          device_type: string | null
+          first_seen_at: string
+          id: string
+          ip_address: string
+          is_trusted: boolean | null
+          last_seen_at: string
+          location: string | null
+          os_name: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          browser_name?: string | null
+          created_at?: string
+          device_fingerprint: string
+          device_type?: string | null
+          first_seen_at?: string
+          id?: string
+          ip_address: string
+          is_trusted?: boolean | null
+          last_seen_at?: string
+          location?: string | null
+          os_name?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          browser_name?: string | null
+          created_at?: string
+          device_fingerprint?: string
+          device_type?: string | null
+          first_seen_at?: string
+          id?: string
+          ip_address?: string
+          is_trusted?: boolean | null
+          last_seen_at?: string
+          location?: string | null
+          os_name?: string | null
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []

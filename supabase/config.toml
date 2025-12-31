@@ -26,3 +26,12 @@ verify_jwt = false
 
 [functions.semantic-search]
 verify_jwt = false
+
+[functions.rate-limit-check]
+verify_jwt = false
+
+[functions.verify-email]
+verify_jwt = false
+
+[functions.detect-new-device]
+verify_jwt = true
