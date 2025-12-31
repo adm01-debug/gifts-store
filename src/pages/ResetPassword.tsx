@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Lock, Loader2, Eye, EyeOff, CheckCircle, Sparkles } from 'lucide-react';
+import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -219,6 +220,7 @@ export default function ResetPassword() {
                     {form.formState.errors.password.message}
                   </p>
                 )}
+                <PasswordStrengthIndicator password={form.watch('password')} />
               </div>
 
               <div className="space-y-2">
