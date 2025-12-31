@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail, Loader2, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Mail, Loader2, ArrowLeft, CheckCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { usePasswordResetRequests } from '@/hooks/usePasswordResetRequests';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -21,8 +21,9 @@ interface ForgotPasswordFormProps {
 
 export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   const { toast } = useToast();
+  const { createRequest } = usePasswordResetRequests();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
 
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -32,23 +33,21 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   const handleSubmit = async (data: ForgotPasswordFormData) => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const result = await createRequest(data.email);
 
-      if (error) {
+      if (!result.success) {
         toast({
           variant: 'destructive',
-          title: 'Erro ao enviar email',
-          description: error.message,
+          title: 'Erro ao enviar solicitação',
+          description: result.message,
         });
         return;
       }
 
-      setEmailSent(true);
+      setRequestSent(true);
       toast({
-        title: 'Email enviado!',
-        description: 'Verifique sua caixa de entrada para redefinir sua senha.',
+        title: 'Solicitação enviada!',
+        description: result.message,
       });
     } catch (error) {
       toast({
@@ -61,37 +60,32 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
     }
   };
 
-  if (emailSent) {
+  if (requestSent) {
     return (
       <div className="space-y-6 text-center">
         <div className="flex justify-center">
-          <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center">
-            <CheckCircle className="h-8 w-8 text-success" />
+          <div className="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center">
+            <Clock className="h-8 w-8 text-warning" />
           </div>
         </div>
         
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">Email enviado!</h2>
+          <h2 className="text-xl font-semibold text-foreground">Solicitação enviada!</h2>
           <p className="text-sm text-muted-foreground">
-            Enviamos um link para redefinir sua senha para{' '}
-            <span className="font-medium text-foreground">{form.getValues('email')}</span>
+            Sua solicitação de recuperação de senha para{' '}
+            <span className="font-medium text-foreground">{form.getValues('email')}</span>{' '}
+            foi enviada para aprovação.
+          </p>
+        </div>
+
+        <div className="p-4 rounded-lg bg-muted/50 border border-border">
+          <p className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Próximo passo:</strong> Um gestor irá analisar sua solicitação. 
+            Após a aprovação, você receberá um email com o link para redefinir sua senha.
           </p>
         </div>
 
         <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">
-            Não recebeu o email? Verifique a pasta de spam ou tente novamente.
-          </p>
-          
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => setEmailSent(false)}
-          >
-            Tentar novamente
-          </Button>
-          
           <Button
             type="button"
             variant="ghost"
