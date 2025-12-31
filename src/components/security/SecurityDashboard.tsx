@@ -29,13 +29,15 @@ import {
   Settings,
   Bell,
   History,
-  MapPin
+  MapPin,
+  Fingerprint
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TwoFactorSetup } from './TwoFactorSetup';
 import { IPRestrictionManager } from './IPRestrictionManager';
 import { KnownDevicesManager } from '@/components/auth/KnownDevicesManager';
+import { PasskeyManager } from './PasskeyManager';
 import { PushNotificationSettings } from './PushNotificationSettings';
 
 interface SecurityMetrics {
@@ -366,7 +368,7 @@ export function SecurityDashboard() {
 
       {/* Tabbed Content */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Visão Geral</span>
@@ -374,6 +376,10 @@ export function SecurityDashboard() {
           <TabsTrigger value="mfa" className="flex items-center gap-2">
             <Key className="h-4 w-4" />
             <span className="hidden sm:inline">MFA</span>
+          </TabsTrigger>
+          <TabsTrigger value="passkeys" className="flex items-center gap-2">
+            <Fingerprint className="h-4 w-4" />
+            <span className="hidden sm:inline">Passkeys</span>
           </TabsTrigger>
           <TabsTrigger value="devices" className="flex items-center gap-2">
             <Monitor className="h-4 w-4" />
@@ -491,6 +497,10 @@ export function SecurityDashboard() {
 
         <TabsContent value="mfa">
           <TwoFactorSetup />
+        </TabsContent>
+
+        <TabsContent value="passkeys">
+          <PasskeyManager />
         </TabsContent>
 
         <TabsContent value="devices">
