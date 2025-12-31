@@ -13,7 +13,12 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 const resetPasswordSchema = z.object({
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  password: z.string()
+    .min(8, "Senha deve ter pelo menos 8 caracteres")
+    .regex(/[A-Z]/, "Senha deve conter letra maiúscula")
+    .regex(/[a-z]/, "Senha deve conter letra minúscula")
+    .regex(/[0-9]/, "Senha deve conter número")
+    .regex(/[!@#$%^&*(),.?":{}|<>]/, "Senha deve conter caractere especial"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Senhas não conferem',
