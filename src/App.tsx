@@ -61,6 +61,7 @@ const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const SecurityPage = lazy(() => import("./pages/Security"));
 const RolesPage = lazy(() => import("./pages/RolesPage"));
 const PermissionsPage = lazy(() => import("./pages/PermissionsPage"));
+const RolePermissionsPage = lazy(() => import("./pages/RolePermissionsPage"));
 const RateLimitDashboardPage = lazy(() => import("./pages/RateLimitDashboardPage"));
 const SSOCallbackPage = lazy(() => import("./pages/SSOCallbackPage"));
 
@@ -158,6 +159,7 @@ function App() {
                           <Route path="/seguranca" element={<SecurityPage />} />
                           <Route path="/roles" element={<RolesPage />} />
                           <Route path="/permissoes" element={<PermissionsPage />} />
+                          <Route path="/permissoes-roles" element={<RolePermissionsPage />} />
                           <Route path="/rate-limit" element={<RateLimitDashboardPage />} />
                           <Route path="/sso-callback" element={<SSOCallbackPage />} />
                           {/* Integration Routes */}
