@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useReauthentication } from '@/hooks/useReauthentication';
 import { useToast } from '@/hooks/use-toast';
-import { ShieldAlert, Loader2, Lock } from 'lucide-react';
+import { ShieldAlert, Loader2, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface ReauthenticationDialogProps {
   open: boolean;
@@ -21,6 +21,7 @@ export function ReauthenticationDialog({
   actionDescription = 'Esta ação requer confirmação de identidade',
 }: ReauthenticationDialogProps) {
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { reauthenticate, isReauthenticating } = useReauthentication();
   const { toast } = useToast();
 
@@ -36,6 +37,7 @@ export function ReauthenticationDialog({
     
     if (result.success) {
       setPassword('');
+      setShowPassword(false);
       onOpenChange(false);
       onSuccess();
     } else {
@@ -60,13 +62,20 @@ export function ReauthenticationDialog({
               <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="reauth-password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Digite sua senha"
-                className="pl-10"
+                className="pl-10 pr-10"
                 autoFocus
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
           <div className="flex gap-2 justify-end">
