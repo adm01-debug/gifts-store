@@ -18,6 +18,7 @@ import { ErrorBoundary } from "@/components/errors/ErrorBoundary";
 
 // Auth & Public Pages
 const Auth = lazy(() => import("./pages/Auth"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Index = lazy(() => import("./pages/Index"));
 const PublicQuoteApproval = lazy(() => import("./pages/PublicQuoteApproval"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -104,6 +105,8 @@ function App() {
                       <Routes>
                         {/* Public Routes */}
                         <Route path="/login" element={<Auth />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
                         <Route path="/approve/:token" element={<PublicQuoteApproval />} />
                         
                         {/* Protected Routes */}
