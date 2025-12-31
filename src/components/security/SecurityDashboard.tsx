@@ -36,6 +36,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TwoFactorSetup } from './TwoFactorSetup';
 import { IPRestrictionManager } from './IPRestrictionManager';
+import { GeoBlockingManager } from './GeoBlockingManager';
 import { KnownDevicesManager } from '@/components/auth/KnownDevicesManager';
 import { PasskeyManager } from './PasskeyManager';
 import { PushNotificationSettings } from './PushNotificationSettings';
@@ -368,7 +369,7 @@ export function SecurityDashboard() {
 
       {/* Tabbed Content */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="flex flex-wrap h-auto gap-1">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Visão Geral</span>
@@ -388,6 +389,10 @@ export function SecurityDashboard() {
           <TabsTrigger value="ips" className="flex items-center gap-2">
             <Globe className="h-4 w-4" />
             <span className="hidden sm:inline">IPs</span>
+          </TabsTrigger>
+          <TabsTrigger value="geo" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            <span className="hidden sm:inline">Geo</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
@@ -509,6 +514,10 @@ export function SecurityDashboard() {
 
         <TabsContent value="ips">
           <IPRestrictionManager />
+        </TabsContent>
+
+        <TabsContent value="geo">
+          <GeoBlockingManager />
         </TabsContent>
 
         <TabsContent value="notifications">
