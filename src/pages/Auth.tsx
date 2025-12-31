@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { useIPValidation } from "@/hooks/useIPValidation";
+import { useCaptcha } from "@/hooks/useCaptcha";
+import { CaptchaWidget } from "@/components/auth/CaptchaWidget";
 import { supabase } from "@/integrations/supabase/client";
 
 const loginSchema = z.object({
@@ -38,6 +40,16 @@ export default function Auth() {
   const { toast } = useToast();
   const { user, isLoading: authLoading, signIn, signUp, signOut } = useAuth();
   const { validateIPForAuthenticatedUser, logLoginAttempt, fetchCurrentIP } = useIPValidation();
+  const {
+    showCaptcha,
+    failedAttempts,
+    incrementFailedAttempts,
+    resetFailedAttempts,
+    onCaptchaVerify,
+    onCaptchaExpire,
+    canAttemptLogin,
+    captchaThreshold,
+  } = useCaptcha();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
@@ -63,6 +75,16 @@ export default function Auth() {
   });
 
   const handleLogin = async (data: LoginForm) => {
+    // Check if CAPTCHA is required but not verified
+    if (!canAttemptLogin()) {
+      toast({
+        variant: "destructive",
+        title: "Verificação necessária",
+        description: "Complete o CAPTCHA para continuar",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setIpBlocked(false);
     
@@ -73,6 +95,9 @@ export default function Auth() {
       if (error) {
         // Registrar tentativa de login falha
         await logLoginAttempt(data.email, null, false, error.message);
+        
+        // Increment failed attempts for CAPTCHA
+        incrementFailedAttempts();
         
         if (error.message.includes("Invalid login credentials")) {
           toast({
@@ -119,12 +144,16 @@ export default function Auth() {
         await logLoginAttempt(data.email, userId, true);
       }
 
+      // Reset CAPTCHA on successful login
+      resetFailedAttempts();
+
       toast({
         title: "Bem-vindo!",
         description: "Login realizado com sucesso",
       });
       navigate("/");
     } catch (error) {
+      incrementFailedAttempts();
       toast({
         variant: "destructive",
         title: "Erro inesperado",
@@ -385,6 +414,16 @@ export default function Auth() {
                       )}
                     </div>
 
+                    {/* CAPTCHA Widget */}
+                    {showCaptcha && (
+                      <CaptchaWidget
+                        onVerify={onCaptchaVerify}
+                        onExpire={onCaptchaExpire}
+                        failedAttempts={failedAttempts}
+                        threshold={captchaThreshold}
+                      />
+                    )}
+
                     <div className="flex items-center justify-between">
                       <Button
                         type="button"
@@ -400,7 +439,7 @@ export default function Auth() {
                       type="submit" 
                       variant="orange"
                       className="w-full h-11 text-base font-semibold" 
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || (showCaptcha && !canAttemptLogin())}
                     >
                       {isSubmitting ? (
                         <>
