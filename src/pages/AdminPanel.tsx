@@ -1,13 +1,8 @@
 import { useEffect, useState } from "react";
-import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { useAuth } from "@/contexts/AuthContext";
-import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { supabase } from "@/integrations/supabase/client";
-import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { toast } from "sonner";
-import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import {
   Table,
   TableBody,
@@ -17,13 +12,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { Badge } from "@/components/ui/badge";
-import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
-import { Shield, ShieldCheck, Users, UserCog, Loader2 } from "lucide-react";
-import { AuditLogViewer } from "@/components/admin/AuditLogViewer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Shield, ShieldCheck, Users, UserCog, Loader2, KeyRound } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +27,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { PasswordResetApproval } from "@/components/admin/PasswordResetApproval";
+import { usePasswordResetRequests } from "@/hooks/usePasswordResetRequests";
 
 interface UserWithRole {
   id: string;
@@ -50,6 +44,7 @@ export default function AdminPanel() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const { pendingCount } = usePasswordResetRequests();
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -74,7 +69,7 @@ export default function AdminPanel() {
           id: profile.id,
           user_id: profile.user_id,
           full_name: profile.full_name,
-          email: "", // We don't have access to auth.users email directly
+          email: "",
           role: (userRole?.role as "admin" | "vendedor") || "vendedor",
           created_at: profile.created_at,
         };
@@ -137,7 +132,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
@@ -167,115 +162,150 @@ export default function AdminPanel() {
               <div className="text-2xl font-bold">{vendedorCount}</div>
             </CardContent>
           </Card>
+
+          <Card className="border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Reset Pendentes</CardTitle>
+              <KeyRound className="h-4 w-4 text-warning" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-warning">{pendingCount}</div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Users Table */}
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle>Usuários do Sistema</CardTitle>
-            <CardDescription>
-              Gerencie as permissões de acesso de cada usuário
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : users.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                Nenhum usuário encontrado
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Função</TableHead>
-                    <TableHead>Criado em</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((userItem) => (
-                    <TableRow key={userItem.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {userItem.role === "admin" && (
-                            <ShieldCheck className="h-4 w-4 text-primary" />
-                          )}
-                          {userItem.full_name || "Sem nome"}
-                          {userItem.user_id === user?.id && (
-                            <Badge variant="outline" className="text-xs">Você</Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={userItem.role === "admin" ? "default" : "secondary"}
-                          className={userItem.role === "admin" ? "bg-primary" : ""}
-                        >
-                          {userItem.role === "admin" ? "Administrador" : "Vendedor"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {new Date(userItem.created_at).toLocaleDateString("pt-BR")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {userItem.user_id !== user?.id && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant={userItem.role === "admin" ? "outline" : "default"}
-                                size="sm"
-                                disabled={updatingUserId === userItem.user_id}
-                              >
-                                {updatingUserId === userItem.user_id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : userItem.role === "admin" ? (
-                                  "Rebaixar"
-                                ) : (
-                                  "Promover"
-                                )}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  {userItem.role === "admin"
-                                    ? "Rebaixar para Vendedor?"
-                                    : "Promover a Administrador?"}
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {userItem.role === "admin"
-                                    ? `${userItem.full_name || "Este usuário"} perderá acesso ao painel administrativo.`
-                                    : `${userItem.full_name || "Este usuário"} terá acesso total ao painel administrativo.`}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    handleRoleChange(
-                                      userItem.user_id,
-                                      userItem.role === "admin" ? "vendedor" : "admin"
-                                    )
-                                  }
-                                >
-                                  Confirmar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        {/* Tabs for Users and Password Reset */}
+        <Tabs defaultValue="users" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="users" className="gap-2">
+              <Users className="h-4 w-4" />
+              Usuários
+            </TabsTrigger>
+            <TabsTrigger value="password-reset" className="gap-2">
+              <KeyRound className="h-4 w-4" />
+              Reset de Senha
+              {pendingCount > 0 && (
+                <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {pendingCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="users">
+            {/* Users Table */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle>Usuários do Sistema</CardTitle>
+                <CardDescription>
+                  Gerencie as permissões de acesso de cada usuário
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : users.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    Nenhum usuário encontrado
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Função</TableHead>
+                        <TableHead>Criado em</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((userItem) => (
+                        <TableRow key={userItem.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {userItem.role === "admin" && (
+                                <ShieldCheck className="h-4 w-4 text-primary" />
+                              )}
+                              {userItem.full_name || "Sem nome"}
+                              {userItem.user_id === user?.id && (
+                                <Badge variant="outline" className="text-xs">Você</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={userItem.role === "admin" ? "default" : "secondary"}
+                              className={userItem.role === "admin" ? "bg-primary" : ""}
+                            >
+                              {userItem.role === "admin" ? "Administrador" : "Vendedor"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {new Date(userItem.created_at).toLocaleDateString("pt-BR")}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {userItem.user_id !== user?.id && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant={userItem.role === "admin" ? "outline" : "default"}
+                                    size="sm"
+                                    disabled={updatingUserId === userItem.user_id}
+                                  >
+                                    {updatingUserId === userItem.user_id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : userItem.role === "admin" ? (
+                                      "Rebaixar"
+                                    ) : (
+                                      "Promover"
+                                    )}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      {userItem.role === "admin"
+                                        ? "Rebaixar para Vendedor?"
+                                        : "Promover a Administrador?"}
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      {userItem.role === "admin"
+                                        ? `${userItem.full_name || "Este usuário"} perderá acesso ao painel administrativo.`
+                                        : `${userItem.full_name || "Este usuário"} terá acesso total ao painel administrativo.`}
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() =>
+                                        handleRoleChange(
+                                          userItem.user_id,
+                                          userItem.role === "admin" ? "vendedor" : "admin"
+                                        )
+                                      }
+                                    >
+                                      Confirmar
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="password-reset">
+            <PasswordResetApproval />
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   );
