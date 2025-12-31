@@ -36,6 +36,7 @@ import { ptBR } from 'date-fns/locale';
 import { TwoFactorSetup } from './TwoFactorSetup';
 import { IPRestrictionManager } from './IPRestrictionManager';
 import { KnownDevicesManager } from '@/components/auth/KnownDevicesManager';
+import { PushNotificationSettings } from './PushNotificationSettings';
 
 interface SecurityMetrics {
   score: number;
@@ -365,7 +366,7 @@ export function SecurityDashboard() {
 
       {/* Tabbed Content */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Visão Geral</span>
@@ -381,6 +382,10 @@ export function SecurityDashboard() {
           <TabsTrigger value="ips" className="flex items-center gap-2">
             <Globe className="h-4 w-4" />
             <span className="hidden sm:inline">IPs</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            <span className="hidden sm:inline">Push</span>
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <History className="h-4 w-4" />
@@ -494,6 +499,10 @@ export function SecurityDashboard() {
 
         <TabsContent value="ips">
           <IPRestrictionManager />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <PushNotificationSettings />
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
