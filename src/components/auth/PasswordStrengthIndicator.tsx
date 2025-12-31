@@ -1,10 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { Check, X } from 'lucide-react';
+import { Check, X, AlertTriangle, Loader2, Shield } from 'lucide-react';
+import { usePasswordBreachCheck } from '@/hooks/usePasswordBreachCheck';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface PasswordStrengthIndicatorProps {
   password: string;
   className?: string;
+  onStrengthChange?: (isStrong: boolean) => void;
 }
 
 interface StrengthCriteria {
@@ -12,17 +15,38 @@ interface StrengthCriteria {
   met: boolean;
 }
 
-export function PasswordStrengthIndicator({ password, className }: PasswordStrengthIndicatorProps) {
+export function PasswordStrengthIndicator({ 
+  password, 
+  className,
+  onStrengthChange 
+}: PasswordStrengthIndicatorProps) {
+  const { isBreached, count, isChecking, checkPassword, reset } = usePasswordBreachCheck();
+  const debouncedPassword = useDebounce(password, 500);
+  const [hasCheckedBreach, setHasCheckedBreach] = useState(false);
+
+  // Check for breached password when password changes (debounced)
+  useEffect(() => {
+    if (debouncedPassword && debouncedPassword.length >= 8) {
+      checkPassword(debouncedPassword).then(() => {
+        setHasCheckedBreach(true);
+      });
+    } else {
+      reset();
+      setHasCheckedBreach(false);
+    }
+  }, [debouncedPassword, checkPassword, reset]);
+
   const analysis = useMemo(() => {
     const criteria: StrengthCriteria[] = [
       { label: 'Mínimo 8 caracteres', met: password.length >= 8 },
       { label: 'Letra maiúscula', met: /[A-Z]/.test(password) },
       { label: 'Letra minúscula', met: /[a-z]/.test(password) },
       { label: 'Número', met: /[0-9]/.test(password) },
-      { label: 'Caractere especial', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+      { label: 'Caractere especial (!@#$%^&*)', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
     ];
 
     const score = criteria.filter(c => c.met).length;
+    const allMet = criteria.every(c => c.met);
     
     let strength: 'empty' | 'weak' | 'fair' | 'good' | 'strong' = 'empty';
     let color = 'bg-muted';
@@ -48,12 +72,26 @@ export function PasswordStrengthIndicator({ password, className }: PasswordStren
       label = 'Forte';
     }
 
-    return { criteria, score, strength, color, label };
+    return { criteria, score, strength, color, label, allMet };
   }, [password]);
+
+  // Notify parent about strength
+  useEffect(() => {
+    if (onStrengthChange) {
+      const isStrong = analysis.allMet && !isBreached && hasCheckedBreach;
+      onStrengthChange(isStrong);
+    }
+  }, [analysis.allMet, isBreached, hasCheckedBreach, onStrengthChange]);
 
   if (password.length === 0) {
     return null;
   }
+
+  const formatBreachCount = (num: number): string => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num.toString();
+  };
 
   return (
     <div className={cn('space-y-3', className)}>
@@ -95,14 +133,47 @@ export function PasswordStrengthIndicator({ password, className }: PasswordStren
             )}
           >
             {criterion.met ? (
-              <Check className="h-3 w-3" />
+              <Check className="h-3 w-3 flex-shrink-0" />
             ) : (
-              <X className="h-3 w-3" />
+              <X className="h-3 w-3 flex-shrink-0" />
             )}
             <span>{criterion.label}</span>
           </div>
         ))}
       </div>
+
+      {/* Breach check */}
+      {password.length >= 8 && (
+        <div className={cn(
+          'flex items-start gap-2 p-2.5 rounded-lg border text-xs',
+          isChecking && 'bg-muted/50 border-muted',
+          isBreached && 'bg-destructive/10 border-destructive/30',
+          !isChecking && !isBreached && hasCheckedBreach && 'bg-green-500/10 border-green-500/30'
+        )}>
+          {isChecking ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" />
+              <span className="text-muted-foreground">Verificando em base de vazamentos...</span>
+            </>
+          ) : isBreached ? (
+            <>
+              <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-medium text-destructive">Senha vazada!</p>
+                <p className="text-muted-foreground">
+                  Esta senha apareceu em {count ? formatBreachCount(count) : 'vários'} vazamentos de dados. 
+                  Escolha outra senha mais segura.
+                </p>
+              </div>
+            </>
+          ) : hasCheckedBreach ? (
+            <>
+              <Shield className="h-4 w-4 text-green-600 flex-shrink-0" />
+              <span className="text-green-600">Senha não encontrada em vazamentos conhecidos</span>
+            </>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
