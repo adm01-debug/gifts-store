@@ -57,6 +57,7 @@ const MockupGenerator = lazy(() => import("./pages/MockupGenerator"));
 
 // User Pages
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const SecurityPage = lazy(() => import("./pages/Security"));
 
 // Integration Pages
 const BitrixSyncPage = lazy(() => import("./pages/BitrixSyncPage"));
@@ -148,6 +149,7 @@ function App() {
                           
                           {/* User Routes */}
                           <Route path="/perfil" element={<ProfilePage />} />
+                          <Route path="/seguranca" element={<SecurityPage />} />
                           
                           {/* Integration Routes */}
                           <Route path="/bitrix-sync" element={<BitrixSyncPage />} />
