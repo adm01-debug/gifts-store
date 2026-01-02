@@ -17,7 +17,7 @@ import {
   Send,
   Eye,
   ChevronRight,
-  Handshake,
+  Briefcase,
   AlertTriangle,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
@@ -42,7 +42,7 @@ interface ClientInteractionsTimelineProps {
 
 const eventConfig = {
   deal: {
-    icon: Handshake,
+    icon: Briefcase,
     color: "text-primary",
     bgColor: "bg-primary/10",
     label: "Negócio",
