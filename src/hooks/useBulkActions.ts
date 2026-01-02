@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +10,7 @@ type TableName = keyof Database['public']['Tables'];
 export interface BulkAction<T> {
   id: string;
   label: string;
-  icon?: React.ComponentType<{ className?: string }>;
+  icon?: ComponentType<{ className?: string }>;
   variant?: 'default' | 'destructive' | 'outline';
   action: (items: T[]) => Promise<void>;
   confirm?: {
