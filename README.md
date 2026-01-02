@@ -382,3 +382,5 @@ Problemas ou dúvidas? Abra uma [issue](https://github.com/adm01-debug/gifts-sto
 <!-- Deploy trigger: 1767387904 -->
 
 <!-- Fix EnhancedErrorBoundary: 1767388339 -->
+
+<!-- Supabase fix: 1767390179 -->
