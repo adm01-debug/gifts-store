@@ -96,13 +96,13 @@ export function PresentationMode({
   }, [totalProducts]);
 
   const nextImage = useCallback(() => {
-    if (currentProduct.images.length > 1) {
+    if (currentProduct && currentProduct.images.length > 1) {
       setImageIndex((prev) => (prev + 1) % currentProduct.images.length);
     }
   }, [currentProduct]);
 
   const previousImage = useCallback(() => {
-    if (currentProduct.images.length > 1) {
+    if (currentProduct && currentProduct.images.length > 1) {
       setImageIndex(
         (prev) => (prev - 1 + currentProduct.images.length) % currentProduct.images.length
       );

@@ -86,10 +86,13 @@ const TECHNIQUE_FILTERS: Record<string, { filter: string; opacity: number; blend
     opacity: 1,
     description: "Preview"
   }
-};
+} as const;
 
-function getTechniqueFilter(techniqueCode?: string | null, techniqueName?: string) {
-  if (!techniqueCode && !techniqueName) return TECHNIQUE_FILTERS.default;
+type TechniqueFilter = { filter: string; opacity: number; description: string };
+
+function getTechniqueFilter(techniqueCode?: string | null, techniqueName?: string): TechniqueFilter {
+  const defaultFilter = TECHNIQUE_FILTERS['default'];
+  if (!techniqueCode && !techniqueName) return defaultFilter;
   
   const code = (techniqueCode || techniqueName || "").toLowerCase();
   
@@ -99,7 +102,7 @@ function getTechniqueFilter(techniqueCode?: string | null, techniqueName?: strin
     }
   }
   
-  return TECHNIQUE_FILTERS.default;
+  return defaultFilter;
 }
 
 export function LogoPositionEditor({
@@ -436,7 +439,7 @@ export function LogoPositionEditor({
             </div>
             <Slider
               value={[logoWidth]}
-              onValueChange={(v) => onSizeChange(v[0], logoHeight)}
+              onValueChange={(v) => onSizeChange(v[0] ?? logoWidth, logoHeight)}
               min={1}
               max={20}
               step={0.5}
@@ -450,7 +453,7 @@ export function LogoPositionEditor({
             </div>
             <Slider
               value={[logoHeight]}
-              onValueChange={(v) => onSizeChange(logoWidth, v[0])}
+              onValueChange={(v) => onSizeChange(logoWidth, v[0] ?? logoHeight)}
               min={1}
               max={20}
               step={0.5}

@@ -35,6 +35,7 @@ function ProductListItemWrapper({
       }, index * 60);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isVisible, hasAnimated, index]);
 
   return (

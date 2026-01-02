@@ -36,6 +36,7 @@ function ProductCardWrapper({
       }, index * 80); // Stagger delay
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isVisible, hasAnimated, index]);
 
   return (
