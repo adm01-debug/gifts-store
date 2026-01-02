@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from "react";
 import { useRFMAnalysis, SEGMENT_INFO, RFMSegment, RFMScore } from "@/hooks/useRFMAnalysis";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

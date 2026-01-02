@@ -1,3 +1,4 @@
+import React from 'react';
 import { LucideIcon, PackageOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 

@@ -1,3 +1,4 @@
+import React from 'react';
 // ============================================
 // COMPONENTE: DIALOG DE IMPORTAÇÃO
 // Para importar CSV/Excel com validação e preview

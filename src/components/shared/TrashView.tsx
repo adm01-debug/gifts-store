@@ -1,3 +1,4 @@
+import React from 'react';
 // ============================================
 // COMPONENTE: LIXEIRA (TRASH VIEW)
 // Para visualizar e restaurar itens deletados

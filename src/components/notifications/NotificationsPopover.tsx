@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from "react";
 import { Bell, Check, CheckCheck, Trash2, Eye, AlertTriangle, Trophy, FileCheck, FileX } from "lucide-react";
 import { Button } from "@/components/ui/button";
