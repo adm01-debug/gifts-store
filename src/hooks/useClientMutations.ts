@@ -2,6 +2,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export interface Client {
+  id: string;
+  name: string;
+  cnpj?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ClientInput {
   name: string;
   cnpj?: string;
@@ -28,11 +39,32 @@ export function useCreateClient() {
       if (error) throw new Error(`Erro ao criar cliente: ${error.message}`);
       return data;
     },
+    onMutate: async (newClient) => {
+      await queryClient.cancelQueries({ queryKey: ['clients'] });
+      const previousClients = queryClient.getQueryData<Client[]>(['clients']);
+
+      if (previousClients) {
+        const optimisticClient: Client = {
+          id: `temp-${Date.now()}`,
+          ...newClient,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        queryClient.setQueryData<Client[]>(['clients'], [...previousClients, optimisticClient]);
+      }
+
+      return { previousClients };
+    },
+    onError: (error: Error, _, context) => {
+      if (context?.previousClients) {
+        queryClient.setQueryData(['clients'], context.previousClients);
+      }
+      toast.error(error.message);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
-      toast.success('Cliente criado!');
+      toast.success('Cliente criado com sucesso!');
     },
-    onError: (error: Error) => toast.error(error.message),
   });
 }
 
@@ -51,10 +83,65 @@ export function useUpdateClient() {
       if (error) throw new Error(`Erro ao atualizar cliente: ${error.message}`);
       return data;
     },
+    onMutate: async ({ id, updates }) => {
+      await queryClient.cancelQueries({ queryKey: ['clients'] });
+      const previousClients = queryClient.getQueryData<Client[]>(['clients']);
+
+      if (previousClients) {
+        queryClient.setQueryData<Client[]>(
+          ['clients'],
+          previousClients.map((c) =>
+            c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c
+          )
+        );
+      }
+
+      return { previousClients };
+    },
+    onError: (error: Error, _, context) => {
+      if (context?.previousClients) {
+        queryClient.setQueryData(['clients'], context.previousClients);
+      }
+      toast.error(error.message);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       toast.success('Cliente atualizado!');
     },
-    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useDeleteClient() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('clients').delete().eq('id', id);
+      if (error) throw new Error(`Erro ao deletar cliente: ${error.message}`);
+      return id;
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['clients'] });
+      const previousClients = queryClient.getQueryData<Client[]>(['clients']);
+
+      if (previousClients) {
+        queryClient.setQueryData<Client[]>(
+          ['clients'],
+          previousClients.filter((c) => c.id !== id)
+        );
+      }
+
+      return { previousClients };
+    },
+    onError: (error: Error, _, context) => {
+      if (context?.previousClients) {
+        queryClient.setQueryData(['clients'], context.previousClients);
+      }
+      toast.error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast.success('Cliente deletado!');
+    },
   });
 }
