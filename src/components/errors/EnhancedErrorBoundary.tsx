@@ -16,7 +16,7 @@ class EnhancedErrorBoundary extends Component<Props, State> {
     this.state = { hasError: false, error: null };
   }
 
-  override static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 

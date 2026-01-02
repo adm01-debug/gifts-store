@@ -60,14 +60,14 @@
     "skipLibCheck": true
   },
   "include": [
-    "src",
-    "**/*.ts",
-    "**/*.tsx"
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "build",
+    "vite.config.ts",
     "**/*.stories.tsx",
     "**/*.test.ts",
     "**/*.test.tsx",
