@@ -11,7 +11,7 @@ import { ComparisonProvider } from "@/contexts/ComparisonContext";
 import { CollectionsProvider } from "@/contexts/CollectionsContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { CompareBar } from "@/components/compare/CompareBar";
-import { ErrorBoundary } from "@/components/errors/ErrorBoundary";
+import ErrorBoundary from "@/components/errors/ErrorBoundary";
 import { AdminRealtimeNotifications } from "@/components/admin/AdminRealtimeNotifications";
 
 // ⚡ LAZY LOADING: Todas as páginas carregadas sob demanda
