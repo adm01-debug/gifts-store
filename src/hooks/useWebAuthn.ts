@@ -177,16 +177,18 @@ export function useWebAuthn() {
         });
 
         return true;
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error registering passkey:", error);
+        const errorName = error instanceof Error ? error.name : '';
+        const errorMessage = error instanceof Error ? error.message : 'Não foi possível registrar a passkey';
 
-        if (error.name === "NotAllowedError") {
+        if (errorName === "NotAllowedError") {
           toast({
             variant: "destructive",
             title: "Cancelado",
             description: "Registro de passkey foi cancelado",
           });
-        } else if (error.name === "InvalidStateError") {
+        } else if (errorName === "InvalidStateError") {
           toast({
             variant: "destructive",
             title: "Já registrado",
@@ -196,7 +198,7 @@ export function useWebAuthn() {
           toast({
             variant: "destructive",
             title: "Erro ao registrar",
-            description: error.message || "Não foi possível registrar a passkey",
+            description: errorMessage,
           });
         }
         return false;
@@ -263,10 +265,12 @@ export function useWebAuthn() {
           .eq("id", passkey.id);
 
         return { success: true, userId: passkey.user_id };
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error authenticating with passkey:", error);
+        const errorName = error instanceof Error ? error.name : '';
+        const errorMessage = error instanceof Error ? error.message : 'Não foi possível autenticar com passkey';
 
-        if (error.name === "NotAllowedError") {
+        if (errorName === "NotAllowedError") {
           toast({
             variant: "destructive",
             title: "Cancelado",
@@ -276,7 +280,7 @@ export function useWebAuthn() {
           toast({
             variant: "destructive",
             title: "Erro de autenticação",
-            description: error.message || "Não foi possível autenticar com passkey",
+            description: errorMessage,
           });
         }
         return { success: false };
@@ -306,7 +310,8 @@ export function useWebAuthn() {
         });
 
         return true;
-      } catch (error: any) {
+      } catch (error) {
+        console.error("Error deleting passkey:", error);
         toast({
           variant: "destructive",
           title: "Erro",
