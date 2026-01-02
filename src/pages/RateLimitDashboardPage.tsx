@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AppSidebar } from '@/components/layout/AppSidebar';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -80,7 +79,7 @@ export default function RateLimitDashboardPage() {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <AppSidebar />
+        <Sidebar />
         <SidebarInset className="flex-1">
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
