@@ -386,3 +386,5 @@ Problemas ou dúvidas? Abra uma [issue](https://github.com/adm01-debug/gifts-sto
 <!-- Supabase fix: 1767390179 -->
 
 <!-- ErrorBoundary fix: 1767390749 -->
+
+<!-- Handshake icon fix: 1767391507 -->
