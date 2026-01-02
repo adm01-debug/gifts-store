@@ -42,7 +42,7 @@ export function MiniConfetti({
       const newPieces: ConfettiPiece[] = Array.from({ length: count }, (_, i) => ({
         id: i,
         x: Math.random() * 100 - 50,
-        color: colors[Math.floor(Math.random() * colors.length)],
+        color: colors[Math.floor(Math.random() * colors.length)] ?? defaultColors[0],
         delay: Math.random() * 0.2,
         rotation: Math.random() * 360,
         size: Math.random() * 6 + 4,
@@ -57,6 +57,7 @@ export function MiniConfetti({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [trigger, count, duration, colors, onComplete, isActive]);
 
   return (

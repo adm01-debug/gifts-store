@@ -66,6 +66,7 @@ export function SuccessCelebration({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [show, duration, onComplete]);
 
   return (

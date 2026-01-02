@@ -33,7 +33,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({ errorInfo });
     
     // Log error to console in development
@@ -60,7 +60,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     this.setState((prev) => ({ showStack: !prev.showStack }));
   };
 
-  render(): ReactNode {
+  override render(): ReactNode {
     const { hasError, error, errorInfo, showStack } = this.state;
     const { children, fallback, showDetails = false } = this.props;
 

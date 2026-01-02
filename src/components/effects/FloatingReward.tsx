@@ -90,6 +90,7 @@ export function FloatingReward({
       }, 2500);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [show, onComplete]);
 
   return (
@@ -292,8 +293,11 @@ export function useRewardQueue() {
 
   useEffect(() => {
     if (!current && queue.length > 0) {
-      setCurrent(queue[0]);
-      setQueue(prev => prev.slice(1));
+      const nextReward = queue[0];
+      if (nextReward) {
+        setCurrent(nextReward);
+        setQueue(prev => prev.slice(1));
+      }
     }
   }, [current, queue]);
 

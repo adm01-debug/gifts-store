@@ -25,7 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error, errorInfo: null };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  public override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Error caught by boundary:', error, errorInfo);
     this.setState({
       error,
@@ -41,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
     window.location.href = '/';
   };
 
-  public render() {
+  public override render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;

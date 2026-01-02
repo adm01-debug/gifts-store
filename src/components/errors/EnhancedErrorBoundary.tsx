@@ -38,7 +38,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error('EnhancedErrorBoundary caught an error:', error, errorInfo);
 
     this.setState((prevState) => ({
@@ -49,7 +49,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     this.props.onError?.(error, errorInfo);
   }
 
-  componentDidUpdate(prevProps: Props): void {
+  override componentDidUpdate(prevProps: Props): void {
     if (
       this.props.resetOnPropsChange &&
       this.state.hasError &&
@@ -82,7 +82,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     window.location.href = '/';
   };
 
-  render(): ReactNode {
+  override render(): ReactNode {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
