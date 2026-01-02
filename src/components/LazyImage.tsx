@@ -19,7 +19,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (entry?.isIntersecting) {
           setImageSrc(src);
           observer.disconnect();
         }
