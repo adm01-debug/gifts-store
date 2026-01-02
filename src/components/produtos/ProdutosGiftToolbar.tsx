@@ -7,7 +7,7 @@ import { DataImporter } from '@/components/DataImporter';
 import { BulkActionsBar } from '@/components/BulkActionsBar';
 import { DuplicateButton } from '@/components/DuplicateButton';
 import { produtoGiftSchema, giftsStoreImportTemplates } from '@/lib/giftsStoreSchemas';
-import { exportToExcel } from '@/lib/excelImporter';
+import { exportToExcel } from '@/utils/excelExport';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
