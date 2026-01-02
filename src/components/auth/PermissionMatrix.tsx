@@ -84,8 +84,9 @@ export function PermissionMatrix() {
   };
 
   const groupedPermissions = permissions.reduce((acc, perm) => {
-    if (!acc[perm.category]) acc[perm.category] = [];
-    acc[perm.category].push(perm);
+    const category = perm.category;
+    if (!acc[category]) acc[category] = [];
+    acc[category]?.push(perm);
     return acc;
   }, {} as Record<string, Permission[]>);
 

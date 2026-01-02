@@ -83,8 +83,8 @@ export function ImageUploadButton({
     try {
       // Extract path from URL
       const urlParts = currentImageUrl.split("/personalization-images/");
-      if (urlParts.length > 1) {
-        const filePath = urlParts[1];
+      const filePath = urlParts[1];
+      if (filePath) {
         await supabase.storage.from("personalization-images").remove([filePath]);
       }
       onRemove();

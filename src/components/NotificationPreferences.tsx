@@ -26,32 +26,36 @@ export function NotificationPreferences() {
 
   const { data: prefs, isLoading } = useQuery({
     queryKey: ['notification-preferences'],
-    queryFn: async () => {
+    queryFn: async (): Promise<NotificationPreferencesData | null> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.id) return null;
       
-      const { data, error } = await (supabase
-        .from('notification_preferences') as unknown as { select: (cols: string) => { eq: (col: string, val: string) => { single: () => Promise<{ data: NotificationPreferencesData | null; error: unknown }> } } })
+      // Use type assertion to handle Supabase types
+      const result = await supabase
+        .from('notification_preferences' as 'profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
       
-      if (error && (error as { code?: string }).code !== 'PGRST116') throw error;
-      return data as NotificationPreferencesData | null;
+      const error = result.error as { code?: string } | null;
+      if (error && error.code !== 'PGRST116') throw error;
+      return (result.data as unknown) as NotificationPreferencesData | null;
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (updates: Partial<NotificationPreferencesData>) => {
+    mutationFn: async (updates: Partial<NotificationPreferencesData>): Promise<void> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.id) throw new Error('User not authenticated');
       
-      const { error } = await (supabase
-        .from('notification_preferences') as unknown as { upsert: (data: NotificationPreferencesData) => Promise<{ error: unknown }> })
-        .upsert({
-          user_id: user.id,
-          ...updates,
-        });
+      const payload = {
+        user_id: user.id,
+        ...updates,
+      };
+      
+      const { error } = await supabase
+        .from('notification_preferences' as 'profiles')
+        .upsert(payload as unknown as Parameters<typeof supabase.from<'profiles'>>[0] extends string ? never : Record<string, unknown>);
       
       if (error) throw error;
     },

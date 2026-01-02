@@ -203,14 +203,18 @@ export function useFilterPresets() {
 
     if (index === -1) return null;
 
-    customPresets[index] = {
-      ...customPresets[index],
+    const existingPreset = customPresets[index];
+    if (!existingPreset) return null;
+
+    const updatedPreset: FilterPreset = {
+      ...existingPreset,
       ...updates,
       updatedAt: new Date().toISOString(),
     };
+    customPresets[index] = updatedPreset;
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(customPresets));
-    return customPresets[index];
+    return updatedPreset;
   };
 
   const deletePreset = (id: string): boolean => {

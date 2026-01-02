@@ -76,10 +76,11 @@ export function StockAlertsIndicator({
       if (error) throw error;
 
       const newAlerts: StockAlert[] = (products || []).map((product) => {
+        const stock = product.stock ?? 0;
         let alertType: "low" | "critical" | "out" = "low";
-        if (product.stock === 0) {
+        if (stock === 0) {
           alertType = "out";
-        } else if (product.stock <= criticalStockThreshold) {
+        } else if (stock <= criticalStockThreshold) {
           alertType = "critical";
         }
 
@@ -88,7 +89,7 @@ export function StockAlertsIndicator({
           productId: product.id,
           productName: product.name,
           sku: product.sku,
-          currentStock: product.stock || 0,
+          currentStock: stock,
           alertType,
           supplier: product.supplier_name || "Desconhecido",
           createdAt: new Date(),

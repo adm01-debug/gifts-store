@@ -383,11 +383,12 @@ export function GroupPersonalizationManager() {
 
     // Update sort_order for all affected components
     for (let i = 0; i < reordered.length; i++) {
-      if (reordered[i].sort_order !== i) {
+      const component = reordered[i];
+      if (component && component.sort_order !== i) {
         await supabase
           .from("product_group_components")
           .update({ sort_order: i })
-          .eq("id", reordered[i].id);
+          .eq("id", component.id);
       }
     }
     queryClient.invalidateQueries({ queryKey: ["group-components"] });
