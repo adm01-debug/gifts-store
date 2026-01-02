@@ -2,21 +2,18 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export interface Supplier {
-  id: string;
-  name: string;
-  cnpj?: string;
-  email?: string;
-  phone?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
 export interface SupplierInput {
   name: string;
-  cnpj?: string;
+  contact?: string;
   email?: string;
   phone?: string;
+  notes?: string;
+}
+
+interface Supplier extends SupplierInput {
+  id: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export function useCreateSupplier() {
@@ -24,8 +21,8 @@ export function useCreateSupplier() {
 
   return useMutation({
     mutationFn: async (newSupplier: SupplierInput) => {
-      if (!newSupplier.name || newSupplier.name.trim().length < 3) {
-        throw new Error('Nome do fornecedor deve ter no mínimo 3 caracteres');
+      if (!newSupplier.name || newSupplier.name.trim().length < 2) {
+        throw new Error('Nome do fornecedor deve ter no mínimo 2 caracteres');
       }
 
       const { data, error } = await supabase
