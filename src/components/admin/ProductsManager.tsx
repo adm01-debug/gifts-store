@@ -1,0 +1,671 @@
+/**
+ * Gerenciador de Produtos - CRUD completo
+ */
+
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Loader2,
+  Search,
+  Package,
+  ImageIcon,
+  RefreshCw,
+} from "lucide-react";
+import { ImageUploadButton } from "./ImageUploadButton";
+
+interface Product {
+  id: string;
+  sku: string;
+  name: string;
+  description: string | null;
+  price: number;
+  stock: number | null;
+  stock_status: string | null;
+  category_name: string | null;
+  subcategory: string | null;
+  supplier_name: string | null;
+  images: any;
+  colors: any;
+  materials: any;
+  min_quantity: number | null;
+  is_active: boolean | null;
+  featured: boolean | null;
+  new_arrival: boolean | null;
+  on_sale: boolean | null;
+  video_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ProductFormData {
+  sku: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  stock_status: string;
+  category_name: string;
+  subcategory: string;
+  supplier_name: string;
+  min_quantity: number;
+  is_active: boolean;
+  featured: boolean;
+  new_arrival: boolean;
+  on_sale: boolean;
+  video_url: string;
+  materials: string;
+}
+
+const initialFormData: ProductFormData = {
+  sku: "",
+  name: "",
+  description: "",
+  price: 0,
+  stock: 0,
+  stock_status: "in_stock",
+  category_name: "",
+  subcategory: "",
+  supplier_name: "",
+  min_quantity: 1,
+  is_active: true,
+  featured: false,
+  new_arrival: false,
+  on_sale: false,
+  video_url: "",
+  materials: "",
+};
+
+export function ProductsManager() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Dialog states
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [formData, setFormData] = useState<ProductFormData>(initialFormData);
+  const [isSaving, setIsSaving] = useState(false);
+  const [productImages, setProductImages] = useState<string[]>([]);
+
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("updated_at", { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      const formattedProducts: Product[] = (data || []).map((p) => ({
+        ...p,
+        images: Array.isArray(p.images) ? p.images : [],
+        colors: Array.isArray(p.colors) ? p.colors : [],
+        materials: Array.isArray(p.materials) ? p.materials : [],
+      }));
+
+      setProducts(formattedProducts);
+      setFilteredProducts(formattedProducts);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      toast.error("Erro ao carregar produtos");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.category_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredProducts(filtered);
+    } else {
+      setFilteredProducts(products);
+    }
+  }, [searchTerm, products]);
+
+  const openCreateForm = () => {
+    setSelectedProduct(null);
+    setFormData(initialFormData);
+    setProductImages([]);
+    setIsFormOpen(true);
+  };
+
+  const openEditForm = (product: Product) => {
+    setSelectedProduct(product);
+    setFormData({
+      sku: product.sku,
+      name: product.name,
+      description: product.description || "",
+      price: product.price,
+      stock: product.stock || 0,
+      stock_status: product.stock_status || "in_stock",
+      category_name: product.category_name || "",
+      subcategory: product.subcategory || "",
+      supplier_name: product.supplier_name || "",
+      min_quantity: product.min_quantity || 1,
+      is_active: product.is_active ?? true,
+      featured: product.featured ?? false,
+      new_arrival: product.new_arrival ?? false,
+      on_sale: product.on_sale ?? false,
+      video_url: product.video_url || "",
+      materials: product.materials?.join(", ") || "",
+    });
+    setProductImages(product.images || []);
+    setIsFormOpen(true);
+  };
+
+  const openDeleteDialog = (product: Product) => {
+    setSelectedProduct(product);
+    setIsDeleteOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.sku || !formData.name) {
+      toast.error("SKU e Nome são obrigatórios");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const productData = {
+        sku: formData.sku,
+        name: formData.name,
+        description: formData.description || null,
+        price: formData.price,
+        stock: formData.stock,
+        stock_status: formData.stock_status,
+        category_name: formData.category_name || null,
+        subcategory: formData.subcategory || null,
+        supplier_name: formData.supplier_name || null,
+        min_quantity: formData.min_quantity,
+        is_active: formData.is_active,
+        featured: formData.featured,
+        new_arrival: formData.new_arrival,
+        on_sale: formData.on_sale,
+        video_url: formData.video_url || null,
+        materials: formData.materials ? formData.materials.split(",").map((m) => m.trim()) : [],
+        images: productImages,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (selectedProduct) {
+        // Update
+        const { error } = await supabase
+          .from("products")
+          .update(productData)
+          .eq("id", selectedProduct.id);
+
+        if (error) throw error;
+        toast.success("Produto atualizado com sucesso");
+      } else {
+        // Create
+        const { error } = await supabase.from("products").insert(productData);
+
+        if (error) throw error;
+        toast.success("Produto criado com sucesso");
+      }
+
+      setIsFormOpen(false);
+      fetchProducts();
+    } catch (error: any) {
+      console.error("Error saving product:", error);
+      toast.error(error.message || "Erro ao salvar produto");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedProduct) return;
+
+    try {
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", selectedProduct.id);
+
+      if (error) throw error;
+
+      toast.success("Produto excluído com sucesso");
+      setIsDeleteOpen(false);
+      fetchProducts();
+    } catch (error: any) {
+      console.error("Error deleting product:", error);
+      toast.error(error.message || "Erro ao excluir produto");
+    }
+  };
+
+  const handleImageUpload = (url: string) => {
+    setProductImages((prev) => [...prev, url]);
+  };
+
+  const handleImageRemove = (index: number) => {
+    setProductImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  return (
+    <Card className="border-border/50">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Gerenciador de Produtos
+            </CardTitle>
+            <CardDescription>
+              Cadastre, edite e gerencie os produtos do catálogo
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={fetchProducts}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Atualizar
+            </Button>
+            <Button size="sm" onClick={openCreateForm}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Produto
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome, SKU ou categoria..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {/* Products Table */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Nenhum produto encontrado</p>
+          </div>
+        ) : (
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Imagem</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>Preço</TableHead>
+                  <TableHead>Estoque</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProducts.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell>
+                      {product.images && product.images.length > 0 ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-12 h-12 object-cover rounded-md"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">
+                      {product.sku}
+                    </TableCell>
+                    <TableCell className="font-medium max-w-[200px] truncate">
+                      {product.name}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {product.category_name || "-"}
+                    </TableCell>
+                    <TableCell>
+                      R$ {product.price.toFixed(2)}
+                    </TableCell>
+                    <TableCell>
+                      {product.stock ?? 0}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {product.is_active ? (
+                          <Badge variant="default" className="text-xs">Ativo</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">Inativo</Badge>
+                        )}
+                        {product.featured && (
+                          <Badge variant="outline" className="text-xs">Destaque</Badge>
+                        )}
+                        {product.new_arrival && (
+                          <Badge variant="outline" className="text-xs text-green-600">Novo</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditForm(product)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => openDeleteDialog(product)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        <p className="text-sm text-muted-foreground">
+          Exibindo {filteredProducts.length} de {products.length} produtos
+        </p>
+      </CardContent>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedProduct ? "Editar Produto" : "Novo Produto"}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedProduct
+                ? "Atualize as informações do produto"
+                : "Preencha os dados para cadastrar um novo produto"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="grid gap-4 py-4">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sku">SKU *</Label>
+                  <Input
+                    id="sku"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    placeholder="Ex: PROD-001"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Nome do produto"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Descrição</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Descrição detalhada do produto"
+                  rows={3}
+                />
+              </div>
+
+              {/* Pricing & Stock */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price">Preço (R$)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stock">Estoque</Label>
+                  <Input
+                    id="stock"
+                    type="number"
+                    value={formData.stock}
+                    onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="min_quantity">Qtd. Mínima</Label>
+                  <Input
+                    id="min_quantity"
+                    type="number"
+                    value={formData.min_quantity}
+                    onChange={(e) => setFormData({ ...formData, min_quantity: parseInt(e.target.value) || 1 })}
+                  />
+                </div>
+              </div>
+
+              {/* Category & Supplier */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category_name">Categoria</Label>
+                  <Input
+                    id="category_name"
+                    value={formData.category_name}
+                    onChange={(e) => setFormData({ ...formData, category_name: e.target.value })}
+                    placeholder="Ex: Canecas"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="subcategory">Subcategoria</Label>
+                  <Input
+                    id="subcategory"
+                    value={formData.subcategory}
+                    onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                    placeholder="Ex: Térmicas"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="supplier_name">Fornecedor</Label>
+                  <Input
+                    id="supplier_name"
+                    value={formData.supplier_name}
+                    onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value })}
+                    placeholder="Nome do fornecedor"
+                  />
+                </div>
+              </div>
+
+              {/* Materials & Video */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="materials">Materiais (separados por vírgula)</Label>
+                  <Input
+                    id="materials"
+                    value={formData.materials}
+                    onChange={(e) => setFormData({ ...formData, materials: e.target.value })}
+                    placeholder="Ex: Plástico, Metal, Silicone"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="video_url">URL do Vídeo</Label>
+                  <Input
+                    id="video_url"
+                    value={formData.video_url}
+                    onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              {/* Flags */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <Label htmlFor="is_active" className="cursor-pointer">Produto Ativo</Label>
+                  <Switch
+                    id="is_active"
+                    checked={formData.is_active}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <Label htmlFor="featured" className="cursor-pointer">Destaque</Label>
+                  <Switch
+                    id="featured"
+                    checked={formData.featured}
+                    onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <Label htmlFor="new_arrival" className="cursor-pointer">Lançamento</Label>
+                  <Switch
+                    id="new_arrival"
+                    checked={formData.new_arrival}
+                    onCheckedChange={(checked) => setFormData({ ...formData, new_arrival: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <Label htmlFor="on_sale" className="cursor-pointer">Em Promoção</Label>
+                  <Switch
+                    id="on_sale"
+                    checked={formData.on_sale}
+                    onCheckedChange={(checked) => setFormData({ ...formData, on_sale: checked })}
+                  />
+                </div>
+              </div>
+
+              {/* Images */}
+              <div className="space-y-2">
+                <Label>Imagens do Produto</Label>
+                <div className="flex flex-wrap gap-2">
+                  {productImages.map((img, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={img}
+                        alt={`Imagem ${index + 1}`}
+                        className="w-20 h-20 object-cover rounded-md"
+                      />
+                      <button
+                        type="button"
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleImageRemove(index)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  <ImageUploadButton
+                    currentImageUrl={null}
+                    onUpload={handleImageUpload}
+                    onRemove={() => {}}
+                    folder="products"
+                  />
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsFormOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {selectedProduct ? "Salvar Alterações" : "Criar Produto"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Produto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o produto "{selectedProduct?.name}"?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  );
+}
