@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ProductFilters } from './useProducts';
+import { Product, ProductFilters } from './useProducts';
 
 interface PaginatedProducts {
-  products: any[];
+  products: Product[];
   totalPages: number;
   currentPage: number;
   totalCount: number;
