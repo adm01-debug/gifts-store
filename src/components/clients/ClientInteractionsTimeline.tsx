@@ -142,13 +142,13 @@ export function ClientInteractionsTimeline({
   const handleEventClick = (event: TimelineEvent) => {
     switch (event.type) {
       case "quote":
-        if (event.metadata?.quoteId) {
-          navigate(`/orcamentos/${event.metadata.quoteId}`);
+        if (event.metadata?.['quoteId']) {
+          navigate(`/orcamentos/${event.metadata['quoteId']}`);
         }
         break;
       case "order":
-        if (event.metadata?.orderId) {
-          navigate(`/pedidos/${event.metadata.orderId}`);
+        if (event.metadata?.['orderId']) {
+          navigate(`/pedidos/${event.metadata['orderId']}`);
         }
         break;
       default:
@@ -242,7 +242,7 @@ export function ClientInteractionsTimeline({
                         key={event.id}
                         className={cn(
                           "relative flex gap-3 group",
-                          event.metadata?.quoteId || event.metadata?.orderId
+                          event.metadata?.['quoteId'] || event.metadata?.['orderId']
                             ? "cursor-pointer hover:bg-accent/50 rounded-lg p-2 -m-2"
                             : ""
                         )}
@@ -311,7 +311,7 @@ export function ClientInteractionsTimeline({
                           </div>
 
                           {/* Click indicator */}
-                          {(event.metadata?.quoteId || event.metadata?.orderId) && (
+                          {(event.metadata?.['quoteId'] || event.metadata?.['orderId']) && (
                             <div className="flex items-center gap-1 text-xs text-primary mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <span>Ver detalhes</span>
                               <ChevronRight className="h-3 w-3" />

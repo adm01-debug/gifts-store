@@ -39,14 +39,18 @@ export function MiniConfetti({
   useEffect(() => {
     if (trigger && !isActive) {
       setIsActive(true);
-      const newPieces: ConfettiPiece[] = Array.from({ length: count }, (_, i) => ({
-        id: i,
-        x: Math.random() * 100 - 50,
-        color: colors[Math.floor(Math.random() * colors.length)] ?? defaultColors[0],
-        delay: Math.random() * 0.2,
-        rotation: Math.random() * 360,
-        size: Math.random() * 6 + 4,
-      }));
+      const colorArray = colors.length > 0 ? colors : defaultColors;
+      const newPieces: ConfettiPiece[] = Array.from({ length: count }, (_, i) => {
+        const colorIndex = Math.floor(Math.random() * colorArray.length);
+        return {
+          id: i,
+          x: Math.random() * 100 - 50,
+          color: colorArray[colorIndex] ?? defaultColors[0] ?? "hsl(252 87% 64%)",
+          delay: Math.random() * 0.2,
+          rotation: Math.random() * 360,
+          size: Math.random() * 6 + 4,
+        };
+      });
       setPieces(newPieces);
 
       const timer = setTimeout(() => {

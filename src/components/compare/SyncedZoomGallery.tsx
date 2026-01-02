@@ -85,8 +85,11 @@ export function SyncedZoomGallery({ products, onProductClick }: SyncedZoomGaller
   }, []);
 
   const handleSliderChange = (value: number[]) => {
-    setZoom(value[0]);
-    if (value[0] === 1) setPan({ x: 0, y: 0 });
+    const newZoom = value[0];
+    if (newZoom !== undefined) {
+      setZoom(newZoom);
+      if (newZoom === 1) setPan({ x: 0, y: 0 });
+    }
   };
 
   const selectImage = (productId: string, index: number) => {

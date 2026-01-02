@@ -137,7 +137,7 @@ export default function QuotesDashboardPage() {
     }
 
     // Filter by period and client
-    let filteredQuotes = quotes.filter((q) => new Date(q.created_at) >= startDate);
+    let filteredQuotes = quotes.filter((q) => q.created_at && new Date(q.created_at) >= startDate);
     
     // Filter by client if selected
     if (selectedClientId !== "all") {
@@ -171,6 +171,7 @@ export default function QuotesDashboardPage() {
     let averageResponseTime = 0;
     if (quotesWithResponse.length > 0) {
       const totalHours = quotesWithResponse.reduce((sum, q) => {
+        if (!q.created_at) return sum;
         const created = new Date(q.created_at);
         const responded = new Date(q.client_response_at!);
         return sum + differenceInHours(responded, created);
@@ -195,6 +196,7 @@ export default function QuotesDashboardPage() {
 
     // Monthly data for bar chart
     const monthlyGroups = filteredQuotes.reduce((acc, q) => {
+      if (!q.created_at) return acc;
       const month = format(new Date(q.created_at), "MMM", { locale: ptBR });
       if (!acc[month]) {
         acc[month] = { month, total: 0, approved: 0, rejected: 0, value: 0 };

@@ -146,7 +146,7 @@ export default function QuoteViewPage() {
     );
   }
 
-  const status = statusConfig[quote.status] || statusConfig.draft;
+  const status = statusConfig[quote.status] ?? statusConfig['draft'];
 
   return (
     <MainLayout>

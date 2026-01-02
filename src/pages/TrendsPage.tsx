@@ -53,7 +53,7 @@ export default function TrendsPage() {
       // Aggregate by product
       const productMap = new Map<string, { name: string; sku?: string; views: number; details: number; compares: number; favorites: number }>();
       
-      data?.forEach((view) => {
+      data?.forEach((view: { product_id?: string; product_name: string; product_sku?: string; view_type?: string }) => {
         const key = view.product_id || view.product_name;
         const existing = productMap.get(key) || { 
           name: view.product_name, 
@@ -91,7 +91,7 @@ export default function TrendsPage() {
       // Aggregate by search term
       const searchMap = new Map<string, { count: number; avgResults: number; totalResults: number }>();
       
-      data?.forEach((search) => {
+      data?.forEach((search: { search_term: string; results_count?: number }) => {
         const term = search.search_term.toLowerCase();
         const existing = searchMap.get(term) || { count: 0, avgResults: 0, totalResults: 0 };
         existing.count++;
@@ -130,13 +130,13 @@ export default function TrendsPage() {
         dayMap.set(date, { date, views: 0, searches: 0 });
       }
 
-      views?.forEach((v) => {
+      views?.forEach((v: { created_at: string }) => {
         const date = format(new Date(v.created_at), "yyyy-MM-dd");
         const existing = dayMap.get(date);
         if (existing) existing.views++;
       });
 
-      searches?.forEach((s) => {
+      searches?.forEach((s: { created_at: string }) => {
         const date = format(new Date(s.created_at), "yyyy-MM-dd");
         const existing = dayMap.get(date);
         if (existing) existing.searches++;
