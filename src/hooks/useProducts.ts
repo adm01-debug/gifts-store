@@ -57,7 +57,6 @@ export function useProducts(
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching products:', error);
         throw new Error(`Failed to fetch products: ${error.message}`);
       }
 
