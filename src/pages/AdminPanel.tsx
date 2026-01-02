@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, ShieldCheck, Users, UserCog, Loader2, KeyRound } from "lucide-react";
+import { Shield, ShieldCheck, Users, UserCog, Loader2, KeyRound, Package } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PasswordResetApproval } from "@/components/admin/PasswordResetApproval";
 import { usePasswordResetRequests } from "@/hooks/usePasswordResetRequests";
+import { ProductsManager } from "@/components/admin/ProductsManager";
 
 interface UserWithRole {
   id: string;
@@ -174,12 +175,16 @@ export default function AdminPanel() {
           </Card>
         </div>
 
-        {/* Tabs for Users and Password Reset */}
+        {/* Tabs for Users, Products and Password Reset */}
         <Tabs defaultValue="users" className="space-y-4">
           <TabsList>
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" />
               Usuários
+            </TabsTrigger>
+            <TabsTrigger value="products" className="gap-2">
+              <Package className="h-4 w-4" />
+              Produtos
             </TabsTrigger>
             <TabsTrigger value="password-reset" className="gap-2">
               <KeyRound className="h-4 w-4" />
@@ -300,6 +305,10 @@ export default function AdminPanel() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="products">
+            <ProductsManager />
           </TabsContent>
 
           <TabsContent value="password-reset">
