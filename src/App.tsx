@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { Suspense, lazy } from "react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ComparisonProvider } from "@/contexts/ComparisonContext";
@@ -107,6 +108,7 @@ function App() {
                     <Toaster />
                     <Sonner />
                     <AdminRealtimeNotifications />
+                    <SpeedInsights />
                     <BrowserRouter>
                     <CompareBar />
                     <Suspense fallback={<PageLoader />}>
