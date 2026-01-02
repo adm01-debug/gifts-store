@@ -2,23 +2,18 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export interface Client {
-  id: string;
-  name: string;
-  cnpj?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
 export interface ClientInput {
   name: string;
-  cnpj?: string;
   email?: string;
   phone?: string;
-  address?: string;
+  company?: string;
+  notes?: string;
+}
+
+interface Client extends ClientInput {
+  id: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export function useCreateClient() {
@@ -26,8 +21,8 @@ export function useCreateClient() {
 
   return useMutation({
     mutationFn: async (newClient: ClientInput) => {
-      if (!newClient.name || newClient.name.trim().length < 3) {
-        throw new Error('Nome do cliente deve ter no mínimo 3 caracteres');
+      if (!newClient.name || newClient.name.trim().length < 2) {
+        throw new Error('Nome do cliente deve ter no mínimo 2 caracteres');
       }
 
       const { data, error } = await supabase
@@ -85,7 +80,10 @@ export function useUpdateClient() {
     },
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: ['clients'] });
+      await queryClient.cancelQueries({ queryKey: ['clients', id] });
+
       const previousClients = queryClient.getQueryData<Client[]>(['clients']);
+      const previousClient = queryClient.getQueryData<Client>(['clients', id]);
 
       if (previousClients) {
         queryClient.setQueryData<Client[]>(
@@ -96,11 +94,21 @@ export function useUpdateClient() {
         );
       }
 
-      return { previousClients };
+      if (previousClient) {
+        queryClient.setQueryData<Client>(
+          ['clients', id],
+          { ...previousClient, ...updates, updated_at: new Date().toISOString() }
+        );
+      }
+
+      return { previousClients, previousClient };
     },
-    onError: (error: Error, _, context) => {
+    onError: (error: Error, { id }, context) => {
       if (context?.previousClients) {
         queryClient.setQueryData(['clients'], context.previousClients);
+      }
+      if (context?.previousClient) {
+        queryClient.setQueryData(['clients', id], context.previousClient);
       }
       toast.error(error.message);
     },
