@@ -1,0 +1,8 @@
+**/*.stories.tsx
+**/*.test.tsx
+**/*.spec.tsx
+.storybook/
+docs/
+e2e/
+tests/
+coverage/
