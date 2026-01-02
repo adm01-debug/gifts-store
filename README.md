@@ -378,3 +378,5 @@ Problemas ou dúvidas? Abra uma [issue](https://github.com/adm01-debug/gifts-sto
 **Desenvolvido com 💙 por adm01-debug**
 
 <!-- Build: 1767386924 -->
+
+<!-- Deploy trigger: 1767387904 -->
