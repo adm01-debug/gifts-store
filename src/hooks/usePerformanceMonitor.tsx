@@ -180,7 +180,7 @@ export function useWhyDidYouUpdate(
         }
       });
 
-      if (Object.keys(changedProps).length > 0) {
+      if (Object.keys(changedProps).length > 0 && import.meta.env.DEV) {
         console.log(`🔄 [Why Update] ${componentName}:`, changedProps);
       }
     }

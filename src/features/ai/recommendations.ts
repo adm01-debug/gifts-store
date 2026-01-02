@@ -7,8 +7,10 @@ export class AIRecommendationService {
     };
   }
 
-  async trainModel(data: any[]) {
-    console.log('Training model...');
+  async trainModel(_data: unknown[]) {
+    if (import.meta.env.DEV) {
+      console.log('Training model...');
+    }
   }
 }
 

@@ -174,7 +174,9 @@ export function useNotifications() {
         },
         (payload) => {
           const newNotification = payload.new as Notification;
-          console.log("New notification received:", newNotification);
+          if (import.meta.env.DEV) {
+            console.log("New notification received:", newNotification);
+          }
           
           setNotifications(prev => [newNotification, ...prev]);
           setUnreadCount(prev => prev + 1);

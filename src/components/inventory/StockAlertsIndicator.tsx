@@ -52,7 +52,9 @@ export function StockAlertsIndicator({
           filter: `stock=lt.${lowStockThreshold}`,
         },
         (payload) => {
-          console.log("Stock change detected:", payload);
+          if (import.meta.env.DEV) {
+            console.log("Stock change detected:", payload);
+          }
           fetchStockAlerts();
         }
       )

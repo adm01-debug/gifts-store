@@ -12,7 +12,9 @@ export const reportWebVitals = (onPerfEntry?: (metric: any) => void) => {
 
 export const logWebVitals = () => {
   reportWebVitals((metric) => {
-    console.log(metric);
+    if (import.meta.env.DEV) {
+      console.log(metric);
+    }
     // Send to analytics
   });
 };

@@ -12,14 +12,16 @@ export async function registerServiceWorker(): Promise<void> {
         scope: '/'
       });
 
-      console.log('✅ Service Worker registrado:', registration.scope);
+      if (import.meta.env.DEV) {
+        console.log('✅ Service Worker registrado:', registration.scope);
+      }
 
       // Checar atualizações
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
         newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller && import.meta.env.DEV) {
               console.log('🔄 Nova versão do Service Worker disponível');
               // Reload automático removido para evitar auto-refresh intermitente
             }
@@ -28,7 +30,9 @@ export async function registerServiceWorker(): Promise<void> {
       });
 
       // Controllerchange listener removido para evitar auto-refresh
-      console.log('✅ Service Worker configurado sem auto-reload');
+      if (import.meta.env.DEV) {
+        console.log('✅ Service Worker configurado sem auto-reload');
+      }
 
     } catch (error) {
       console.error('❌ Falha ao registrar Service Worker:', error);
@@ -46,7 +50,9 @@ export async function unregisterServiceWorker(): Promise<void> {
     const registrations = await navigator.serviceWorker.getRegistrations();
     for (const registration of registrations) {
       await registration.unregister();
-      console.log('🗑️ Service Worker desregistrado');
+      if (import.meta.env.DEV) {
+        console.log('🗑️ Service Worker desregistrado');
+      }
     }
   }
 }

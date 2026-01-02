@@ -28,7 +28,7 @@ export function useSessionManager() {
           variant: 'destructive',
         });
         signOut();
-      } else if (data.session) {
+      } else if (data.session && import.meta.env.DEV) {
         console.log('Session refreshed successfully');
       }
     } catch (error) {

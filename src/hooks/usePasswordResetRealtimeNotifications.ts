@@ -38,12 +38,16 @@ export function usePasswordResetRealtimeNotifications() {
           table: 'password_reset_requests',
         },
         (payload) => {
-          console.log('Nova solicitação de reset recebida:', payload);
+          if (import.meta.env.DEV) {
+            console.log('Nova solicitação de reset recebida:', payload);
+          }
           handleNewRequest(payload as { new: PasswordResetRequest });
         }
       )
       .subscribe((status) => {
-        console.log('Status da inscrição realtime:', status);
+        if (import.meta.env.DEV) {
+          console.log('Status da inscrição realtime:', status);
+        }
       });
 
     return () => {

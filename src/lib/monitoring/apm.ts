@@ -10,7 +10,9 @@ export class APMService {
   private metrics: PerformanceMetric[] = [];
 
   track(metric: string, value: number) {
-    console.log(`[APM] ${metric}: ${value}`);
+    if (import.meta.env.DEV) {
+      console.log(`[APM] ${metric}: ${value}`);
+    }
     this.metrics.push({
       name: metric,
       value,
