@@ -30,7 +30,7 @@ export { LoadingOverlay } from '@/components/LoadingOverlay';
 
 // Utilities
 export { importCSV, generateCSVTemplate } from '@/lib/csvImporter';
-export { importExcel, exportToExcel } from '@/lib/excelImporter';
+export { importExcel, exportToExcel } from '@/utils/excelExport';
 export * from '@/lib/brazilValidators';
 
 // Types
