@@ -47,8 +47,7 @@ export function usePasswordBreachCheck() {
       }
 
       const text = await response.text();
-      const hashes = text.split('
-');
+      const hashes = text.split('\n');
       
       for (const line of hashes) {
         const [hashSuffix, count] = line.split(':');
