@@ -5,9 +5,23 @@ import { Database } from '@/integrations/supabase/types';
 
 type TableName = keyof Database['public']['Tables'];
 
+// Interface for UI bulk actions (used by BulkActionsBar)
+export interface BulkAction<T> {
+  id: string;
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  variant?: 'default' | 'destructive' | 'outline';
+  action: (items: T[]) => Promise<void>;
+  confirm?: {
+    title: string;
+    description: string;
+  };
+}
+
 interface BulkActionConfig {
   tableName: TableName;
   queryKey: string[];
+  entityName?: string;
 }
 
 interface BulkDeleteOptions {

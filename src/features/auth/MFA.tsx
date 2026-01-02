@@ -6,8 +6,7 @@ export function MFA() {
   const [code, setCode] = useState('');
   
   const verify = async () => {
-    // Verify TOTP code
-    console.log('Verifying code:', code);
+    // TODO: Implement TOTP verification
   };
   
   return (
