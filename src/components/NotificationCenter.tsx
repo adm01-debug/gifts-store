@@ -16,7 +16,7 @@ export function NotificationCenter() {
   const {
     notifications,
     unreadCount,
-    isLoading,
+    loading: isLoading,
     markAsRead,
     markAllAsRead,
     deleteNotification,
@@ -88,7 +88,7 @@ export function NotificationCenter() {
                         )}>
                           {notif.title}
                         </p>
-                        {notif.is_grouped && notif.group_count > 1 && (
+                        {notif.is_grouped && notif.group_count && notif.group_count > 1 && (
                           <Badge variant="secondary" className="text-xs">
                             {notif.group_count}
                           </Badge>
@@ -107,7 +107,7 @@ export function NotificationCenter() {
                           })}
                         </span>
                         <span>•</span>
-                        <span className="capitalize">{notif.source_system}</span>
+                        <span className="capitalize">{notif.source_system || 'sistema'}</span>
                       </div>
                     </div>
 

@@ -6,6 +6,21 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
+interface NotificationPreferencesData {
+  user_id?: string;
+  email_enabled?: boolean;
+  push_enabled?: boolean;
+  sms_enabled?: boolean;
+  whatsapp_enabled?: boolean;
+  dnd_enabled?: boolean;
+  dnd_start_time?: string;
+  dnd_end_time?: string;
+  digest_enabled?: boolean;
+  digest_time?: string;
+  phone_number?: string;
+  whatsapp_number?: string;
+}
+
 export function NotificationPreferences() {
   const queryClient = useQueryClient();
 
@@ -13,26 +28,28 @@ export function NotificationPreferences() {
     queryKey: ['notification-preferences'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) return null;
       
-      const { data, error } = await supabase
-        .from('notification_preferences')
+      const { data, error } = await (supabase
+        .from('notification_preferences') as unknown as { select: (cols: string) => { eq: (col: string, val: string) => { single: () => Promise<{ data: NotificationPreferencesData | null; error: unknown }> } } })
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .single();
       
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      if (error && (error as { code?: string }).code !== 'PGRST116') throw error;
+      return data as NotificationPreferencesData | null;
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (updates: any) => {
+    mutationFn: async (updates: Partial<NotificationPreferencesData>) => {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error('User not authenticated');
       
-      const { error } = await supabase
-        .from('notification_preferences')
+      const { error } = await (supabase
+        .from('notification_preferences') as unknown as { upsert: (data: NotificationPreferencesData) => Promise<{ error: unknown }> })
         .upsert({
-          user_id: user?.id,
+          user_id: user.id,
           ...updates,
         });
       

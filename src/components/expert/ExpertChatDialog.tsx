@@ -122,8 +122,8 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
         parts.push(content.slice(lastIndex, match.index));
       }
       parts.push({
-        id: match[1],
-        name: match[2],
+        id: match[1] ?? '',
+        name: match[2] ?? '',
         fullMatch: match[0]
       });
       lastIndex = match.index + match[0].length;
@@ -237,12 +237,12 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/expert-chat`,
+        `${import.meta.env['VITE_SUPABASE_URL']}/functions/v1/expert-chat`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY']}`,
           },
           body: JSON.stringify({
             messages: [...messages, { role: "user", content: userMessage }],
@@ -294,8 +294,9 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
                 assistantMessage += content;
                 setMessages(prev => {
                   const newMessages = [...prev];
-                  if (newMessages[newMessages.length - 1]?.role === "assistant") {
-                    newMessages[newMessages.length - 1].content = assistantMessage;
+                  const lastMessage = newMessages[newMessages.length - 1];
+                  if (lastMessage?.role === "assistant") {
+                    lastMessage.content = assistantMessage;
                   }
                   return newMessages;
                 });

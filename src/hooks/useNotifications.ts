@@ -12,6 +12,10 @@ export interface Notification {
   metadata: Record<string, unknown>;
   is_read: boolean;
   created_at: string;
+  action_url?: string;
+  is_grouped?: boolean;
+  group_count?: number;
+  source_system?: string;
 }
 
 export function useNotifications() {
