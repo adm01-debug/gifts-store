@@ -69,7 +69,8 @@
     "jspdf-autotable": "^3.8.2",
     "@tensorflow/tfjs": "^4.17.0",
     "otpauth": "^9.2.2",
-    "react-resizable-panels": "^2.0.11"
+    "react-resizable-panels": "^2.0.11",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
