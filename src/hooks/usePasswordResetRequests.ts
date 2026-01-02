@@ -77,11 +77,11 @@ export function usePasswordResetRequests() {
 
       await fetchRequests();
       return true;
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Erro ao aprovar',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
       });
       return false;
     }
@@ -110,11 +110,11 @@ export function usePasswordResetRequests() {
 
       await fetchRequests();
       return true;
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Erro ao rejeitar',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
       });
       return false;
     }
@@ -147,10 +147,10 @@ export function usePasswordResetRequests() {
         success: true, 
         message: 'Solicitação enviada! Um gestor irá analisar e aprovar seu pedido de recuperação de senha.' 
       };
-    } catch (error: any) {
-      return { 
-        success: false, 
-        message: error.message 
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Erro desconhecido'
       };
     }
   };

@@ -32,8 +32,8 @@ export function MFAEnroll({ onSuccess, onCancel }: MFAEnrollProps) {
       const result = await generateSecret(user.email);
       setSecret(result.secret);
       setQrUri(result.uri);
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     } finally {
       setIsGenerating(false);
     }
@@ -54,8 +54,8 @@ export function MFAEnroll({ onSuccess, onCancel }: MFAEnrollProps) {
       } else {
         toast({ title: 'Erro', description: result.error, variant: 'destructive' });
       }
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }

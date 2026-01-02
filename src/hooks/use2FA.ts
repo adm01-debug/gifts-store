@@ -111,8 +111,8 @@ export function use2FA() {
       await fetchSettings();
       
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
     }
   }, [user, pendingSecret, verifyToken, fetchSettings]);
 
@@ -152,8 +152,8 @@ export function use2FA() {
 
       await fetchSettings();
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
     }
   }, [user, verifyToken, fetchSettings]);
 

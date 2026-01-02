@@ -52,12 +52,12 @@ export function useIPValidation() {
         currentIP,
         hasRestrictions: false
       };
-    } catch (error: any) {
+    } catch (error) {
       return {
         isAllowed: false,
         currentIP: null,
         hasRestrictions: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
       };
     } finally {
       setIsValidating(false);
@@ -108,12 +108,12 @@ export function useIPValidation() {
         hasRestrictions: true,
         error: isAllowed ? undefined : 'Acesso negado: seu IP não está autorizado para esta conta'
       };
-    } catch (error: any) {
+    } catch (error) {
       return {
         isAllowed: false,
         currentIP: null,
         hasRestrictions: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
       };
     } finally {
       setIsValidating(false);

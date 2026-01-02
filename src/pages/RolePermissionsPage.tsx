@@ -67,8 +67,8 @@ export default function RolePermissionsPage() {
 
       setPermissions(permRes.data || []);
       setRolePermissions(rolePermRes.data || []);
-    } catch (error: any) {
-      toast({ title: 'Erro ao carregar dados', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro ao carregar dados', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -132,8 +132,8 @@ export default function RolePermissionsPage() {
       toast({ title: 'Permissões atualizadas com sucesso!' });
       setPendingChanges(new Map());
       fetchData();
-    } catch (error: any) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro ao salvar', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }

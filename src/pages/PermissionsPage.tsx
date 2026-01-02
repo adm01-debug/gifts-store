@@ -45,8 +45,8 @@ export default function PermissionsPage() {
 
       if (error) throw error;
       setPermissions(data || []);
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -70,8 +70,8 @@ export default function PermissionsPage() {
       setEditingPermission(null);
       setFormData({ code: '', name: '', description: '', category: 'geral' });
       fetchPermissions();
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     }
   };
 
@@ -92,8 +92,8 @@ export default function PermissionsPage() {
       if (error) throw error;
       toast({ title: 'Permissão excluída com sucesso' });
       fetchPermissions();
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     }
   };
 

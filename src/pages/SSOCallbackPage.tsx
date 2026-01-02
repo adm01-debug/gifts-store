@@ -24,9 +24,9 @@ export default function SSOCallbackPage() {
           const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) throw exchangeError;
           navigate('/');
-        } catch (err: any) {
+        } catch (err) {
           console.error('Session exchange error:', err);
-          navigate('/login?error=' + encodeURIComponent(err.message));
+          navigate('/login?error=' + encodeURIComponent(err instanceof Error ? err.message : 'Erro desconhecido'));
         }
       } else {
         // Check if we have a session from hash fragment

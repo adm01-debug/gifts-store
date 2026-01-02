@@ -69,8 +69,8 @@ export default function RateLimitDashboardPage() {
         blockedRequests: blocked,
         uniqueIPs,
       });
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }

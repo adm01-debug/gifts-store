@@ -257,9 +257,9 @@ export function ProductsManager() {
 
       setIsFormOpen(false);
       fetchProducts();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error saving product:", error);
-      toast.error(error.message || "Erro ao salvar produto");
+      toast.error(error instanceof Error ? error.message : "Erro ao salvar produto");
     } finally {
       setIsSaving(false);
     }
@@ -279,9 +279,9 @@ export function ProductsManager() {
       toast.success("Produto excluído com sucesso");
       setIsDeleteOpen(false);
       fetchProducts();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error deleting product:", error);
-      toast.error(error.message || "Erro ao excluir produto");
+      toast.error(error instanceof Error ? error.message : "Erro ao excluir produto");
     }
   };
 

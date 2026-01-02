@@ -49,8 +49,8 @@ export function PermissionMatrix() {
       setRoles(rolesRes.data || []);
       setPermissions(permissionsRes.data || []);
       setRolePermissions(rolePermissionsRes.data || []);
-    } catch (error: any) {
-      toast({ title: 'Erro ao carregar dados', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro ao carregar dados', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -78,8 +78,8 @@ export function PermissionMatrix() {
         if (error) throw error;
         setRolePermissions((prev) => [...prev, { role: roleName, permission_id: permissionId }]);
       }
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     }
   };
 

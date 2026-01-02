@@ -40,8 +40,8 @@ export default function RolesPage() {
 
       if (error) throw error;
       setRoles(data || []);
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -67,8 +67,8 @@ export default function RolesPage() {
       setEditingRole(null);
       setFormData({ name: '', description: '' });
       fetchRoles();
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     }
   };
 
@@ -84,8 +84,8 @@ export default function RolesPage() {
       if (error) throw error;
       toast({ title: 'Role excluída com sucesso' });
       fetchRoles();
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: error instanceof Error ? error.message : 'Erro desconhecido', variant: 'destructive' });
     }
   };
 

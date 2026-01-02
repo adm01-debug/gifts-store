@@ -85,8 +85,8 @@ export function useAllowedIPs(targetUserId?: string) {
 
       await fetchAllowedIPs();
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
     }
   }, [userId, user, fetchAllowedIPs]);
 
@@ -103,13 +103,13 @@ export function useAllowedIPs(targetUserId?: string) {
 
       await fetchAllowedIPs();
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
     }
   }, [fetchAllowedIPs]);
 
   const toggleIP = useCallback(async (
-    ipId: string, 
+    ipId: string,
     isActive: boolean
   ): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -122,8 +122,8 @@ export function useAllowedIPs(targetUserId?: string) {
 
       await fetchAllowedIPs();
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
     }
   }, [fetchAllowedIPs]);
 
