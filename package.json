@@ -2,10 +2,10 @@
   "name": "@adm01-debug/gifts-store",
   "private": true,
   "version": "2.0.0",
-  "description": "Sistema profissional de gestão de brindes corporativos com IA e gamificação",
+  "description": "Sistema profissional de gest\u00e3o de brindes corporativos com IA e gamifica\u00e7\u00e3o",
   "type": "module",
   "author": {
-    "name": "Pink e Cerébro",
+    "name": "Pink e Cer\u00e9bro",
     "email": "adm01@promobrindes.com.br",
     "url": "https://github.com/adm01-debug"
   },
@@ -82,6 +82,7 @@
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "otpauth": "^9.4.1",
+    "papaparse": "^5.4.1",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
@@ -102,6 +103,7 @@
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.16.5",
+    "@types/papaparse": "^5.3.14",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
