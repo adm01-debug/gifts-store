@@ -1,21 +1,37 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "@adm01-debug/gifts-store",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
+  "description": "Sistema profissional de gestão de brindes corporativos com IA e gamificação",
   "type": "module",
+  "author": {
+    "name": "Pink e Cerébro",
+    "email": "adm01@promobrindes.com.br",
+    "url": "https://github.com/adm01-debug"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adm01-debug/gifts-store.git"
+  },
+  "bugs": {
+    "url": "https://github.com/adm01-debug/gifts-store/issues"
+  },
+  "homepage": "https://gifts-store.vercel.app",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
+    "build": "tsc && vite build",
+    "build:dev": "tsc && vite build --mode development",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "type-check": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "lint:fix": "eslint . --fix",
-    "type-check": "tsc --noEmit",
-    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx}\""
+    "test:watch": "vitest --watch"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -88,17 +104,38 @@
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
+    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/parser": "^8.38.0",
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.32.0",
+    "eslint-plugin-jsx-a11y": "^6.9.0",
+    "eslint-plugin-react": "^7.34.2",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
+    "prettier": "^3.2.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^5.4.19"
-  }
+    "vite": "^5.4.19",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "brindes",
+    "gifts",
+    "ecommerce",
+    "typescript",
+    "react",
+    "vite",
+    "supabase",
+    "gamification",
+    "ai"
+  ]
 }
