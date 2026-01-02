@@ -5,6 +5,7 @@ export interface HealthCheckResult {
   auth: boolean;
   functions: boolean;
   errors: string[];
+  timestamp: string;
 }
 
 export async function healthCheck(): Promise<HealthCheckResult> {
@@ -12,7 +13,8 @@ export async function healthCheck(): Promise<HealthCheckResult> {
     database: false,
     auth: false,
     functions: false,
-    errors: []
+    errors: [],
+    timestamp: new Date().toISOString(),
   };
 
   try {
@@ -22,7 +24,6 @@ export async function healthCheck(): Promise<HealthCheckResult> {
       result.errors.push(`Database: ${error.message}`);
     } else {
       result.database = true;
-      console.log('✅ Database connected');
     }
   } catch (err) {
     result.errors.push(`Database: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -32,7 +33,6 @@ export async function healthCheck(): Promise<HealthCheckResult> {
     // Test 2: Auth
     const { data: { session } } = await supabase.auth.getSession();
     result.auth = true;
-    console.log('✅ Auth working:', !!session);
   } catch (err) {
     result.errors.push(`Auth: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
@@ -46,7 +46,6 @@ export async function healthCheck(): Promise<HealthCheckResult> {
       result.errors.push(`Functions: ${error.message}`);
     } else {
       result.functions = true;
-      console.log('✅ Edge Functions working');
     }
   } catch (err) {
     result.errors.push(`Functions: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -64,10 +63,8 @@ export async function validateEnvironment(): Promise<boolean> {
   const missing = requiredVars.filter(v => !import.meta.env[v]);
   
   if (missing.length > 0) {
-    console.error('❌ Missing environment variables:', missing);
-    return false;
+    throw new Error(`Missing environment variables: ${missing.join(', ')}`);
   }
 
-  console.log('✅ Environment variables configured');
   return true;
 }
