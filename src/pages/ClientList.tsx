@@ -1,17 +1,26 @@
 import { useNavigate } from "react-router-dom";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { useState, useEffect, useMemo } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
+import { 
+  Search, 
+  Building2, 
+  DollarSign, 
+  Calendar,
+  ChevronRight,
+  RefreshCw,
+  Filter,
+  X,
+  BarChart3,
+  Users,
+} from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
 import { Button } from "@/components/ui/button";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
 import { Badge } from "@/components/ui/badge";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
 import { Input } from "@/components/ui/input";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
 import { 
   Pagination,
   PaginationContent,
@@ -27,30 +36,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Search, 
-  Building2, 
-  DollarSign, 
-  Calendar,
-  ChevronRight,
-  RefreshCw,
-  Filter,
-  X,
-  BarChart3,
-  Users,
-} from "lucide-react";
-import { format } from "date-fns";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
-import { ptBR } from "date-fns/locale";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
-import { useState, useEffect, useMemo } from "react";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
-import { supabase } from "@/integrations/supabase/client";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
-import { toast } from "sonner";
 import { ExportExcelButton } from "@/components/export/ExportExcelButton";
 import { ClientRFMSegmentation } from "@/components/clients/ClientRFMSegmentation";
-import { ExportExcelButton } from "@/components/export/ExportExcelButton";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BitrixClient {
   id: string;
