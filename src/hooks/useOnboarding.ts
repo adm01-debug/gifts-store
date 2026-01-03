@@ -159,7 +159,9 @@ export function useOnboarding() {
           .maybeSingle();
 
         if (error && error.code !== "PGRST116") {
-          console.error("Error fetching onboarding:", error);
+          if (import.meta.env.DEV) {
+            console.error("Error fetching onboarding:", error);
+          }
           return;
         }
 
@@ -184,14 +186,18 @@ export function useOnboarding() {
             .single();
 
           if (insertError) {
-            console.error("Error creating onboarding:", insertError);
+            if (import.meta.env.DEV) {
+              console.error("Error creating onboarding:", insertError);
+            }
           } else if (newData) {
             setOnboardingId(newData.id);
             setShowTour(true);
           }
         }
       } catch (err) {
-        console.error("Error in onboarding:", err);
+        if (import.meta.env.DEV) {
+          console.error("Error in onboarding:", err);
+        }
       } finally {
         setIsLoading(false);
       }

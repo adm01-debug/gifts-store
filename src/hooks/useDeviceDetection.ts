@@ -100,7 +100,9 @@ export function useDeviceDetection() {
       });
 
       if (error) {
-        console.error('Error checking device:', error);
+        if (import.meta.env.DEV) {
+          console.error('Error checking device:', error);
+        }
         return { isNewDevice: false, isNewIP: false, error: error.message };
       }
 
@@ -109,7 +111,9 @@ export function useDeviceDetection() {
         isNewIP: data.isNewIP || false,
       };
     } catch (error) {
-      console.error('Device detection error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Device detection error:', error);
+      }
       return { isNewDevice: false, isNewIP: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
     }
   }, [user]);
@@ -124,7 +128,9 @@ export function useDeviceDetection() {
       .order('last_seen_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching known devices:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching known devices:', error);
+      }
       return [];
     }
 
@@ -141,7 +147,9 @@ export function useDeviceDetection() {
       .eq('user_id', user.id);
 
     if (error) {
-      console.error('Error removing device:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error removing device:', error);
+      }
       return false;
     }
 
@@ -158,7 +166,9 @@ export function useDeviceDetection() {
       .eq('user_id', user.id);
 
     if (error) {
-      console.error('Error trusting device:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error trusting device:', error);
+      }
       return false;
     }
 

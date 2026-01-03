@@ -28,7 +28,9 @@ export function usePushNotifications() {
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (!state.isSupported) {
-      console.warn('Push notifications not supported');
+      if (import.meta.env.DEV) {
+        console.warn('Push notifications not supported');
+      }
       return false;
     }
 
@@ -52,14 +54,18 @@ export function usePushNotifications() {
         return false;
       }
     } catch (error) {
-      console.error('Error requesting notification permission:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error requesting notification permission:', error);
+      }
       return false;
     }
   }, [state.isSupported]);
 
   const showNotification = useCallback((title: string, options?: NotificationOptions) => {
     if (!state.isEnabled) {
-      console.warn('Notifications not enabled');
+      if (import.meta.env.DEV) {
+        console.warn('Notifications not enabled');
+      }
       return null;
     }
 
@@ -78,7 +84,9 @@ export function usePushNotifications() {
 
       return notification;
     } catch (error) {
-      console.error('Error showing notification:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error showing notification:', error);
+      }
       return null;
     }
   }, [state.isEnabled]);

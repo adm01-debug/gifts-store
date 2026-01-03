@@ -32,7 +32,9 @@ export function useProductAnalytics() {
           view_type: viewType,
         });
       } catch (error) {
-        console.error("Error tracking product view:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error tracking product view:", error);
+        }
       }
     },
     [user?.id]
@@ -51,7 +53,9 @@ export function useProductAnalytics() {
           filters_used: filtersUsed,
         });
       } catch (error) {
-        console.error("Error tracking search:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error tracking search:", error);
+        }
       }
     },
     [user?.id]

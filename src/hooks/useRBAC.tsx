@@ -94,7 +94,9 @@ export function useRBAC() {
           });
         }
       } catch (error) {
-        console.error('Error fetching user role:', error);
+        if (import.meta.env.DEV) {
+          console.error('Error fetching user role:', error);
+        }
         setRole({ id: '', name: 'seller', description: 'Vendedor' });
       } finally {
         setIsLoading(false);

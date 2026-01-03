@@ -21,7 +21,9 @@ export function useSessionManager() {
     try {
       const { data, error } = await supabase.auth.refreshSession();
       if (error) {
-        console.error('Session refresh failed:', error);
+        if (import.meta.env.DEV) {
+          console.error('Session refresh failed:', error);
+        }
         toast({
           title: 'Sessão expirada',
           description: 'Faça login novamente para continuar.',
@@ -32,7 +34,9 @@ export function useSessionManager() {
         console.log('Session refreshed successfully');
       }
     } catch (error) {
-      console.error('Session refresh error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Session refresh error:', error);
+      }
     }
   }, [signOut, toast]);
 

@@ -143,7 +143,9 @@ export function useBitrixSync() {
       if (fnError) throw new Error(fnError.message);
       return data.logs || [];
     } catch (err) {
-      console.error("Error fetching sync logs:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching sync logs:", err);
+      }
       return [];
     }
   };
@@ -161,7 +163,9 @@ export function useBitrixSync() {
 
       return data || [];
     } catch (err) {
-      console.error("Search error:", err);
+      if (import.meta.env.DEV) {
+        console.error("Search error:", err);
+      }
       return [];
     }
   };

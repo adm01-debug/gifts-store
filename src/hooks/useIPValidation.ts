@@ -18,7 +18,9 @@ export function useIPValidation() {
       const data = await response.json();
       return data.ip;
     } catch (error) {
-      console.error('Error fetching current IP:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching current IP:', error);
+      }
       return null;
     }
   }, []);
@@ -139,7 +141,9 @@ export function useIPValidation() {
         user_agent: navigator.userAgent
       });
     } catch (error) {
-      console.error('Error logging login attempt:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error logging login attempt:', error);
+      }
     }
   }, [fetchCurrentIP]);
 

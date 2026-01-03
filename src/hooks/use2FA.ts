@@ -34,7 +34,9 @@ export function use2FA() {
       if (error) throw error;
       setSettings(data);
     } catch (error) {
-      console.error('Error fetching 2FA settings:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching 2FA settings:', error);
+      }
     } finally {
       setIsLoading(false);
     }

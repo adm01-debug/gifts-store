@@ -34,7 +34,9 @@ export function useFavorites(options?: UseFavoritesOptions) {
         setFavorites(JSON.parse(stored));
       }
     } catch (e) {
-      console.error("Error loading favorites:", e);
+      if (import.meta.env.DEV) {
+        console.error("Error loading favorites:", e);
+      }
     }
     setIsLoaded(true);
   }, []);

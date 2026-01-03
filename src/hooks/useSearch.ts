@@ -26,7 +26,9 @@ export function useSearch() {
         setHistory(JSON.parse(stored));
       }
     } catch (e) {
-      console.error("Error loading search history:", e);
+      if (import.meta.env.DEV) {
+        console.error("Error loading search history:", e);
+      }
     }
     setIsLoaded(true);
   }, []);

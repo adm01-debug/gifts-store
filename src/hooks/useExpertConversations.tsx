@@ -45,7 +45,9 @@ export function useExpertConversations(clientId?: string) {
       if (error) throw error;
       setConversations(data || []);
     } catch (error) {
-      console.error("Error fetching conversations:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching conversations:", error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +76,9 @@ export function useExpertConversations(clientId?: string) {
       setConversations(prev => [data, ...prev]);
       return data.id;
     } catch (error) {
-      console.error("Error creating conversation:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error creating conversation:", error);
+      }
       toast.error("Erro ao criar conversa");
       return null;
     }
@@ -93,7 +97,9 @@ export function useExpertConversations(clientId?: string) {
         prev.map(c => c.id === conversationId ? { ...c, title, updated_at: new Date().toISOString() } : c)
       );
     } catch (error) {
-      console.error("Error updating conversation:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error updating conversation:", error);
+      }
     }
   };
 
@@ -109,7 +115,9 @@ export function useExpertConversations(clientId?: string) {
       setConversations(prev => prev.filter(c => c.id !== conversationId));
       toast.success("Conversa excluída");
     } catch (error) {
-      console.error("Error deleting conversation:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error deleting conversation:", error);
+      }
       toast.error("Erro ao excluir conversa");
     }
   };
@@ -125,7 +133,9 @@ export function useExpertConversations(clientId?: string) {
       if (error) throw error;
       return (data || []) as ExpertMessage[];
     } catch (error) {
-      console.error("Error fetching messages:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching messages:", error);
+      }
       return [];
     }
   };
@@ -149,7 +159,9 @@ export function useExpertConversations(clientId?: string) {
         .eq("id", conversationId);
 
     } catch (error) {
-      console.error("Error saving message:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error saving message:", error);
+      }
     }
   };
 

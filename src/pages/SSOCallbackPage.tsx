@@ -14,7 +14,9 @@ export default function SSOCallbackPage() {
       const errorDescription = searchParams.get('error_description');
 
       if (error) {
-        console.error('SSO Error:', error, errorDescription);
+        if (import.meta.env.DEV) {
+          console.error('SSO Error:', error, errorDescription);
+        }
         navigate('/login?error=' + encodeURIComponent(errorDescription || error));
         return;
       }
@@ -25,7 +27,9 @@ export default function SSOCallbackPage() {
           if (exchangeError) throw exchangeError;
           navigate('/');
         } catch (err) {
-          console.error('Session exchange error:', err);
+          if (import.meta.env.DEV) {
+            console.error('Session exchange error:', err);
+          }
           navigate('/login?error=' + encodeURIComponent(err instanceof Error ? err.message : 'Erro desconhecido'));
         }
       } else {

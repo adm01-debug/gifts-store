@@ -39,7 +39,9 @@ export function useCollections() {
         setCollections(JSON.parse(stored));
       }
     } catch (e) {
-      console.error("Error loading collections:", e);
+      if (import.meta.env.DEV) {
+        console.error("Error loading collections:", e);
+      }
     }
     setIsLoaded(true);
   }, []);

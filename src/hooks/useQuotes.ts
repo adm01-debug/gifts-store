@@ -310,7 +310,9 @@ export function useQuotes() {
         metadata: options?.metadata || {},
       });
     } catch (err) {
-      console.error("Error logging history:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error logging history:", err);
+      }
     }
   };
 
@@ -630,7 +632,9 @@ export function useQuotes() {
       if (error) throw error;
       setTechniques(data || []);
     } catch (err) {
-      console.error("Error fetching techniques:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching techniques:", err);
+      }
     }
   };
 

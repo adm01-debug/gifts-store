@@ -26,7 +26,9 @@ export function useAllowedIPs(targetUserId?: string) {
       const data = await response.json();
       setCurrentIP(data.ip);
     } catch (error) {
-      console.error('Error fetching current IP:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching current IP:', error);
+      }
     }
   }, []);
 
@@ -47,7 +49,9 @@ export function useAllowedIPs(targetUserId?: string) {
       if (error) throw error;
       setAllowedIPs(data || []);
     } catch (error) {
-      console.error('Error fetching allowed IPs:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching allowed IPs:', error);
+      }
     } finally {
       setIsLoading(false);
     }

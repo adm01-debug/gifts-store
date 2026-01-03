@@ -147,7 +147,9 @@ export function useSpeechRecognition({
         recognition.start();
       } catch (e) {
         // Recognition might already be started
-        console.error("Speech recognition error:", e);
+        if (import.meta.env.DEV) {
+          console.error("Speech recognition error:", e);
+        }
       }
     }
   }, [recognition, isListening]);

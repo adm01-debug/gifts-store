@@ -87,7 +87,9 @@ export function useWebAuthn() {
       setPasskeys((data as Passkey[]) || []);
       return data as Passkey[];
     } catch (error) {
-      console.error("Error fetching passkeys:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching passkeys:", error);
+      }
       return [];
     }
   }, []);
@@ -178,7 +180,9 @@ export function useWebAuthn() {
 
         return true;
       } catch (error) {
-        console.error("Error registering passkey:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error registering passkey:", error);
+        }
         const errorName = error instanceof Error ? error.name : '';
         const errorMessage = error instanceof Error ? error.message : 'Não foi possível registrar a passkey';
 
@@ -266,7 +270,9 @@ export function useWebAuthn() {
 
         return { success: true, userId: passkey.user_id };
       } catch (error) {
-        console.error("Error authenticating with passkey:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error authenticating with passkey:", error);
+        }
         const errorName = error instanceof Error ? error.name : '';
         const errorMessage = error instanceof Error ? error.message : 'Não foi possível autenticar com passkey';
 
@@ -311,7 +317,9 @@ export function useWebAuthn() {
 
         return true;
       } catch (error) {
-        console.error("Error deleting passkey:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error deleting passkey:", error);
+        }
         toast({
           variant: "destructive",
           title: "Erro",

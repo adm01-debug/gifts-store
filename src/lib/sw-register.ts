@@ -35,10 +35,14 @@ export async function registerServiceWorker(): Promise<void> {
       }
 
     } catch (error) {
-      console.error('❌ Falha ao registrar Service Worker:', error);
+      if (import.meta.env.DEV) {
+        console.error('❌ Falha ao registrar Service Worker:', error);
+      }
     }
   } else {
-    console.warn('⚠️ Service Workers não suportados neste navegador');
+    if (import.meta.env.DEV) {
+      console.warn('⚠️ Service Workers não suportados neste navegador');
+    }
   }
 }
 
@@ -70,7 +74,9 @@ export function isPWA(): boolean {
  */
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (!('Notification' in window)) {
-    console.warn('⚠️ Notificações não suportadas');
+    if (import.meta.env.DEV) {
+      console.warn('⚠️ Notificações não suportadas');
+    }
     return 'denied';
   }
 

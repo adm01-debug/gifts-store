@@ -72,7 +72,9 @@ export const useVoiceCommandHistory = (): UseVoiceCommandHistoryReturn => {
         }));
       }
     } catch (error) {
-      console.error('Error loading voice command history:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error loading voice command history:', error);
+      }
     }
     return [];
   });
@@ -82,7 +84,9 @@ export const useVoiceCommandHistory = (): UseVoiceCommandHistoryReturn => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
     } catch (error) {
-      console.error('Error saving voice command history:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error saving voice command history:', error);
+      }
     }
   }, [history]);
 

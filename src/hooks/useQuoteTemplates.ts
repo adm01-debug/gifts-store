@@ -96,7 +96,9 @@ export function useQuoteTemplates() {
 
       setTemplates(transformedData);
     } catch (err) {
-      console.error("Error fetching quote templates:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching quote templates:", err);
+      }
       setError("Erro ao carregar templates");
     } finally {
       setLoading(false);
@@ -131,7 +133,9 @@ export function useQuoteTemplates() {
 
       setAllTemplates(transformedData);
     } catch (err) {
-      console.error("Error fetching all templates:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching all templates:", err);
+      }
     }
   }, [user, isAdmin]);
 
@@ -159,7 +163,9 @@ export function useQuoteTemplates() {
 
       setSellers(sellersWithInfo);
     } catch (err) {
-      console.error("Error fetching sellers:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching sellers:", err);
+      }
     }
   }, [user, isAdmin]);
 
@@ -212,7 +218,9 @@ export function useQuoteTemplates() {
       await fetchTemplates();
       return data;
     } catch (err) {
-      console.error("Error creating template:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error creating template:", err);
+      }
       toast({
         title: "Erro",
         description: "Não foi possível criar o template",
@@ -265,7 +273,9 @@ export function useQuoteTemplates() {
       await fetchTemplates();
       return data;
     } catch (err) {
-      console.error("Error updating template:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error updating template:", err);
+      }
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o template",
@@ -294,7 +304,9 @@ export function useQuoteTemplates() {
       await fetchTemplates();
       return true;
     } catch (err) {
-      console.error("Error deleting template:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error deleting template:", err);
+      }
       toast({
         title: "Erro",
         description: "Não foi possível excluir o template",
@@ -381,7 +393,9 @@ export function useQuoteTemplates() {
       await fetchAllTemplates();
       return data;
     } catch (err) {
-      console.error("Error cloning template:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error cloning template:", err);
+      }
       toast({
         title: "Erro",
         description: "Não foi possível clonar o template",

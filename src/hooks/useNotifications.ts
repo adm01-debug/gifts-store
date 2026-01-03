@@ -43,7 +43,9 @@ export function useNotifications() {
       setNotifications(typedData);
       setUnreadCount(typedData.filter(n => !n.is_read).length);
     } catch (err) {
-      console.error("Error fetching notifications:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching notifications:", err);
+      }
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,9 @@ export function useNotifications() {
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) {
-      console.error("Error marking notification as read:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error marking notification as read:", err);
+      }
     }
   }, [user]);
 
@@ -85,7 +89,9 @@ export function useNotifications() {
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       setUnreadCount(0);
     } catch (err) {
-      console.error("Error marking all as read:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error marking all as read:", err);
+      }
     }
   }, [user]);
 
@@ -108,7 +114,9 @@ export function useNotifications() {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (err) {
-      console.error("Error deleting notification:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error deleting notification:", err);
+      }
     }
   }, [user, notifications]);
 
@@ -126,7 +134,9 @@ export function useNotifications() {
       setNotifications([]);
       setUnreadCount(0);
     } catch (err) {
-      console.error("Error clearing notifications:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error clearing notifications:", err);
+      }
     }
   }, [user]);
 
@@ -152,7 +162,9 @@ export function useNotifications() {
 
       if (error) throw error;
     } catch (err) {
-      console.error("Error creating notification:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error creating notification:", err);
+      }
     }
   }, [user]);
 

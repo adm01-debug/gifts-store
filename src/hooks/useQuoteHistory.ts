@@ -34,7 +34,9 @@ export function useQuoteHistory() {
       setHistory(data || []);
       return data || [];
     } catch (err) {
-      console.error("Error fetching history:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching history:", err);
+      }
       return [];
     } finally {
       setIsLoading(false);
@@ -69,7 +71,9 @@ export function useQuoteHistory() {
       if (error) throw error;
       return true;
     } catch (err) {
-      console.error("Error adding history entry:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error adding history entry:", err);
+      }
       return false;
     }
   };

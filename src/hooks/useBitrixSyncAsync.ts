@@ -53,7 +53,9 @@ export function useBitrixSyncAsync() {
       subscribeToProgress(job.id);
 
     } catch (error) {
-      console.error(error);
+      if (import.meta.env.DEV) {
+        console.error(error);
+      }
       toast({
         title: 'Erro',
         description: 'Falha ao iniciar sincronização',

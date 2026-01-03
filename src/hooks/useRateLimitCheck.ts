@@ -18,14 +18,18 @@ export function useRateLimitCheck() {
       });
 
       if (error) {
-        console.error('Rate limit check failed:', error);
+        if (import.meta.env.DEV) {
+          console.error('Rate limit check failed:', error);
+        }
         // Allow on error to prevent blocking legitimate users
         return { allowed: true };
       }
 
       return data as RateLimitResult;
     } catch (error) {
-      console.error('Rate limit check error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Rate limit check error:', error);
+      }
       return { allowed: true };
     }
   }, []);

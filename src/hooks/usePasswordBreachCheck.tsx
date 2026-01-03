@@ -71,7 +71,9 @@ export function usePasswordBreachCheck() {
       });
       return false;
     } catch (error) {
-      console.error('Erro ao verificar senha vazada:', error);
+      if (import.meta.env.DEV) {
+        console.error('Erro ao verificar senha vazada:', error);
+      }
       setResult({
         isBreached: false,
         count: null,

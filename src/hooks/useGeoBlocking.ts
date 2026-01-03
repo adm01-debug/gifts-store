@@ -31,7 +31,9 @@ export function useGeoBlocking() {
         name: data.country_name,
       });
     } catch (error) {
-      console.error('Error fetching current country:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching current country:', error);
+      }
     }
   }, []);
 
@@ -57,7 +59,9 @@ export function useGeoBlocking() {
         setSettings(value);
       }
     } catch (error) {
-      console.error('Error fetching geo blocking data:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching geo blocking data:', error);
+      }
     } finally {
       setIsLoading(false);
     }

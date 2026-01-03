@@ -41,7 +41,9 @@ export function useVoiceFeedback(options: VoiceFeedbackOptions = {}) {
       oscillator.start(ctx.currentTime);
       oscillator.stop(ctx.currentTime + duration);
     } catch (error) {
-      console.error("Error playing audio feedback:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error playing audio feedback:", error);
+      }
     }
   }, [getAudioContext, volume]);
 

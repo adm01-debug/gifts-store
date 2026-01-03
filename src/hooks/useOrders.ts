@@ -228,7 +228,9 @@ export function useOrders() {
       toast.success("Pedido criado com sucesso!");
     },
     onError: (error) => {
-      console.error("Error creating order:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error creating order:", error);
+      }
       toast.error("Erro ao criar pedido");
     },
   });
@@ -286,7 +288,9 @@ export function useOrders() {
       toast.success("Status atualizado!");
     },
     onError: (error) => {
-      console.error("Error updating status:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error updating status:", error);
+      }
       toast.error("Erro ao atualizar status");
     },
   });
@@ -308,7 +312,9 @@ export function useOrders() {
       toast.success("Pedido atualizado!");
     },
     onError: (error) => {
-      console.error("Error updating order:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error updating order:", error);
+      }
       toast.error("Erro ao atualizar pedido");
     },
   });
@@ -355,7 +361,9 @@ export function useOrders() {
       toast.success("Rastreio atualizado!");
     },
     onError: (error) => {
-      console.error("Error updating tracking:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error updating tracking:", error);
+      }
       toast.error("Erro ao atualizar rastreio");
     },
   });

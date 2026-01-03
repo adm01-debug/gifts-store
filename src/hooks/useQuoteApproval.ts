@@ -42,7 +42,9 @@ export function useQuoteApproval() {
       toast.success("Link de aprovação gerado!");
       return approvalUrl;
     } catch (err) {
-      console.error("Error generating approval link:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error generating approval link:", err);
+      }
       toast.error("Erro ao gerar link de aprovação");
       return null;
     } finally {

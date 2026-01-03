@@ -123,7 +123,9 @@ export function exportToExcel(config: ExcelExportConfig): void {
     // 6. Fazer download
     XLSX.writeFile(workbook, fullFilename);
   } catch (error) {
-    console.error('Erro ao exportar Excel:', error);
+    if (import.meta.env.DEV) {
+      console.error('Erro ao exportar Excel:', error);
+    }
     throw new Error('Falha ao exportar arquivo Excel');
   }
 }
@@ -175,7 +177,9 @@ export function exportMultipleSheets(
 
     XLSX.writeFile(workbook, fullFilename);
   } catch (error) {
-    console.error('Erro ao exportar múltiplas planilhas:', error);
+    if (import.meta.env.DEV) {
+      console.error('Erro ao exportar múltiplas planilhas:', error);
+    }
     throw new Error('Falha ao exportar arquivo Excel');
   }
 }
