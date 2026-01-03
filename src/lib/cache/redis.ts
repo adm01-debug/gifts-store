@@ -1,21 +1,26 @@
 // Redis cache service - Browser-compatible version using Map
 // In production, connect to Redis via Edge Function
 
+interface CacheItem<T> {
+  value: T;
+  expires: number;
+}
+
 export class CacheService {
-  private cache = new Map<string, { value: any; expires: number }>();
+  private cache = new Map<string, CacheItem<unknown>>();
   private defaultTTL = 3600;
 
   async get<T>(key: string): Promise<T | null> {
-    const item = this.cache.get(key);
+    const item = this.cache.get(key) as CacheItem<T> | undefined;
     if (!item) return null;
     if (Date.now() > item.expires) {
       this.cache.delete(key);
       return null;
     }
-    return item.value as T;
+    return item.value;
   }
 
-  async set(key: string, value: any, ttl?: number): Promise<void> {
+  async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     const expires = Date.now() + ((ttl || this.defaultTTL) * 1000);
     this.cache.set(key, { value, expires });
   }
@@ -31,6 +36,16 @@ export class CacheService {
 
   async flush(): Promise<void> {
     this.cache.clear();
+  }
+
+  async has(key: string): Promise<boolean> {
+    const item = this.cache.get(key);
+    if (!item) return false;
+    if (Date.now() > item.expires) {
+      this.cache.delete(key);
+      return false;
+    }
+    return true;
   }
 }
 
