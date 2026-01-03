@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,8 +9,8 @@ import { AuthProvider, ProtectedRoute } from "@/contexts/AuthContext";
 import { ProductsProvider } from "@/contexts/ProductsContext";
 import { CollectionsProvider } from "@/contexts/CollectionsContext";
 import { GamificationProvider } from "@/contexts/GamificationContext";
+import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ComparisonProvider } from "@/contexts/ComparisonContext";
-import { supabase } from "@/integrations/supabase/client";
 import LoadingScreen from "@/components/LoadingScreen";
 import { Analytics } from "@vercel/analytics/react";
 import "./App.css";
@@ -93,7 +93,8 @@ const App = () => {
           <ProductsProvider>
             <CollectionsProvider>
               <GamificationProvider>
-                <ComparisonProvider>
+                <FavoritesProvider>
+                  <ComparisonProvider>
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>
@@ -172,7 +173,8 @@ const App = () => {
                     </Suspense>
                   </BrowserRouter>
                   <Analytics />
-                </ComparisonProvider>
+                  </ComparisonProvider>
+                </FavoritesProvider>
               </GamificationProvider>
             </CollectionsProvider>
           </ProductsProvider>
