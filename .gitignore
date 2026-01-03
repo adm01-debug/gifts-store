@@ -1,34 +1,39 @@
+# Dependencies
+node_modules
 
-!.vscode/extensions.json
-# Editor directories and files
-# Environment variables
-# Logs
-# Storybook
-# Tests
-**/*.stories.tsx
+# Build outputs
+dist
+dist-node
+dist-ssr
+
+# Environment files
+.env
+.env.local
+.env.*.local
 *.local
+
+# Logs
+logs
 *.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Coverage
+coverage/
+.nyc_output/
+
+# IDE/Editor
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.sw?
+.DS_Store
+
+# Visual Studio files
 *.njsproj
 *.ntvs*
 *.sln
 *.suo
-*.sw?
-.DS_Store
-.env
-.env.*.local
-.env.local
-.idea
-.nyc_output/
-.storybook/
-.vscode/*
-coverage/
-dist
-dist-ssr
-lerna-debug.log*
-logs
-node_modules
-npm-debug.log*
-pnpm-debug.log*
-storybook-static/
-yarn-debug.log*
-yarn-error.log*

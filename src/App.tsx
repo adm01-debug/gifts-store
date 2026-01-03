@@ -59,14 +59,14 @@ const MagicUp = lazy(() => import("./pages/MagicUp"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 
 // Bitrix Integration
-const BitrixSync = lazy(() => import("./pages/BitrixSync"));
+const BitrixSync = lazy(() => import("./pages/BitrixSyncPage"));
 
 // Analytics Pages
 const BIDashboard = lazy(() => import("./pages/BIDashboard"));
 const TrendsPage = lazy(() => import("./pages/TrendsPage"));
 
 // Gamification Pages
-const StoreRewardsPage = lazy(() => import("./pages/StoreRewardsPage"));
+const StoreRewardsPage = lazy(() => import("./pages/RewardsStorePage"));
 
 const queryClient = new QueryClient();
 

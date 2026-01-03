@@ -8,7 +8,7 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 
 export default [
   {
-    ignores: ['dist', 'build', 'node_modules', 'coverage', '*.config.js', '*.config.ts', '.eslintrc.cjs', '.eslintrc.json']
+    ignores: ['dist', 'build', 'node_modules', 'coverage', '*.config.js', '*.config.ts']
   },
   {
     files: ['src/**/*.{ts,tsx}'],

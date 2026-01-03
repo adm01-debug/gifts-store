@@ -164,3 +164,36 @@ export function useAuth() {
   }
   return context;
 }
+
+interface ProtectedRouteProps {
+  children: ReactNode;
+  requiredRole?: AppRole;
+}
+
+export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+  const { user, role, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    // Redirect to login - using window.location for simplicity
+    window.location.href = "/login";
+    return null;
+  }
+
+  if (requiredRole && role !== requiredRole && role !== "admin") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-destructive">Acesso negado</p>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
