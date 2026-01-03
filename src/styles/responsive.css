@@ -1,5 +1,0 @@
-@media (max-width: 768px) {
-  .table-scroll { overflow-x: auto; }
-  .modal-mobile { max-height: 90vh; }
-  .form-mobile input { width: 100%; }
-}
