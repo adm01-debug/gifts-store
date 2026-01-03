@@ -13,7 +13,7 @@ export interface SendNotificationParams {
   priority?: 0 | 1 | 2 | 3;
   actionUrl?: string;
   actionLabel?: string;
-  actionData?: any;
+  actionData?: Record<string, unknown>;
   scheduledFor?: string;
 }
 

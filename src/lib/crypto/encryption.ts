@@ -77,7 +77,7 @@ export class EncryptionService {
   /**
    * Criptografa dados sensíveis do localStorage
    */
-  static encryptLocalStorage(key: string, data: any): void {
+  static encryptLocalStorage<T>(key: string, data: T): void {
     try {
       const encrypted = this.encryptObject(data);
       localStorage.setItem(key, encrypted);

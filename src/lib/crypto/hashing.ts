@@ -112,7 +112,7 @@ export class HashingService {
   /**
    * Gera hash de objeto (para comparação)
    */
-  static hashObject(obj: any): string {
+  static hashObject(obj: Record<string, unknown>): string {
     const json = JSON.stringify(obj, Object.keys(obj).sort());
     return this.sha256(json);
   }

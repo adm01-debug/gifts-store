@@ -69,23 +69,23 @@ export class XSSProtection {
   /**
    * Sanitiza input para uso em JSON
    */
-  static sanitizeJSON(value: any): any {
+  static sanitizeJSON(value: unknown): unknown {
     if (typeof value === 'string') {
       return this.escapeHTML(value);
     }
-    
+
     if (Array.isArray(value)) {
       return value.map(item => this.sanitizeJSON(item));
     }
-    
+
     if (typeof value === 'object' && value !== null) {
-      const sanitized: Record<string, any> = {};
-      Object.keys(value).forEach(key => {
-        sanitized[key] = this.sanitizeJSON(value[key]);
+      const sanitized: Record<string, unknown> = {};
+      Object.keys(value as Record<string, unknown>).forEach(key => {
+        sanitized[key] = this.sanitizeJSON((value as Record<string, unknown>)[key]);
       });
       return sanitized;
     }
-    
+
     return value;
   }
 
