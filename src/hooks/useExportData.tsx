@@ -70,8 +70,7 @@ export function useExportData<T extends Record<string, unknown>>(
           })
           .join(',')
       ),
-    ].join('
-');
+    ].join('\n');
 
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

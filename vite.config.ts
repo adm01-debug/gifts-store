@@ -10,10 +10,7 @@ import path from 'path'
  */
 export default defineConfig({
   plugins: [
-    react({
-      // Enable Fast Refresh
-      fastRefresh: true,
-    }),
+    react(),
   ],
   
   resolve: {
@@ -42,7 +39,7 @@ export default defineConfig({
   },
   
   server: {
-    port: 5173,
+    port: 8080,
     host: true,
     open: false,
   },
