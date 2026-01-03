@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
+import { Navigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 type AppRole = "admin" | "vendedor";
@@ -172,6 +173,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const { user, role, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -182,9 +184,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   if (!user) {
-    // Redirect to login - using window.location for simplicity
-    window.location.href = "/login";
-    return null;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (requiredRole && role !== requiredRole && role !== "admin") {

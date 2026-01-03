@@ -1,27 +1,10 @@
-import { createContext, useContext, ReactNode } from "react";
-
-interface GamificationContextType {
-  // Placeholder - extend as needed
-}
-
-const GamificationContext = createContext<GamificationContextType | null>(null);
+import { ReactNode } from "react";
 
 interface GamificationProviderProps {
   children: ReactNode;
 }
 
+// Este provider é um passthrough - a lógica real está no hook useGamification
 export function GamificationProvider({ children }: GamificationProviderProps) {
-  return (
-    <GamificationContext.Provider value={{}}>
-      {children}
-    </GamificationContext.Provider>
-  );
-}
-
-export function useGamification() {
-  const context = useContext(GamificationContext);
-  if (!context) {
-    throw new Error("useGamification must be used within a GamificationProvider");
-  }
-  return context;
+  return <>{children}</>;
 }
