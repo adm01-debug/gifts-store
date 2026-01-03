@@ -196,7 +196,9 @@ export default function MockupGenerator() {
       setTechniques(techniquesRes.data || []);
       setClients(clientsRes.data || []);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching data:", error);
+      }
       toast.error("Erro ao carregar dados");
     } finally {
       setIsLoadingData(false);
@@ -230,7 +232,9 @@ export default function MockupGenerator() {
       if (error) throw error;
       setMockupHistory(data || []);
     } catch (error) {
-      console.error("Error fetching history:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching history:", error);
+      }
     } finally {
       setIsLoadingHistory(false);
     }
@@ -286,7 +290,9 @@ export default function MockupGenerator() {
       if (error) throw error;
       fetchHistory();
     } catch (error) {
-      console.error("Error saving mockup to history:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error saving mockup to history:", error);
+      }
     }
   };
 
@@ -348,7 +354,9 @@ export default function MockupGenerator() {
         throw new Error("Nenhuma imagem retornada");
       }
     } catch (error) {
-      console.error("Error generating mockup:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error generating mockup:", error);
+      }
       toast.error("Erro ao gerar mockup. Tente novamente.");
     } finally {
       setIsLoading(false);
@@ -381,7 +389,9 @@ export default function MockupGenerator() {
       setMockupHistory(prev => prev.filter(m => m.id !== mockupToDelete));
       toast.success("Mockup excluído");
     } catch (error) {
-      console.error("Error deleting mockup:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error deleting mockup:", error);
+      }
       toast.error("Erro ao excluir mockup");
     } finally {
       setDeleteDialogOpen(false);

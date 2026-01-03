@@ -146,7 +146,9 @@ export function SecurityDashboard() {
         securityAlerts: unreadAlerts,
       });
     } catch (error) {
-      console.error('Error loading security data:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error loading security data:', error);
+      }
     } finally {
       setIsLoading(false);
     }

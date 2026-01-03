@@ -272,7 +272,9 @@ export function ProductPersonalizationRules({ productId, productSku, productName
       });
       toast.success("Excel exportado com sucesso!");
     } catch (error) {
-      console.error("Export error:", error);
+      if (import.meta.env.DEV) {
+        console.error("Export error:", error);
+      }
       toast.error("Erro ao exportar Excel");
     }
   };
@@ -286,7 +288,9 @@ export function ProductPersonalizationRules({ productId, productSku, productName
       });
       toast.success("PDF exportado com sucesso!");
     } catch (error) {
-      console.error("Export error:", error);
+      if (import.meta.env.DEV) {
+        console.error("Export error:", error);
+      }
       toast.error("Erro ao exportar PDF");
     }
   };

@@ -21,7 +21,9 @@ class EnhancedErrorBoundary extends Component<Props, State> {
   }
 
   override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error('Error caught:', error, errorInfo);
+    if (import.meta.env.DEV) {
+      console.error('Error caught:', error, errorInfo);
+    }
     this.props.onError?.(error, errorInfo);
   }
 

@@ -84,7 +84,9 @@ export function DropboxMediaBrowser({
         await fetchFiles("");
       }
     } catch (err) {
-      console.error("Error checking Dropbox connection:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error checking Dropbox connection:", err);
+      }
       setIsConnected(false);
       setError("Dropbox não está configurado. Adicione o DROPBOX_ACCESS_TOKEN nas configurações.");
     } finally {
@@ -135,7 +137,9 @@ export function DropboxMediaBrowser({
       setFiles(filtered);
       setCurrentPath(path);
     } catch (err) {
-      console.error("Error fetching Dropbox files:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching Dropbox files:", err);
+      }
       setError(err instanceof Error ? err.message : "Erro ao buscar arquivos do Dropbox");
     } finally {
       setIsLoading(false);

@@ -98,7 +98,9 @@ export default function QuoteViewPage() {
       downloadPDF(blob, `orcamento-${quote.quote_number}.pdf`);
       toast.success("PDF gerado com sucesso!");
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error generating PDF:", error);
+      }
       toast.error("Erro ao gerar PDF");
     } finally {
       setIsGeneratingPDF(false);

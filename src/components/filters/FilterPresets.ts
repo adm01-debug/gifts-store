@@ -171,7 +171,9 @@ export function useFilterPresets() {
         return JSON.parse(stored);
       }
     } catch (e) {
-      console.error('Error reading presets from localStorage:', e);
+      if (import.meta.env.DEV) {
+        console.error('Error reading presets from localStorage:', e);
+      }
     }
     return [];
   };

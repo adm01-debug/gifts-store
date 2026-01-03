@@ -111,7 +111,9 @@ export default function PublicQuoteApproval() {
         setSubmittedAction(data.quote.client_response === "Aprovado" ? "approve" : "reject");
       }
     } catch (err) {
-      console.error("Error fetching quote:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching quote:", err);
+      }
       setError(err instanceof Error ? err.message : "Erro ao carregar orçamento");
     } finally {
       setIsLoading(false);
@@ -132,7 +134,9 @@ export default function PublicQuoteApproval() {
       setSubmittedAction(action);
       toast.success(data.message);
     } catch (err) {
-      console.error("Error submitting response:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error submitting response:", err);
+      }
       toast.error(err instanceof Error ? err.message : "Erro ao enviar resposta");
     } finally {
       setIsSubmitting(false);

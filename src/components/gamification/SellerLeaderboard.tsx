@@ -68,7 +68,7 @@ export function SellerLeaderboard({
         .select("user_id, full_name, avatar_url")
         .in("user_id", userIds);
 
-      if (profileError) console.error("Error fetching profiles:", profileError);
+      if (profileError && import.meta.env.DEV) console.error("Error fetching profiles:", profileError);
 
       // Merge data
       const merged: LeaderboardEntry[] = (gamificationData || []).map(g => ({

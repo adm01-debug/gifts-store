@@ -189,7 +189,9 @@ export function LogoPositionEditor({
         setIsReady(true);
       })
       .catch((err) => {
-        console.error("Error loading product image:", err);
+        if (import.meta.env.DEV) {
+          console.error("Error loading product image:", err);
+        }
       });
   }, [productImageUrl, canvasSize]);
 
@@ -275,7 +277,9 @@ export function LogoPositionEditor({
         canvas.renderAll();
       })
       .catch((err) => {
-        console.error("Error loading logo:", err);
+        if (import.meta.env.DEV) {
+          console.error("Error loading logo:", err);
+        }
       });
   }, [logoPreview, isReady, canvasSize, applyTechniqueFilter, getLogoDisplaySize, onPositionChange, onSizeChange, positionX, positionY]);
 

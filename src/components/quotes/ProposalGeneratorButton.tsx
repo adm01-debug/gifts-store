@@ -122,7 +122,9 @@ export function ProposalGeneratorButton({
 
       setIsOpen(false);
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error generating PDF:", error);
+      }
       toast({
         title: "Erro ao gerar PDF",
         description: "Ocorreu um erro ao gerar o PDF. Tente novamente.",

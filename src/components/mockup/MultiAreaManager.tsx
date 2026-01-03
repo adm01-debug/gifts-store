@@ -156,7 +156,9 @@ export function MultiAreaManager({
       try {
         setCustomTemplates(JSON.parse(saved));
       } catch (e) {
-        console.error("Failed to parse custom templates:", e);
+        if (import.meta.env.DEV) {
+          console.error("Failed to parse custom templates:", e);
+        }
       }
     }
   }, []);

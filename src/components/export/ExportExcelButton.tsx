@@ -65,7 +65,9 @@ export function ExportExcelButton({
         description: `Arquivo ${config.filename}.xlsx baixado com sucesso.`
       });
     } catch (error) {
-      console.error('Erro ao exportar:', error);
+      if (import.meta.env.DEV) {
+        console.error('Erro ao exportar:', error);
+      }
       toast({
         title: "❌ Erro na exportação",
         description: "Não foi possível exportar o arquivo. Tente novamente.",

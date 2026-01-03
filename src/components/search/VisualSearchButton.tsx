@@ -94,7 +94,9 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
       setIsOpen(false);
       
     } catch (error) {
-      console.error("Visual search error:", error);
+      if (import.meta.env.DEV) {
+        console.error("Visual search error:", error);
+      }
       toast({
         title: "Erro na busca",
         description: error instanceof Error ? error.message : "Não foi possível processar a imagem.",

@@ -78,7 +78,9 @@ export default function AdminPanel() {
 
       setUsers(usersWithRoles);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching users:", error);
+      }
       toast.error("Erro ao carregar usuários");
     } finally {
       setIsLoading(false);
@@ -109,7 +111,9 @@ export default function AdminPanel() {
           : "Usuário rebaixado para vendedor"
       );
     } catch (error) {
-      console.error("Error updating role:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error updating role:", error);
+      }
       toast.error("Erro ao atualizar permissão");
     } finally {
       setUpdatingUserId(null);

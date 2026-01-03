@@ -87,7 +87,9 @@ export default function ProfilePage() {
       await refreshProfile();
       toast.success("Avatar atualizado com sucesso");
     } catch (error) {
-      console.error("Error uploading avatar:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error uploading avatar:", error);
+      }
       toast.error("Erro ao fazer upload do avatar");
     } finally {
       setIsUploading(false);
@@ -113,7 +115,9 @@ export default function ProfilePage() {
       await refreshProfile();
       toast.success("Perfil atualizado com sucesso");
     } catch (error) {
-      console.error("Error updating profile:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error updating profile:", error);
+      }
       toast.error("Erro ao atualizar perfil");
     } finally {
       setIsSaving(false);

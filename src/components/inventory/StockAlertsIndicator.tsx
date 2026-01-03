@@ -99,7 +99,9 @@ export function StockAlertsIndicator({
 
       setAlerts(newAlerts);
     } catch (error) {
-      console.error("Error fetching stock alerts:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching stock alerts:", error);
+      }
     } finally {
       setIsLoading(false);
     }

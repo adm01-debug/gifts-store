@@ -56,7 +56,9 @@ export function QuoteClientSelector({ selectedClient, onClientSelect }: QuoteCli
       if (error) throw error;
       setClients(data || []);
     } catch (err) {
-      console.error("Error fetching clients:", err);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching clients:", err);
+      }
     } finally {
       setIsLoading(false);
     }

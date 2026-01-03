@@ -38,7 +38,9 @@ export function CaptchaWidget({
   };
 
   const handleError = (err: string) => {
-    console.error('hCaptcha error:', err);
+    if (import.meta.env.DEV) {
+      console.error('hCaptcha error:', err);
+    }
     onExpire();
   };
 

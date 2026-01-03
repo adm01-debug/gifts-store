@@ -101,7 +101,9 @@ export default function OrderDetailPage() {
         setShippingMethod(orderData.shipping_method || "");
       }
     } catch (error) {
-      console.error("Error loading order:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error loading order:", error);
+      }
     } finally {
       setIsLoading(false);
     }

@@ -314,7 +314,9 @@ export function ExpertChatDialog({ isOpen, onClose, clientId, clientName }: Expe
       }
 
     } catch (error) {
-      console.error("Expert chat error:", error);
+      if (import.meta.env.DEV) {
+        console.error("Expert chat error:", error);
+      }
       const errorMessage = error instanceof Error 
         ? `Desculpe, ocorreu um erro: ${error.message}` 
         : "Desculpe, ocorreu um erro ao processar sua mensagem.";

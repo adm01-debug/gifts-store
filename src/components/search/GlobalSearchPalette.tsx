@@ -436,7 +436,9 @@ export function GlobalSearchPalette() {
           setPopularProducts(popular);
         }
       } catch (error) {
-        console.error("Error fetching popular products:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error fetching popular products:", error);
+        }
       }
     };
 
@@ -672,7 +674,9 @@ export function GlobalSearchPalette() {
 
       setResults(allResults);
     } catch (error) {
-      console.error("Search error:", error);
+      if (import.meta.env.DEV) {
+        console.error("Search error:", error);
+      }
       setIsAIProcessing(false);
     } finally {
       setIsSearching(false);

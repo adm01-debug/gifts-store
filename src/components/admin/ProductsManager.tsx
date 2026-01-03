@@ -148,7 +148,9 @@ export function ProductsManager() {
       setProducts(formattedProducts);
       setFilteredProducts(formattedProducts);
     } catch (error) {
-      console.error("Error fetching products:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching products:", error);
+      }
       toast.error("Erro ao carregar produtos");
     } finally {
       setIsLoading(false);
@@ -258,7 +260,9 @@ export function ProductsManager() {
       setIsFormOpen(false);
       fetchProducts();
     } catch (error) {
-      console.error("Error saving product:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error saving product:", error);
+      }
       toast.error(error instanceof Error ? error.message : "Erro ao salvar produto");
     } finally {
       setIsSaving(false);
@@ -280,7 +284,9 @@ export function ProductsManager() {
       setIsDeleteOpen(false);
       fetchProducts();
     } catch (error) {
-      console.error("Error deleting product:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error deleting product:", error);
+      }
       toast.error(error instanceof Error ? error.message : "Erro ao excluir produto");
     }
   };

@@ -68,7 +68,9 @@ export function ImageUploadButton({
       onUpload(urlData.publicUrl);
       toast.success("Imagem enviada!");
     } catch (error) {
-      console.error("Upload error:", error);
+      if (import.meta.env.DEV) {
+        console.error("Upload error:", error);
+      }
       toast.error("Erro ao enviar imagem");
     } finally {
       setIsUploading(false);
@@ -91,7 +93,9 @@ export function ImageUploadButton({
       onRemove();
       toast.success("Imagem removida!");
     } catch (error) {
-      console.error("Remove error:", error);
+      if (import.meta.env.DEV) {
+        console.error("Remove error:", error);
+      }
       toast.error("Erro ao remover imagem");
     }
   };

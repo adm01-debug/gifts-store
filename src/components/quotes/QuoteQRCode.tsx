@@ -63,7 +63,9 @@ export function QuoteQRCode({
         description: `Arquivo qrcode-${quoteNumber}.png salvo com sucesso.`
       });
     } catch (error) {
-      console.error('Erro ao baixar QR Code:', error);
+      if (import.meta.env.DEV) {
+        console.error('Erro ao baixar QR Code:', error);
+      }
       toast({
         title: "❌ Erro ao baixar",
         description: "Não foi possível baixar o QR Code. Tente novamente.",
@@ -90,7 +92,9 @@ export function QuoteQRCode({
         });
       }
     } catch (error) {
-      console.error('Erro ao compartilhar:', error);
+      if (import.meta.env.DEV) {
+        console.error('Erro ao compartilhar:', error);
+      }
       // Silenciosamente ignorar se usuário cancelar o share
     }
   };

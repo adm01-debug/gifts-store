@@ -422,7 +422,9 @@ export function ProductPersonalizationManager() {
 
       toast.success("Regras do grupo copiadas! Agora você pode customizar.");
     } catch (error) {
-      console.error("Error copying rules:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error copying rules:", error);
+      }
       toast.error("Erro ao copiar regras do grupo");
     } finally {
       setIsCopying(false);
