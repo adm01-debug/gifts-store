@@ -1,23 +1,21 @@
+import { createContext, useContext, useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
 import { Suspense, lazy } from "react";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { FavoritesProvider } from "@/contexts/FavoritesContext";
-import { ComparisonProvider } from "@/contexts/ComparisonContext";
+import { AuthProvider, ProtectedRoute } from "@/contexts/AuthContext";
+import { ProductsProvider } from "@/contexts/ProductsContext";
 import { CollectionsProvider } from "@/contexts/CollectionsContext";
-import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
-import { CompareBar } from "@/components/compare/CompareBar";
-import ErrorBoundary from "@/components/errors/ErrorBoundary";
-import { AdminRealtimeNotifications } from "@/components/admin/AdminRealtimeNotifications";
+import { GamificationProvider } from "@/contexts/GamificationContext";
+import { ComparisonProvider } from "@/contexts/ComparisonContext";
+import { supabase } from "@/integrations/supabase/client";
+import LoadingScreen from "@/components/LoadingScreen";
+import { Analytics } from "@vercel/analytics/react";
+import "./App.css";
 
-// ⚡ LAZY LOADING: Todas as páginas carregadas sob demanda
-// Isso reduz o bundle inicial em ~60% e melhora o First Contentful Paint
-
-// Auth & Public Pages
+// Auth Pages
 const Auth = lazy(() => import("./pages/Auth"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Index = lazy(() => import("./pages/Index"));
@@ -55,138 +53,133 @@ const AdminPersonalizationPage = lazy(() => import("./pages/AdminPersonalization
 // Tools Pages
 const PersonalizationSimulator = lazy(() => import("./pages/PersonalizationSimulator"));
 const MockupGenerator = lazy(() => import("./pages/MockupGenerator"));
+const MagicUp = lazy(() => import("./pages/MagicUp"));
 
 // User Pages
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
-const SecurityPage = lazy(() => import("./pages/Security"));
-const RolesPage = lazy(() => import("./pages/RolesPage"));
-const PermissionsPage = lazy(() => import("./pages/PermissionsPage"));
-const RolePermissionsPage = lazy(() => import("./pages/RolePermissionsPage"));
-const RateLimitDashboardPage = lazy(() => import("./pages/RateLimitDashboardPage"));
-const SSOCallbackPage = lazy(() => import("./pages/SSOCallbackPage"));
 
-// Integration Pages
-const BitrixSyncPage = lazy(() => import("./pages/BitrixSyncPage"));
+// Bitrix Integration
+const BitrixSync = lazy(() => import("./pages/BitrixSync"));
 
 // Analytics Pages
 const BIDashboard = lazy(() => import("./pages/BIDashboard"));
 const TrendsPage = lazy(() => import("./pages/TrendsPage"));
 
 // Gamification Pages
-const RewardsStorePage = lazy(() => import("./pages/RewardsStorePage"));
+const StoreRewardsPage = lazy(() => import("./pages/StoreRewardsPage"));
 
-// Loading fallback component
-const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="flex flex-col items-center gap-4">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      <p className="text-sm text-muted-foreground">Carregando...</p>
-    </div>
-  </div>
-);
+const queryClient = new QueryClient();
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+const App = () => {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-function App() {
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
   return (
-    <ErrorBoundary showDetails={import.meta.env.DEV}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <TooltipProvider>
-            <AuthProvider>
-              <FavoritesProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <ProductsProvider>
+            <CollectionsProvider>
+              <GamificationProvider>
                 <ComparisonProvider>
-                  <CollectionsProvider>
-                    <Toaster />
-                    <Sonner />
-                    <AdminRealtimeNotifications />
-                    <BrowserRouter>
-                    <CompareBar />
-                    <Suspense fallback={<PageLoader />}>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <Suspense fallback={<LoadingScreen />}>
                       <Routes>
                         {/* Public Routes */}
                         <Route path="/login" element={<Auth />} />
-                        <Route path="/auth" element={<Auth />} />
                         <Route path="/reset-password" element={<ResetPassword />} />
                         <Route path="/approve/:token" element={<PublicQuoteApproval />} />
-                        
+
                         {/* Protected Routes */}
-                        <Route element={<ProtectedRoute />}>
-                          <Route path="/" element={<Index />} />
+                        <Route
+                          path="/*"
+                          element={
+                            <ProtectedRoute>
+                              <Routes>
+                                {/* Home */}
+                                <Route path="/" element={<Index />} />
+
+                                {/* Products */}
+                                <Route path="/produto/:id" element={<ProductDetail />} />
+                                <Route path="/filtros" element={<FiltersPage />} />
+                                <Route path="/favoritos" element={<FavoritesPage />} />
+                                <Route path="/comparar" element={<ComparePage />} />
+                                <Route path="/colecoes" element={<CollectionsPage />} />
+                                <Route path="/colecoes/:id" element={<CollectionDetailPage />} />
+
+                                {/* Clients */}
+                                <Route path="/clientes" element={<ClientList />} />
+                                <Route path="/clientes/:id" element={<ClientDetail />} />
+
+                                {/* Quotes */}
+                                <Route path="/orcamentos" element={<QuotesListPage />} />
+                                <Route path="/orcamentos/dashboard" element={<QuotesDashboardPage />} />
+                                <Route path="/orcamentos/lista" element={<QuotesListPage />} />
+                                <Route path="/orcamentos/kanban" element={<QuotesKanbanPage />} />
+                                <Route path="/orcamentos/templates" element={<QuoteTemplatesPage />} />
+                                <Route path="/orcamentos/novo" element={<QuoteBuilderPage />} />
+                                <Route path="/orcamentos/:id/editar" element={<QuoteBuilderPage />} />
+                                <Route path="/orcamentos/:id" element={<QuoteViewPage />} />
+
+                                {/* Orders */}
+                                <Route path="/pedidos" element={<OrdersListPage />} />
+                                <Route path="/pedidos/:id" element={<OrderDetailPage />} />
+
+                                {/* Admin */}
+                                <Route path="/admin" element={<AdminPanel />} />
+                                <Route path="/admin/personalizacao" element={<AdminPersonalizationPage />} />
                           
-                          {/* Product Routes */}
-                          <Route path="/produto/:id" element={<ProductDetail />} />
-                          <Route path="/filtros" element={<FiltersPage />} />
-                          <Route path="/favoritos" element={<FavoritesPage />} />
-                          <Route path="/comparar" element={<ComparePage />} />
-                          <Route path="/colecoes" element={<CollectionsPage />} />
-                          <Route path="/colecoes/:id" element={<CollectionDetailPage />} />
+                                {/* Tools Routes */}
+                                <Route path="/simulador" element={<PersonalizationSimulator />} />
+                                <Route path="/mockup" element={<Navigate to="/mockup-generator" replace />} />
+                                <Route path="/mockup-generator" element={<MockupGenerator />} />
+                                <Route path="/magic-up" element={<MagicUp />} />
                           
-                          {/* Client Routes */}
-                          <Route path="/clientes" element={<ClientList />} />
-                          <Route path="/clientes/:id" element={<ClientDetail />} />
-                          
-                          {/* Quote Routes */}
-                          <Route path="/orcamentos" element={<QuotesDashboardPage />} />
-                          <Route path="/orcamentos/lista" element={<QuotesListPage />} />
-                          <Route path="/orcamentos/kanban" element={<QuotesKanbanPage />} />
-                          <Route path="/orcamentos/templates" element={<QuoteTemplatesPage />} />
-                          <Route path="/orcamentos/novo" element={<QuoteBuilderPage />} />
-                          <Route path="/orcamentos/:id" element={<QuoteViewPage />} />
-                          
-                          {/* Order Routes */}
-                          <Route path="/pedidos" element={<OrdersListPage />} />
-                          <Route path="/pedidos/:id" element={<OrderDetailPage />} />
-                          
-                          {/* Admin Routes */}
-                          <Route path="/admin" element={<AdminPanel />} />
-                          <Route path="/admin/personalizacao" element={<AdminPersonalizationPage />} />
-                          
-                          {/* Tools Routes */}
-                          <Route path="/simulador" element={<PersonalizationSimulator />} />
-                          <Route path="/mockup" element={<Navigate to="/mockup-generator" replace />} />
-                          <Route path="/mockup-generator" element={<MockupGenerator />} />
-                          
-                          {/* User Routes */}
-                          <Route path="/perfil" element={<ProfilePage />} />
-                          <Route path="/seguranca" element={<SecurityPage />} />
-                          <Route path="/roles" element={<RolesPage />} />
-                          <Route path="/permissoes" element={<PermissionsPage />} />
-                          <Route path="/permissoes-roles" element={<RolePermissionsPage />} />
-                          <Route path="/rate-limit" element={<RateLimitDashboardPage />} />
-                          <Route path="/sso-callback" element={<SSOCallbackPage />} />
-                          {/* Integration Routes */}
-                          <Route path="/bitrix-sync" element={<BitrixSyncPage />} />
-                          
-                          {/* Analytics Routes */}
-                          <Route path="/bi" element={<BIDashboard />} />
-                          <Route path="/tendencias" element={<TrendsPage />} />
-                          
-                          {/* Gamification Routes */}
-                          <Route path="/loja-recompensas" element={<RewardsStorePage />} />
-                        </Route>
-                        
-                        {/* 404 Route */}
-                        <Route path="*" element={<NotFound />} />
+                                {/* User Routes */}
+                                <Route path="/perfil" element={<ProfilePage />} />
+
+                                {/* Bitrix */}
+                                <Route path="/bitrix-sync" element={<BitrixSync />} />
+
+                                {/* Analytics */}
+                                <Route path="/bi" element={<BIDashboard />} />
+                                <Route path="/tendencias" element={<TrendsPage />} />
+
+                                {/* Gamification */}
+                                <Route path="/loja-recompensas" element={<StoreRewardsPage />} />
+
+                                {/* Fallback */}
+                                <Route path="*" element={<NotFound />} />
+                              </Routes>
+                            </ProtectedRoute>
+                          }
+                        />
                       </Routes>
                     </Suspense>
                   </BrowserRouter>
-                  </CollectionsProvider>
+                  <Analytics />
                 </ComparisonProvider>
-              </FavoritesProvider>
-            </AuthProvider>
-          </TooltipProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+              </GamificationProvider>
+            </CollectionsProvider>
+          </ProductsProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
-}
+};
 
 export default App;
