@@ -1,24 +1,10 @@
 import { useState } from "react";
-import { useBulkSelection } from "@/hooks/useBulkSelection";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
-import { useBulkSelection } from "@/hooks/useBulkSelection";
-import { Checkbox } from "@/components/ui/checkbox";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { useBulkSelection } from "@/hooks/useBulkSelection";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useBulkSelection } from "@/hooks/useBulkSelection";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useBulkSelection } from "@/hooks/useBulkSelection";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { useBulkSelection } from "@/hooks/useBulkSelection";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { useBulkSelection } from "@/hooks/useBulkSelection";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,14 +30,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useBulkSelection } from "@/hooks/useBulkSelection";
-import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  FileText, 
-  Plus, 
-  MoreVertical, 
-  Eye, 
-  Trash2, 
+import {
+  FileText,
+  Plus,
+  MoreVertical,
+  Eye,
+  Trash2,
   Send,
   Search,
   Filter,
@@ -64,14 +48,8 @@ import {
   List,
 } from "lucide-react";
 import { useQuotes, Quote } from "@/hooks/useQuotes";
-import { useBulkSelection } from "@/hooks/useBulkSelection";
-import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
-import { useBulkSelection } from "@/hooks/useBulkSelection";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ptBR } from "date-fns/locale";
-import { useBulkSelection } from "@/hooks/useBulkSelection";
-import { Checkbox } from "@/components/ui/checkbox";
 
 const statusConfig: Record<Quote["status"], { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   draft: { label: "Rascunho", variant: "secondary" },
@@ -85,13 +63,13 @@ const statusConfig: Record<Quote["status"], { label: string; variant: "default" 
 export default function QuotesListPage() {
   const navigate = useNavigate();
   const { quotes, isLoading, deleteQuote, updateQuoteStatus, syncQuoteToBitrix, duplicateQuote } = useQuotes();
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const filteredQuotes = quotes.filter((quote) => {
-    const matchesSearch = 
+    const matchesSearch =
       quote.quote_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       quote.client_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || quote.status === statusFilter;

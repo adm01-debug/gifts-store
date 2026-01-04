@@ -1,43 +1,23 @@
 import { useEffect, useState } from "react";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { useParams, useNavigate } from "react-router-dom";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { format } from "date-fns";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { ptBR } from "date-fns/locale";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { ArrowLeft, Copy, Download, FileText, History, Link2, Loader2, Printer, Share2, ShoppingCart } from "lucide-react";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { Button } from "@/components/ui/button";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { Badge } from "@/components/ui/badge";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { Separator } from "@/components/ui/separator";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { Skeleton } from "@/components/ui/skeleton";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { useQuotes, Quote } from "@/hooks/useQuotes";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { useOrders } from "@/hooks/useOrders";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { generateProposalPDF, downloadPDF } from "@/utils/proposalPdfGenerator";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { useAuth } from "@/contexts/AuthContext";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { QuoteHistoryPanel } from "@/components/quotes/QuoteHistoryPanel";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { useQuoteApproval } from "@/hooks/useQuoteApproval";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 import { toast } from "sonner";
-import { QuoteQRCode } from "@/components/quotes/QuoteQRCode";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   draft: { label: "Rascunho", variant: "secondary" },
@@ -202,8 +182,8 @@ export default function QuoteViewPage() {
               </SheetContent>
             </Sheet>
             {quote.status === "approved" && (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={async () => {
                   const order = await createOrderFromQuote.mutateAsync(quote.id);
                   if (order) navigate(`/pedidos/${order.id}`);
@@ -238,8 +218,8 @@ export default function QuoteViewPage() {
                       <div className="p-2 bg-muted rounded text-xs break-all font-mono">
                         {approvalLink}
                       </div>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         className="w-full"
                         onClick={() => copyToClipboard(approvalLink)}
                       >
@@ -248,8 +228,8 @@ export default function QuoteViewPage() {
                       </Button>
                     </div>
                   ) : (
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       className="w-full"
                       onClick={handleGenerateApprovalLink}
                       disabled={isGenerating}
@@ -325,7 +305,7 @@ export default function QuoteViewPage() {
                   <tbody>
                     {quote.items?.map((item, index) => {
                       const personalization = item.personalizations?.[0];
-                      const personalizationCost = personalization 
+                      const personalizationCost = personalization
                         ? (personalization.unit_cost || 0) * item.quantity + (personalization.setup_cost || 0)
                         : 0;
                       const itemTotal = item.quantity * item.unit_price + personalizationCost;
@@ -335,8 +315,8 @@ export default function QuoteViewPage() {
                           <td className="p-3">
                             <div className="flex items-center gap-3">
                               {item.product_image_url && (
-                                <img 
-                                  src={item.product_image_url} 
+                                <img
+                                  src={item.product_image_url}
                                   alt={item.product_name}
                                   className="w-12 h-12 object-cover rounded print:hidden"
                                 />
@@ -346,8 +326,8 @@ export default function QuoteViewPage() {
                                 {item.color_name && (
                                   <div className="flex items-center gap-1 mt-1">
                                     {item.color_hex && (
-                                      <span 
-                                        className="w-3 h-3 rounded-full border" 
+                                      <span
+                                        className="w-3 h-3 rounded-full border"
                                         style={{ backgroundColor: item.color_hex }}
                                       />
                                     )}
