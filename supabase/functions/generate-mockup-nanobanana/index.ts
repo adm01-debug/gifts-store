@@ -1,3 +1,4 @@
+/// <reference lib="deno.ns" />
 // ============================================================
 // EDGE FUNCTION: generate-mockup-nanobanana
 // Geração de Mockups com IA usando Nano Banana API
