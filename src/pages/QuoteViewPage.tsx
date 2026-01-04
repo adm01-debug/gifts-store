@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Copy, Download, FileText, History, Link2, Loader2, Printer, Share2, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Copy, Download, FileText, History, Link2, Loader2, Printer, ShoppingCart } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
