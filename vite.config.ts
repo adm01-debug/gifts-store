@@ -1,17 +1,18 @@
-// Build timestamp: 1767384952
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import path from 'path'
+import { componentTagger } from "lovable-tagger";
 
 /**
  * Vite Configuration - Production Ready
  * 
  * @see https://vitejs.dev/config/
  */
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
-  ],
+    mode === 'development' && componentTagger(),
+  ].filter(Boolean),
   
   resolve: {
     alias: {
@@ -21,15 +22,14 @@ export default defineConfig({
   
   build: {
     outDir: 'dist',
-    sourcemap: false, // Disable sourcemaps in production for security
-    minify: 'esbuild', // Faster than terser
+    sourcemap: false,
+    minify: 'esbuild',
     target: 'esnext',
     chunkSizeWarningLimit: 2000,
     
     rollupOptions: {
       output: {
         manualChunks: {
-          // Split vendor chunks for better caching
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
           'query-vendor': ['@tanstack/react-query'],
@@ -40,8 +40,7 @@ export default defineConfig({
   
   server: {
     port: 8080,
-    host: true,
-    open: false,
+    host: "::",
   },
   
   preview: {
@@ -52,4 +51,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'xlsx'],
   },
-})
+}))
