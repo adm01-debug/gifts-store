@@ -1,3 +1,4 @@
+/// <reference lib="deno.ns" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -75,7 +76,7 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             from: 'Resumo Diário <digest@promobrindes.com.br>',
-            to: user.user_email || 'user@example.com',
+            to: (user as any).user_email || 'user@example.com',
             subject: `📬 Resumo: ${notifications.length} notificações`,
             html,
           }),

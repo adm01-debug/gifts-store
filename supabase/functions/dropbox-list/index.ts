@@ -1,3 +1,4 @@
+/// <reference lib="deno.ns" />
 /**
  * Edge Function: dropbox-list
  * Lista arquivos e pastas do Dropbox
