@@ -68,6 +68,9 @@ const TrendsPage = lazy(() => import("./pages/TrendsPage"));
 // Gamification Pages
 const StoreRewardsPage = lazy(() => import("./pages/StoreRewardsPage"));
 
+// System Pages
+const SystemStatusPage = lazy(() => import("./pages/SystemStatusPage"));
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -161,6 +164,9 @@ const App = () => {
 
                                 {/* Gamification */}
                                 <Route path="/loja-recompensas" element={<StoreRewardsPage />} />
+
+                                {/* System */}
+                                <Route path="/status" element={<SystemStatusPage />} />
 
                                 {/* Fallback */}
                                 <Route path="*" element={<NotFound />} />
