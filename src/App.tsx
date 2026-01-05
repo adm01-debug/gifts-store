@@ -5,14 +5,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
-import { AuthProvider, ProtectedRoute } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { ProductsProvider } from "@/contexts/ProductsContext";
 import { CollectionsProvider } from "@/contexts/CollectionsContext";
 import { GamificationProvider } from "@/contexts/GamificationContext";
 import { ComparisonProvider } from "@/contexts/ComparisonContext";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingScreen from "@/components/LoadingScreen";
-import { Analytics } from "@vercel/analytics/react";
+// import { Analytics } from "@vercel/analytics/react"; // TODO: Descomentar quando instalar @vercel/analytics
 import "./App.css";
 
 // Auth Pages
@@ -59,14 +60,14 @@ const MagicUp = lazy(() => import("./pages/MagicUp"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 
 // Bitrix Integration
-const BitrixSync = lazy(() => import("./pages/BitrixSync"));
+const BitrixSync = lazy(() => import("./pages/BitrixSyncPage"));
 
 // Analytics Pages
 const BIDashboard = lazy(() => import("./pages/BIDashboard"));
 const TrendsPage = lazy(() => import("./pages/TrendsPage"));
 
 // Gamification Pages
-const StoreRewardsPage = lazy(() => import("./pages/StoreRewardsPage"));
+const StoreRewardsPage = lazy(() => import("./pages/RewardsStorePage"));
 
 // System Pages
 const SystemStatusPage = lazy(() => import("./pages/SystemStatusPage"));
@@ -177,7 +178,7 @@ const App = () => {
                       </Routes>
                     </Suspense>
                   </BrowserRouter>
-                  <Analytics />
+                  {/* <Analytics /> */}
                 </ComparisonProvider>
               </GamificationProvider>
             </CollectionsProvider>

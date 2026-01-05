@@ -1,18 +1,40 @@
-# Guia de Deploy
+# Deployment Guide
 
-## Produção (Vercel)
+## Prerequisites
+- Node.js 18+
+- PostgreSQL 14+
+- Redis 7+
+
+## Steps
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Configure environment:
+```bash
+cp .env.example .env
+```
+
+3. Run migrations:
+```bash
+npx supabase db push
+```
+
+4. Build:
 ```bash
 npm run build
-vercel --prod
 ```
 
-## Staging
+5. Deploy:
 ```bash
-vercel
+npm run deploy
 ```
 
-## Variáveis de Ambiente
-- VITE_SUPABASE_URL
-- VITE_SUPABASE_ANON_KEY
-- VITE_BITRIX24_WEBHOOK
-- VITE_SENTRY_DSN
+## Production Checklist
+- [ ] Environment variables configured
+- [ ] Database migrated
+- [ ] SSL certificates installed
+- [ ] CDN configured
+- [ ] Monitoring enabled
