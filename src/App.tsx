@@ -11,6 +11,7 @@ import { ProductsProvider } from "@/contexts/ProductsContext";
 import { CollectionsProvider } from "@/contexts/CollectionsContext";
 import { GamificationProvider } from "@/contexts/GamificationContext";
 import { ComparisonProvider } from "@/contexts/ComparisonContext";
+import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingScreen from "@/components/LoadingScreen";
 // import { Analytics } from "@vercel/analytics/react"; // TODO: Descomentar quando instalar @vercel/analytics
@@ -98,6 +99,7 @@ const App = () => {
             <CollectionsProvider>
               <GamificationProvider>
                 <ComparisonProvider>
+                  <FavoritesProvider>
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>
@@ -179,6 +181,7 @@ const App = () => {
                     </Suspense>
                   </BrowserRouter>
                   {/* <Analytics /> */}
+                  </FavoritesProvider>
                 </ComparisonProvider>
               </GamificationProvider>
             </CollectionsProvider>
