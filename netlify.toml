@@ -42,7 +42,7 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 [context.deploy-preview]
-  command = "npm run build:dev"
+  command = "npm run build"
 
 [context.branch-deploy]
-  command = "npm run build:dev"
+  command = "npm run build"
