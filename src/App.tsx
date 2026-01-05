@@ -1,18 +1,15 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Suspense, lazy } from "react";
 import { AuthProvider, ProtectedRoute } from "@/contexts/AuthContext";
 import { ProductsProvider } from "@/contexts/ProductsContext";
 import { CollectionsProvider } from "@/contexts/CollectionsContext";
 import { GamificationProvider } from "@/contexts/GamificationContext";
 import { ComparisonProvider } from "@/contexts/ComparisonContext";
-import { supabase } from "@/integrations/supabase/client";
 import LoadingScreen from "@/components/LoadingScreen";
-import { Analytics } from "@vercel/analytics/react";
 import "./App.css";
 
 // Auth Pages
@@ -20,7 +17,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Index = lazy(() => import("./pages/Index"));
 const PublicQuoteApproval = lazy(() => import("./pages/PublicQuoteApproval"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 
 // Product Pages
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
@@ -59,7 +56,7 @@ const MagicUp = lazy(() => import("./pages/MagicUp"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 
 // Bitrix Integration
-const BitrixSync = lazy(() => import("./pages/BitrixSync"));
+const BitrixSync = lazy(() => import("./pages/BitrixSyncPage"));
 
 // Analytics Pages
 const BIDashboard = lazy(() => import("./pages/BIDashboard"));
@@ -71,21 +68,6 @@ const StoreRewardsPage = lazy(() => import("./pages/StoreRewardsPage"));
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -163,7 +145,7 @@ const App = () => {
                                 <Route path="/loja-recompensas" element={<StoreRewardsPage />} />
 
                                 {/* Fallback */}
-                                <Route path="*" element={<NotFound />} />
+                                <Route path="*" element={<NotFoundPage />} />
                               </Routes>
                             </ProtectedRoute>
                           }
@@ -171,7 +153,6 @@ const App = () => {
                       </Routes>
                     </Suspense>
                   </BrowserRouter>
-                  <Analytics />
                 </ComparisonProvider>
               </GamificationProvider>
             </CollectionsProvider>

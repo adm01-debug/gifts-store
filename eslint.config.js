@@ -8,7 +8,7 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 
 export default [
   {
-    ignores: ['dist', 'build', 'node_modules', 'coverage', '*.config.js', '*.config.ts', '.eslintrc.cjs', '.eslintrc.json']
+    ignores: ['dist', 'build', 'node_modules', 'coverage', '*.config.js', '*.config.ts']
   },
   {
     files: ['src/**/*.{ts,tsx}'],
@@ -33,7 +33,7 @@ export default [
       ...typescript.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react/jsx-uses-react': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
