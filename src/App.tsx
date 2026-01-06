@@ -4,10 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, ProtectedRoute } from "@/contexts/AuthContext";
-import { ProductsProvider } from "@/contexts/ProductsContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { CollectionsProvider } from "@/contexts/CollectionsContext";
-import { GamificationProvider } from "@/contexts/GamificationContext";
 import { ComparisonProvider } from "@/contexts/ComparisonContext";
 import LoadingScreen from "@/components/LoadingScreen";
 import "./App.css";
@@ -72,10 +71,8 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <ProductsProvider>
-            <CollectionsProvider>
-              <GamificationProvider>
-                <ComparisonProvider>
+          <CollectionsProvider>
+            <ComparisonProvider>
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>
@@ -153,10 +150,8 @@ const App = () => {
                       </Routes>
                     </Suspense>
                   </BrowserRouter>
-                </ComparisonProvider>
-              </GamificationProvider>
-            </CollectionsProvider>
-          </ProductsProvider>
+            </ComparisonProvider>
+          </CollectionsProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
