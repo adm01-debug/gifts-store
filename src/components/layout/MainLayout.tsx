@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Header } from "./Header";
-import { Sidebar } from "./Sidebar";
+import { SidebarReorganized } from "./SidebarReorganized";
 import { PageTransition } from "@/components/effects";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { RestartTourButton } from "@/components/onboarding/RestartTourButton";
@@ -28,7 +28,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       <OnboardingTour />
       
       <div className="flex">
-        <Sidebar 
+        <SidebarReorganized 
           isOpen={sidebarOpen} 
           onToggle={() => setSidebarOpen(!sidebarOpen)} 
         />
