@@ -1102,4 +1102,114 @@
   .color-match-glow {
     @apply ring-2 ring-success ring-offset-2 ring-offset-background;
   }
+
+  /* ============================================
+     MOBILE & TOUCH OPTIMIZATIONS
+     ============================================ */
+
+  /* Touch-friendly tap targets (min 44x44px per WCAG) */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .touch-target-lg {
+    @apply min-h-[48px] min-w-[48px];
+  }
+
+  /* Disable tap highlight on iOS */
+  .tap-highlight-transparent {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Touch manipulation for scrolling */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  /* Safe area padding for notched devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* ============================================
+     ACCESSIBILITY ENHANCEMENTS
+     ============================================ */
+
+  /* Enhanced focus ring */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Skip link styles (visible on focus) */
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:z-[9999] 
+           focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-primary-foreground
+           focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .card-interactive {
+      @apply border-2;
+    }
+    
+    .btn-primary {
+      @apply border-2 border-primary-foreground;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Mobile bottom nav padding */
+  .has-bottom-nav {
+    @apply pb-20 lg:pb-0;
+  }
+
+  /* ============================================
+     LOADING STATES
+     ============================================ */
+
+  /* Skeleton pulse animation */
+  .skeleton-pulse {
+    @apply bg-muted animate-pulse rounded;
+  }
+
+  /* Loading shimmer effect */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.1) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
 }

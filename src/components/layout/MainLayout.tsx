@@ -7,6 +7,7 @@ import { RestartTourButton } from "@/components/onboarding/RestartTourButton";
 import { ExpertChatButton } from "@/components/expert/ExpertChatButton";
 import { SkipToContent } from "@/components/common/SkipToContent";
 import { Spotlight } from "@/components/common/Spotlight";
+import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -18,7 +19,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Accessibility: Skip to content link */}
+      {/* Accessibility: Skip links */}
       <SkipToContent />
       
       {/* Global Spotlight Search (Cmd+K) */}
@@ -40,21 +41,29 @@ export function MainLayout({ children }: MainLayoutProps) {
             onSearchChange={setSearchQuery}
           />
           
-          <main id="main-content" className="flex-1 p-4 lg:p-6" role="main">
+          <main 
+            id="main-content" 
+            className="flex-1 p-4 lg:p-6 pb-20 lg:pb-6" 
+            role="main"
+            aria-label="Conteúdo principal"
+          >
             <PageTransition variant="fade-slide" duration={0.25}>
               {children}
             </PageTransition>
           </main>
           
           {/* Restart Tour Button - fixed position */}
-          <div className="fixed bottom-4 left-4 z-40">
+          <div className="fixed bottom-20 lg:bottom-4 left-4 z-40">
             <RestartTourButton />
           </div>
           
-          {/* Expert Chat Button - fixed position, mobile-friendly */}
+          {/* Expert Chat Button - fixed position, adjusted for mobile nav */}
           <ExpertChatButton />
         </div>
       </div>
+      
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
     </div>
   );
 }
