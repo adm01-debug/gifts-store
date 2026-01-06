@@ -10,6 +10,8 @@ import { ProductListSkeleton } from "@/components/products/ProductListItemSkelet
 import { FilterPanel, FilterState, defaultFilters } from "@/components/filters/FilterPanel";
 import { QuickFiltersBar, QuickFilter } from "@/components/filters/QuickFiltersBar";
 import { ClientFilterModal } from "@/components/clients/ClientFilterModal";
+import { SearchWithSuggestions } from "@/components/search";
+import { useSearch } from "@/hooks/useSearch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +31,7 @@ export default function Index() {
   const { toast } = useToast();
   const { isFavorite, toggleFavorite, favoriteCount } = useFavoritesContext();
   const { isInCompare, toggleCompare, canAddMore } = useComparisonContext();
+  const { suggestions, quickSuggestions, history, addToHistory } = useSearch();
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('name');
@@ -38,6 +41,8 @@ export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeQuickFilterId, setActiveQuickFilterId] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
+  const [displayCount, setDisplayCount] = useState(12);
   const [displayCount, setDisplayCount] = useState(12);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -339,15 +344,33 @@ export default function Index() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
+        {/* Header with Search */}
         <div className="flex flex-col gap-4">
-          <div>
-            <h1 className="font-display text-2xl lg:text-3xl font-bold">
-              Catálogo de Produtos
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Explore nossa coleção completa de brindes corporativos
-            </p>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h1 className="font-display text-2xl lg:text-3xl font-bold">
+                Catálogo de Produtos
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Explore nossa coleção completa de brindes corporativos
+              </p>
+            </div>
+            
+            {/* Search with Suggestions */}
+            <SearchWithSuggestions
+              placeholder="Buscar produtos, categorias..."
+              onSearch={(query) => {
+                setIsSearching(true);
+                setSearchQuery(query);
+                if (query) addToHistory(query);
+                setTimeout(() => setIsSearching(false), 300);
+              }}
+              suggestions={suggestions.map(s => s.label)}
+              recentSearches={history}
+              isLoading={isSearching}
+              enableVoice
+              className="lg:w-80"
+            />
           </div>
 
           {/* Stats */}
