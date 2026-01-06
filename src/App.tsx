@@ -62,6 +62,7 @@ const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 
 // Bitrix Integration
 const BitrixSync = lazy(() => import("./pages/BitrixSyncPage"));
+const BitrixSyncV2 = lazy(() => import("./pages/BitrixSyncPageV2"));
 
 // Analytics Pages
 const BIDashboard = lazy(() => import("./pages/BIDashboard"));
@@ -72,6 +73,21 @@ const StoreRewardsPage = lazy(() => import("./pages/RewardsStorePage"));
 
 // System Pages
 const SystemStatusPage = lazy(() => import("./pages/SystemStatusPage"));
+const RateLimitDashboard = lazy(() => import("./pages/RateLimitDashboardPage"));
+
+// Security Pages
+const SecurityPage = lazy(() => import("./pages/Security"));
+
+// Admin - Roles & Permissions
+const PermissionsPage = lazy(() => import("./pages/PermissionsPage"));
+const RolesPage = lazy(() => import("./pages/RolesPage"));
+const RolePermissionsPage = lazy(() => import("./pages/RolePermissionsPage"));
+
+// Dashboard
+const CustomizableDashboard = lazy(() => import("./pages/CustomizableDashboard"));
+
+// Auth Callbacks
+const SSOCallbackPage = lazy(() => import("./pages/SSOCallbackPage"));
 
 const queryClient = new QueryClient();
 
@@ -109,6 +125,7 @@ const App = () => {
                         <Route path="/login" element={<Auth />} />
                         <Route path="/reset-password" element={<ResetPassword />} />
                         <Route path="/approve/:token" element={<PublicQuoteApproval />} />
+                        <Route path="/auth/callback" element={<SSOCallbackPage />} />
 
                         {/* Protected Routes */}
                         <Route
@@ -118,6 +135,7 @@ const App = () => {
                               <Routes>
                                 {/* Home */}
                                 <Route path="/" element={<Index />} />
+                                <Route path="/dashboard" element={<CustomizableDashboard />} />
 
                                 {/* Products */}
                                 <Route path="/produto/:id" element={<ProductDetail />} />
@@ -148,6 +166,10 @@ const App = () => {
                                 {/* Admin */}
                                 <Route path="/admin" element={<AdminPanel />} />
                                 <Route path="/admin/personalizacao" element={<AdminPersonalizationPage />} />
+                                <Route path="/admin/permissoes" element={<PermissionsPage />} />
+                                <Route path="/admin/roles" element={<RolesPage />} />
+                                <Route path="/admin/role-permissoes" element={<RolePermissionsPage />} />
+                                <Route path="/admin/rate-limit" element={<RateLimitDashboard />} />
                           
                                 {/* Tools Routes */}
                                 <Route path="/simulador" element={<PersonalizationSimulator />} />
@@ -157,9 +179,11 @@ const App = () => {
                           
                                 {/* User Routes */}
                                 <Route path="/perfil" element={<ProfilePage />} />
+                                <Route path="/seguranca" element={<SecurityPage />} />
 
                                 {/* Bitrix */}
                                 <Route path="/bitrix-sync" element={<BitrixSync />} />
+                                <Route path="/bitrix-sync-v2" element={<BitrixSyncV2 />} />
 
                                 {/* Analytics */}
                                 <Route path="/bi" element={<BIDashboard />} />
