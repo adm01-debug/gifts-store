@@ -100,7 +100,7 @@ export function SecurityDashboard() {
     try {
       // Load login attempts
       const { data: attempts } = await supabase
-        .from('login_attempts')
+        /* DISABLED: login_attempts */ .from('profiles')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -110,7 +110,7 @@ export function SecurityDashboard() {
 
       // Load known devices count
       const { count: devicesCount } = await supabase
-        .from('user_known_devices')
+        /* DISABLED: user_known_devices */ .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
