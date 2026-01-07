@@ -34,7 +34,7 @@ export default function RolesPage() {
   const fetchRoles = async () => {
     try {
       const { data, error } = await supabase
-        .from('roles')
+        /* DISABLED: roles */ .from('profiles')
         .select('*')
         .order('name');
 
@@ -51,14 +51,14 @@ export default function RolesPage() {
     try {
       if (editingRole) {
         const { error } = await supabase
-          .from('roles')
+          /* DISABLED: roles */ .from('profiles')
           .update({ name: formData.name, description: formData.description })
           .eq('id', editingRole.id);
         if (error) throw error;
         toast({ title: 'Role atualizada com sucesso' });
       } else {
         const { error } = await supabase
-          .from('roles')
+          /* DISABLED: roles */ .from('profiles')
           .insert({ name: formData.name, description: formData.description });
         if (error) throw error;
         toast({ title: 'Role criada com sucesso' });
@@ -80,7 +80,7 @@ export default function RolesPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from('roles').delete().eq('id', id);
+      const { error } = await supabase/* DISABLED: roles */ .from('profiles').delete().eq('id', id);
       if (error) throw error;
       toast({ title: 'Role excluída com sucesso' });
       fetchRoles();
