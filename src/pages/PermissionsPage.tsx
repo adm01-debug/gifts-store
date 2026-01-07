@@ -39,7 +39,7 @@ export default function PermissionsPage() {
   const fetchPermissions = async () => {
     try {
       const { data, error } = await supabase
-        .from('permissions')
+        /* DISABLED: permissions */ .from('profiles')
         .select('*')
         .order('category', { ascending: true });
 
@@ -56,13 +56,13 @@ export default function PermissionsPage() {
     try {
       if (editingPermission) {
         const { error } = await supabase
-          .from('permissions')
+          /* DISABLED: permissions */ .from('profiles')
           .update(formData)
           .eq('id', editingPermission.id);
         if (error) throw error;
         toast({ title: 'Permissão atualizada com sucesso' });
       } else {
-        const { error } = await supabase.from('permissions').insert(formData);
+        const { error } = await supabase/* DISABLED: permissions */ .from('profiles').insert(formData);
         if (error) throw error;
         toast({ title: 'Permissão criada com sucesso' });
       }
@@ -88,7 +88,7 @@ export default function PermissionsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from('permissions').delete().eq('id', id);
+      const { error } = await supabase/* DISABLED: permissions */ .from('profiles').delete().eq('id', id);
       if (error) throw error;
       toast({ title: 'Permissão excluída com sucesso' });
       fetchPermissions();
