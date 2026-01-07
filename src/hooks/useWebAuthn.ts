@@ -78,7 +78,7 @@ export function useWebAuthn() {
   const fetchPasskeys = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from("user_passkeys")
+        // .from("user_passkeys") // DISABLED
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
@@ -158,7 +158,7 @@ export function useWebAuthn() {
         const publicKey = arrayBufferToBase64url(response.getPublicKey()!);
         const transports = response.getTransports?.() || [];
 
-        const { error } = await supabase.from("user_passkeys").insert({
+        const { error } = await supabase// .from("user_passkeys") // DISABLED.insert({
           user_id: userId,
           credential_id: credentialId,
           public_key: publicKey,
@@ -244,7 +244,7 @@ export function useWebAuthn() {
 
         // Find the passkey in database
         const { data: passkey, error: findError } = await supabase
-          .from("user_passkeys")
+          // .from("user_passkeys") // DISABLED
           .select("*")
           .eq("credential_id", credentialId)
           .single();
@@ -255,7 +255,7 @@ export function useWebAuthn() {
 
         // Update last used
         await supabase
-          .from("user_passkeys")
+          // .from("user_passkeys") // DISABLED
           .update({ 
             last_used_at: new Date().toISOString(),
             counter: (passkey.counter || 0) + 1 
@@ -292,7 +292,7 @@ export function useWebAuthn() {
     async (passkeyId: string): Promise<boolean> => {
       try {
         const { error } = await supabase
-          .from("user_passkeys")
+          // .from("user_passkeys") // DISABLED
           .delete()
           .eq("id", passkeyId);
 
@@ -323,7 +323,7 @@ export function useWebAuthn() {
     async (userId: string): Promise<boolean> => {
       try {
         const { count, error } = await supabase
-          .from("user_passkeys")
+          // .from("user_passkeys") // DISABLED
           .select("*", { count: "exact", head: true })
           .eq("user_id", userId);
 
