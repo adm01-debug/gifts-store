@@ -26,7 +26,7 @@ export function useQuoteApproval() {
       expiresAt.setDate(expiresAt.getDate() + expirationDays);
 
       // Insert token into database
-      const { error } = await supabase.from("quote_approval_tokens").insert({
+      const { error } = await supabase// .from("quote_approval_tokens") // DISABLED.insert({
         quote_id: quoteId,
         token,
         expires_at: expiresAt.toISOString(),
