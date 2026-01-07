@@ -29,8 +29,6 @@ const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const FiltersPage = lazy(() => import("./pages/FiltersPage"));
 const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
 const ComparePage = lazy(() => import("./pages/ComparePage"));
-const CollectionsPage = lazy(() => import("./pages/CollectionsPage"));
-const CollectionDetailPage = lazy(() => import("./pages/CollectionDetailPage"));
 
 // Client Pages
 const ClientDetail = lazy(() => import("./pages/ClientDetail"));
