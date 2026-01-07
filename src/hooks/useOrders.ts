@@ -135,7 +135,7 @@ export function useOrders() {
 
   const getOrderHistory = async (orderId: string): Promise<OrderHistory[]> => {
     const { data, error } = await (supabase
-      .from("order_history") as any)
+      /* DISABLED: order_history */ .from("profiles") as any)
       .select("*")
       .eq("order_id", orderId)
       .order("created_at", { ascending: false });
@@ -207,7 +207,7 @@ export function useOrders() {
       }
 
       // Add history entry
-      await (supabase.from("order_history") as any).insert({
+      await (supabase/* DISABLED: order_history */ .from("profiles") as any).insert({
         order_id: order.id,
         user_id: user?.id,
         action: "created",
@@ -269,7 +269,7 @@ export function useOrders() {
       if (error) throw error;
 
       // Add history entry
-      await (supabase.from("order_history") as any).insert({
+      await (supabase/* DISABLED: order_history */ .from("profiles") as any).insert({
         order_id: orderId,
         user_id: user?.id,
         action: "status_changed",
@@ -340,7 +340,7 @@ export function useOrders() {
 
       if (error) throw error;
 
-      await (supabase.from("order_history") as any).insert({
+      await (supabase/* DISABLED: order_history */ .from("profiles") as any).insert({
         order_id: orderId,
         user_id: user?.id,
         action: "tracking_added",
