@@ -43,7 +43,6 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [displayCount, setDisplayCount] = useState(12);
-  const [displayCount, setDisplayCount] = useState(12);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const ITEMS_PER_PAGE = 12;
@@ -665,3 +664,4 @@ export default function Index() {
     </MainLayout>
   );
 }
+
