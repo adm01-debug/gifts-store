@@ -25,7 +25,7 @@ export function useQuoteHistory() {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from("quote_history")
+        // .from("quote_history") // DISABLED
         .select("*")
         .eq("quote_id", quoteId)
         .order("created_at", { ascending: false });
@@ -55,7 +55,7 @@ export function useQuoteHistory() {
     if (!user) return false;
 
     try {
-      const { error } = await supabase.from("quote_history").insert({
+      const { error } = await supabase// .from("quote_history") // DISABLED.insert({
         quote_id: quoteId,
         user_id: user.id,
         action,
