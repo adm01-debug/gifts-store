@@ -114,7 +114,7 @@ export default function ClientDetail() {
 
       // Carregar deals do cliente
       const { data: dealsData, error: dealsError } = await supabase
-        .from("bitrix_deals")
+        // .from("bitrix_deals") // DISABLED
         .select("*")
         .eq("bitrix_client_id", id)
         .order("created_at_bitrix", { ascending: false });
@@ -140,7 +140,7 @@ export default function ClientDetail() {
 
       // Carregar conversas do cliente
       const { data: conversationsData } = await supabase
-        .from("expert_conversations")
+        // .from("expert_conversations") // DISABLED
         .select("*")
         .eq("client_id", clientData.id)
         .order("created_at", { ascending: false });
@@ -148,7 +148,7 @@ export default function ClientDetail() {
 
       // Carregar lembretes do cliente
       const { data: remindersData } = await supabase
-        .from("follow_up_reminders")
+        // .from("follow_up_reminders") // DISABLED
         .select("*")
         .eq("client_id", clientData.id)
         .order("reminder_date", { ascending: false });
