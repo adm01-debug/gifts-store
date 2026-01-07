@@ -42,7 +42,7 @@ export default function RateLimitDashboardPage() {
     try {
       // Fetch login attempts as proxy for rate limit data
       const { data: loginAttempts, error } = await supabase
-        .from('login_attempts')
+        /* DISABLED: login_attempts */ .from('profiles')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
