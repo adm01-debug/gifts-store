@@ -41,7 +41,7 @@ git pull origin main
 ```bash
 # Salvar progresso frequentemente
 git add .
-git commit -m "descrição do que fez"
+git commit -m "xyz"
 ```
 
 ### 3. FIM DO DIA (antes de fechar)

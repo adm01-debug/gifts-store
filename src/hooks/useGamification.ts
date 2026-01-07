@@ -41,12 +41,26 @@ export function useGamification() {
     unlockedAchievements: [] as string[],
     leaderboard: [],
     
+    // Dados para GamificationIndicators
+    level: 1,
+    xp: 0,
+    coins: 0,
+    streak: 0,
+    xpProgress: {
+      current: 0,
+      needed: 100,
+      percentage: 0,
+    },
+    
     // Estados
     isLoading,
     isEnabled: false, // Flag indicando que módulo está desabilitado
     
     // Funções que não fazem nada
     addXP: async (_amount: number, _reason?: string) => {
+      console.warn("[Gamificação] Módulo desabilitado");
+    },
+    addXp: async (_amount: number, _reason?: string) => {
       console.warn("[Gamificação] Módulo desabilitado");
     },
     addCoins: async (_amount: number, _reason?: string) => {

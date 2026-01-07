@@ -14,9 +14,6 @@
 *.suo
 *.sw?
 .DS_Store
-.env
-.env.*.local
-.env.local
 .idea
 .nyc_output/
 .storybook/
