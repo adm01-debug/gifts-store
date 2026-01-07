@@ -1,8 +1,12 @@
+/**
+ * Hook de RBAC (Role-Based Access Control) - CORRIGIDO
+ * Usa profiles.role em vez de tabela roles separada
+ */
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type RoleName = 'admin' | 'manager' | 'seller' | 'viewer';
+export type RoleName = 'admin' | 'gerente' | 'vendedor' | 'viewer';
 
 export interface Role {
   id: string;
@@ -20,7 +24,7 @@ const rolePermissions: Record<RoleName, Permission[]> = {
   admin: [
     { action: '*', resource: '*' }, // Full access
   ],
-  manager: [
+  gerente: [
     { action: 'read', resource: '*' },
     { action: 'create', resource: 'quotes' },
     { action: 'update', resource: 'quotes' },
@@ -31,7 +35,7 @@ const rolePermissions: Record<RoleName, Permission[]> = {
     { action: 'read', resource: 'reports' },
     { action: 'manage', resource: 'team' },
   ],
-  seller: [
+  vendedor: [
     { action: 'read', resource: 'products' },
     { action: 'read', resource: 'clients' },
     { action: 'create', resource: 'quotes' },
@@ -49,8 +53,18 @@ const rolePermissions: Record<RoleName, Permission[]> = {
   ],
 };
 
+// Mapeamento de nomes de roles (para compatibilidade)
+const roleNameMap: Record<string, RoleName> = {
+  'admin': 'admin',
+  'manager': 'gerente',
+  'gerente': 'gerente',
+  'seller': 'vendedor',
+  'vendedor': 'vendedor',
+  'viewer': 'viewer',
+};
+
 export function useRBAC() {
-  const { user } = useAuth();
+  const { user, role: authRole } = useAuth();
   const [role, setRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -63,46 +77,70 @@ export function useRBAC() {
       }
 
       try {
-        // Get user profile with role
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (profileError || !profile?.role_id) {
-          // Default to seller if no role assigned
-          setRole({ id: '', name: 'seller', description: 'Vendedor' });
+        // Se já temos o role do AuthContext, usar ele
+        if (authRole) {
+          const mappedRole = roleNameMap[authRole] || 'vendedor';
+          setRole({ 
+            id: user.id, 
+            name: mappedRole, 
+            description: getRoleDescription(mappedRole) 
+          });
           setIsLoading(false);
           return;
         }
 
-        // Get role details
-        const { data: roleData, error: roleError } = await supabase
-          .from('roles')
-          .select('*')
-          .eq('id', profile.role_id)
-          .single();
+        // CORRIGIDO: Buscar role diretamente de profiles
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, role')
+          .eq('id', user.id)
+          .maybeSingle();
 
-        if (roleError || !roleData) {
-          setRole({ id: '', name: 'seller', description: 'Vendedor' });
-        } else {
-          setRole({
-            id: roleData.id,
-            name: roleData.name as RoleName,
-            description: roleData.description,
-          });
+        if (profileError) {
+          console.warn('Erro ao buscar role do usuário:', profileError.message);
+          // Default to vendedor if error
+          setRole({ id: '', name: 'vendedor', description: 'Vendedor' });
+          setIsLoading(false);
+          return;
         }
+
+        if (!profile?.role) {
+          // Default to vendedor if no role assigned
+          setRole({ id: '', name: 'vendedor', description: 'Vendedor' });
+          setIsLoading(false);
+          return;
+        }
+
+        // Mapear role para nome padronizado
+        const roleName = roleNameMap[profile.role] || 'vendedor';
+        setRole({
+          id: profile.id,
+          name: roleName,
+          description: getRoleDescription(roleName),
+        });
       } catch (error) {
         console.error('Error fetching user role:', error);
-        setRole({ id: '', name: 'seller', description: 'Vendedor' });
+        setRole({ id: '', name: 'vendedor', description: 'Vendedor' });
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchUserRole();
-  }, [user]);
+  }, [user, authRole]);
+
+  /**
+   * Get description for a role
+   */
+  function getRoleDescription(roleName: RoleName): string {
+    const descriptions: Record<RoleName, string> = {
+      admin: 'Administrador - Acesso total ao sistema',
+      gerente: 'Gerente - Gerenciamento de equipe e relatórios',
+      vendedor: 'Vendedor - Criação de orçamentos e pedidos',
+      viewer: 'Visualizador - Apenas leitura',
+    };
+    return descriptions[roleName] || 'Vendedor';
+  }
 
   /**
    * Check if user has permission to perform an action on a resource
@@ -132,9 +170,9 @@ export function useRBAC() {
   const isAdmin = role?.name === 'admin';
 
   /**
-   * Check if user is manager or above
+   * Check if user is manager/gerente or above
    */
-  const isManagerOrAbove = role?.name === 'admin' || role?.name === 'manager';
+  const isManagerOrAbove = role?.name === 'admin' || role?.name === 'gerente';
 
   /**
    * Get all permissions for current role
