@@ -143,7 +143,8 @@ export function useQuotes() {
         .from("quote_items")
         .select(`
           *,
-          quote_item_personalizations (
+          -- DISABLED: quote_item_personalizations does not exist
+          -- quote_item_personalizations (
             *,
             personalization_techniques (
               id,
@@ -259,7 +260,7 @@ export function useQuotes() {
             }));
 
             const { error: persError } = await supabase
-              .from("quote_item_personalizations")
+              // .from("quote_item_personalizations") // DISABLED
               .insert(personalizationsToInsert);
 
             if (persError) throw persError;
@@ -299,7 +300,7 @@ export function useQuotes() {
   ) => {
     if (!user) return;
     try {
-      await supabase.from("quote_history").insert({
+      await supabase.from("audit_log") // TEMP: quote_history -> audit_log.insert({
         quote_id: quoteId,
         user_id: user.id,
         action,
@@ -418,7 +419,7 @@ export function useQuotes() {
       if (existingItems?.length) {
         for (const item of existingItems) {
           await supabase
-            .from("quote_item_personalizations")
+            // .from("quote_item_personalizations") // DISABLED
             .delete()
             .eq("quote_item_id", item.id);
         }
@@ -470,7 +471,7 @@ export function useQuotes() {
             }));
 
             const { error: persError } = await supabase
-              .from("quote_item_personalizations")
+              // .from("quote_item_personalizations") // DISABLED
               .insert(personalizationsToInsert);
 
             if (persError) throw persError;
