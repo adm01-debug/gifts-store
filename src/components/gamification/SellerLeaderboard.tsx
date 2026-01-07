@@ -53,7 +53,7 @@ export function SellerLeaderboard({
     queryFn: async () => {
       // Fetch gamification data for all sellers
       const { data: gamificationData, error: gamError } = await supabase
-        .from("seller_gamification")
+        // .from("seller_gamification") // DISABLED
         .select("*")
         .order("xp", { ascending: false })
         .limit(limit);
@@ -87,7 +87,7 @@ export function SellerLeaderboard({
       if (!user?.id) return null;
 
       const { data, error } = await supabase
-        .from("seller_gamification")
+        // .from("seller_gamification") // DISABLED
         .select("user_id, xp")
         .order("xp", { ascending: false });
 
