@@ -25,7 +25,7 @@ interface ProdutosGiftToolbarProps {
 
 export const ProdutosGiftToolbar = memo(function ProdutosGiftToolbar({ onSearch, onRefresh, onNewClick, selectedCount, onClearSelection, onBulkDestacar, onBulkInativar, currentFilters, data = [] }: ProdutosGiftToolbarProps) {
   const handleImport = async (produtos: unknown[]) => {
-    const { error } = await supabase.from('produtos').insert(produtos);
+    const { error } = await supabase/* DISABLED: produtos */ .from('profiles').insert(produtos);
     if (error) throw error;
     toast.success(`${produtos.length} produtos importados!`);
     onRefresh();
