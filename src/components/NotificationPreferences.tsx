@@ -15,7 +15,7 @@ export function NotificationPreferences() {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { data, error } = await supabase
-        .from('notification_preferences')
+        .from('notifications')
         .select('*')
         .eq('user_id', user?.id)
         .single();
@@ -30,7 +30,7 @@ export function NotificationPreferences() {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { error } = await supabase
-        .from('notification_preferences')
+        .from('notifications')
         .upsert({
           user_id: user?.id,
           ...updates,
