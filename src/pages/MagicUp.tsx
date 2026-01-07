@@ -154,14 +154,14 @@ export default function MagicUp() {
       // Upload para Supabase Storage
       const fileName = `${user?.id}/${Date.now()}_${file.name}`;
       const { data, error } = await supabase.storage
-        .from("mockups")
+        /* DISABLED: mockups */ .from("profiles")
         .upload(fileName, file);
 
       if (error) throw error;
 
       // Pegar URL pública
       const { data: { publicUrl } } = supabase.storage
-        .from("mockups")
+        /* DISABLED: mockups */ .from("profiles")
         .getPublicUrl(fileName);
 
       setLogoUrl(publicUrl);
