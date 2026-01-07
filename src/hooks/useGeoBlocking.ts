@@ -39,11 +39,11 @@ export function useGeoBlocking() {
     try {
       const [countriesRes, settingsRes] = await Promise.all([
         supabase
-          .from('geo_allowed_countries')
+          /* DISABLED: geo_allowed_countries */ .from('profiles')
           .select('*')
           .order('country_name'),
         supabase
-          .from('security_settings')
+          /* DISABLED: security_settings */ .from('profiles')
           .select('*')
           .eq('setting_key', 'geo_blocking')
           .single(),
@@ -72,7 +72,7 @@ export function useGeoBlocking() {
     try {
       const newSettings = { ...settings, enabled };
       const { error } = await supabase
-        .from('security_settings')
+        /* DISABLED: security_settings */ .from('profiles')
         .update({ 
           setting_value: newSettings,
           updated_at: new Date().toISOString(),
@@ -98,7 +98,7 @@ export function useGeoBlocking() {
 
     try {
       const { error } = await supabase
-        .from('geo_allowed_countries')
+        /* DISABLED: geo_allowed_countries */ .from('profiles')
         .insert({
           country_code: countryCode.toUpperCase(),
           country_name: countryName,
@@ -122,7 +122,7 @@ export function useGeoBlocking() {
   const removeCountry = useCallback(async (id: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const { error } = await supabase
-        .from('geo_allowed_countries')
+        /* DISABLED: geo_allowed_countries */ .from('profiles')
         .delete()
         .eq('id', id);
 
@@ -140,7 +140,7 @@ export function useGeoBlocking() {
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const { error } = await supabase
-        .from('geo_allowed_countries')
+        /* DISABLED: geo_allowed_countries */ .from('profiles')
         .update({ is_active: isActive })
         .eq('id', id);
 
