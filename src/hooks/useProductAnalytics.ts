@@ -44,7 +44,7 @@ export function useProductAnalytics() {
 
       try {
         // Using type assertion since table was just created
-        await (supabase.from("search_analytics") as any).insert({
+        await (supabase// .from("search_analytics") // DISABLED: table does not exist as any).insert({
           search_term: searchTerm.toLowerCase().trim(),
           results_count: resultsCount,
           seller_id: user.id,
