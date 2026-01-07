@@ -83,7 +83,7 @@ export function useIPValidation() {
 
       // 2. Buscar IPs permitidos do usuário
       const { data: allowedIPs, error } = await supabase
-        .from('user_allowed_ips')
+        /* DISABLED: user_allowed_ips */ .from('profiles')
         .select('ip_address, is_active')
         .eq('user_id', userId)
         .eq('is_active', true);
@@ -130,7 +130,7 @@ export function useIPValidation() {
     try {
       const currentIP = await fetchCurrentIP();
       
-      await supabase.from('login_attempts').insert({
+      await supabase/* DISABLED: login_attempts */ .from('profiles').insert({
         email,
         user_id: userId,
         ip_address: currentIP || 'unknown',
