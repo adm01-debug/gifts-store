@@ -118,7 +118,7 @@ export function useDeviceDetection() {
     if (!user) return [];
 
     const { data, error } = await supabase
-      .from('user_known_devices')
+      /* DISABLED: user_known_devices */ .from('profiles')
       .select('*')
       .eq('user_id', user.id)
       .order('last_seen_at', { ascending: false });
@@ -135,7 +135,7 @@ export function useDeviceDetection() {
     if (!user) return false;
 
     const { error } = await supabase
-      .from('user_known_devices')
+      /* DISABLED: user_known_devices */ .from('profiles')
       .delete()
       .eq('id', deviceId)
       .eq('user_id', user.id);
@@ -152,7 +152,7 @@ export function useDeviceDetection() {
     if (!user) return false;
 
     const { error } = await supabase
-      .from('user_known_devices')
+      /* DISABLED: user_known_devices */ .from('profiles')
       .update({ is_trusted: true })
       .eq('id', deviceId)
       .eq('user_id', user.id);
