@@ -1,28 +1,26 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from "@tanstack/react-query";
 
-export interface Supplier {
+// DESABILITADO: tabela 'suppliers' não existe no Supabase
+// Fornecedores vêm do campo products.supplier_name
+
+interface Supplier {
   id: string;
   name: string;
-  cnpj?: string;
-  contact?: string;
-  email?: string;
-  phone?: string;
-  created_at?: string;
 }
 
 export function useSuppliers() {
-  return useQuery<Supplier[]>({
-    queryKey: ['suppliers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('*')
-        .order('name');
-
-      if (error) throw new Error(`Failed to fetch suppliers: ${error.message}`);
-      return data || [];
+  const query = useQuery({
+    queryKey: ["suppliers"],
+    queryFn: async (): Promise<Supplier[]> => {
+      console.warn("useSuppliers: tabela não existe. Use products.supplier_name");
+      return [];
     },
-    staleTime: 15 * 60 * 1000,
+    staleTime: Infinity,
   });
+
+  return {
+    suppliers: query.data || [],
+    isLoading: false,
+    error: null,
+  };
 }
