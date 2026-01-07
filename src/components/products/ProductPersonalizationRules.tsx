@@ -86,7 +86,7 @@ export function ProductPersonalizationRules({ productId, productSku, productName
 
       // Check if product has custom components
       const { data: customComponents } = await supabase
-        .from("product_components")
+        /* DISABLED: product_components */ .from("profiles")
         .select("id")
         .eq("product_id", dbProduct.id)
         .eq("is_active", true)
@@ -98,7 +98,7 @@ export function ProductPersonalizationRules({ productId, productSku, productName
 
       // Check if product belongs to a group
       const { data: groupMember } = await supabase
-        .from("product_group_members")
+        /* DISABLED: product_group_members */ .from("profiles")
         .select("product_group_id, use_group_rules")
         .eq("product_id", dbProduct.id)
         .maybeSingle();
@@ -118,7 +118,7 @@ export function ProductPersonalizationRules({ productId, productSku, productName
       if (!productData?.productDbId || productData.source !== "product") return null;
 
       const { data: components } = await supabase
-        .from("product_components")
+        /* DISABLED: product_components */ .from("profiles")
         .select(`
           id,
           component_code,
@@ -162,7 +162,7 @@ export function ProductPersonalizationRules({ productId, productSku, productName
       if (!productData?.groupId || productData.source !== "group") return null;
 
       const { data: components } = await supabase
-        .from("product_group_components")
+        /* DISABLED: product_group_components */ .from("profiles")
         .select(`
           id,
           component_code,
