@@ -213,7 +213,7 @@ export default function PersonalizationSimulator() {
     queryKey: ["saved-simulations"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("personalization_simulations")
+        /* DISABLED: personalization_simulations */ .from("profiles")
         .select(`
           *,
           bitrix_clients (
@@ -241,7 +241,7 @@ export default function PersonalizationSimulator() {
       }
 
       const { error } = await supabase
-        .from("personalization_simulations")
+        /* DISABLED: personalization_simulations */ .from("profiles")
         .insert([{
           seller_id: user.id,
           client_id: selectedClientId,
@@ -272,7 +272,7 @@ export default function PersonalizationSimulator() {
   const deleteSimulationMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("personalization_simulations")
+        /* DISABLED: personalization_simulations */ .from("profiles")
         .delete()
         .eq("id", id);
       if (error) throw error;
