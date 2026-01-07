@@ -1,169 +1,82 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface PasswordResetRequest {
   id: string;
   email: string;
   user_id: string | null;
-  status: 'pending' | 'approved' | 'rejected';
+  status: string;
   requested_at: string;
   reviewed_at: string | null;
   reviewed_by: string | null;
   reviewer_notes: string | null;
+  created_at: string;
 }
 
-export function usePasswordResetRequests() {
-  const { toast } = useToast();
-  const [requests, setRequests] = useState<PasswordResetRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [pendingCount, setPendingCount] = useState(0);
+export function usePasswordResetRequests(status?: string) {
+  const queryClient = useQueryClient();
 
-  const fetchRequests = async () => {
-    try {
-      const { data, error } = await supabase
-        /* DISABLED: password_reset_requests */ .from('profiles')
-        .select('*')
-        .order('requested_at', { ascending: false });
+  const query = useQuery({
+    queryKey: ["password-reset-requests", status],
+    queryFn: async (): Promise<PasswordResetRequest[]> => {
+      let q = supabase
+        .from("password_reset_requests")
+        .select("*")
+        .order("requested_at", { ascending: false });
 
-      if (error) throw error;
-      
-      setRequests((data as PasswordResetRequest[]) || []);
-      setPendingCount(data?.filter(r => r.status === 'pending').length || 0);
-    } catch (error) {
-      console.error('Error fetching password reset requests:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRequests();
-  }, []);
-
-  const approveRequest = async (requestId: string, notes?: string) => {
-    try {
-      // Buscar a solicitação
-      const request = requests.find(r => r.id === requestId);
-      if (!request) throw new Error('Solicitação não encontrada');
-
-      // Atualizar status
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { error: updateError } = await supabase
-        /* DISABLED: password_reset_requests */ .from('profiles')
-        .update({
-          status: 'approved',
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: user?.id,
-          reviewer_notes: notes || 'Aprovado',
-        })
-        .eq('id', requestId);
-
-      if (updateError) throw updateError;
-
-      // Enviar email de reset de senha via Supabase Auth
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        request.email,
-        { redirectTo: `${window.location.origin}/reset-password` }
-      );
-
-      if (resetError) throw resetError;
-
-      toast({
-        title: 'Solicitação aprovada',
-        description: `Email de recuperação enviado para ${request.email}`,
-      });
-
-      await fetchRequests();
-      return true;
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao aprovar',
-        description: error.message,
-      });
-      return false;
-    }
-  };
-
-  const rejectRequest = async (requestId: string, notes?: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { error } = await supabase
-        /* DISABLED: password_reset_requests */ .from('profiles')
-        .update({
-          status: 'rejected',
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: user?.id,
-          reviewer_notes: notes || 'Rejeitado',
-        })
-        .eq('id', requestId);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Solicitação rejeitada',
-        description: 'A solicitação de reset de senha foi rejeitada.',
-      });
-
-      await fetchRequests();
-      return true;
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao rejeitar',
-        description: error.message,
-      });
-      return false;
-    }
-  };
-
-  const createRequest = async (email: string) => {
-    try {
-      // Verificar se já existe uma solicitação pendente para este email
-      const { data: existing } = await supabase
-        /* DISABLED: password_reset_requests */ .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .eq('status', 'pending')
-        .single();
-
-      if (existing) {
-        return { 
-          success: true, 
-          message: 'Já existe uma solicitação pendente para este email. Aguarde a aprovação do gestor.' 
-        };
+      if (status) {
+        q = q.eq("status", status);
       }
 
-      const { error } = await supabase
-        /* DISABLED: password_reset_requests */ .from('profiles')
-        .insert({ email });
+      const { data, error } = await q;
 
       if (error) throw error;
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 2,
+  });
 
-      return { 
-        success: true, 
-        message: 'Solicitação enviada! Um gestor irá analisar e aprovar seu pedido de recuperação de senha.' 
-      };
-    } catch (error: any) {
-      return { 
-        success: false, 
-        message: error.message 
-      };
-    }
-  };
+  const reviewRequest = useMutation({
+    mutationFn: async ({
+      requestId,
+      status,
+      reviewerId,
+      notes,
+    }: {
+      requestId: string;
+      status: "approved" | "rejected";
+      reviewerId: string;
+      notes?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from("password_reset_requests")
+        .update({
+          status,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: reviewerId,
+          reviewer_notes: notes,
+        })
+        .eq("id", requestId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ["password-reset-requests"] });
+      toast.success(status === "approved" ? "Solicitação aprovada!" : "Solicitação rejeitada");
+    },
+    onError: () => toast.error("Erro ao processar solicitação"),
+  });
+
+  const pendingCount = query.data?.filter((r) => r.status === "pending").length || 0;
 
   return {
-    requests,
-    isLoading,
+    requests: query.data || [],
     pendingCount,
-    approveRequest,
-    rejectRequest,
-    createRequest,
-    refetch: fetchRequests,
+    isLoading: query.isLoading,
+    reviewRequest,
   };
 }
-
-export default usePasswordResetRequests;
