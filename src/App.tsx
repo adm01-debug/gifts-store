@@ -8,7 +8,6 @@ import { Suspense, lazy } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { ProductsProvider } from "@/contexts/ProductsContext";
-import { CollectionsProvider } from "@/contexts/CollectionsContext";
 import { GamificationProvider } from "@/contexts/GamificationContext";
 import { ComparisonProvider } from "@/contexts/ComparisonContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
@@ -110,7 +109,6 @@ const App = () => {
       <TooltipProvider>
         <AuthProvider>
           <ProductsProvider>
-            <CollectionsProvider>
               <GamificationProvider>
                 <ComparisonProvider>
                   <FavoritesProvider>
@@ -140,8 +138,6 @@ const App = () => {
                                 <Route path="/filtros" element={<FiltersPage />} />
                                 <Route path="/favoritos" element={<FavoritesPage />} />
                                 <Route path="/comparar" element={<ComparePage />} />
-                                <Route path="/colecoes" element={<CollectionsPage />} />
-                                <Route path="/colecoes/:id" element={<CollectionDetailPage />} />
 
                                 {/* Clients */}
                                 <Route path="/clientes" element={<ClientList />} />
@@ -206,7 +202,6 @@ const App = () => {
                   </FavoritesProvider>
                 </ComparisonProvider>
               </GamificationProvider>
-            </CollectionsProvider>
           </ProductsProvider>
         </AuthProvider>
       </TooltipProvider>
