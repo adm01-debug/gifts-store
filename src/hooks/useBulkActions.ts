@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import { LucideIcon } from 'lucide-react';
 
 type TableName = keyof Database['public']['Tables'];
 
@@ -12,6 +13,18 @@ interface BulkActionConfig {
 
 interface BulkDeleteOptions {
   permanent?: boolean;
+}
+
+// Interface for bulk action buttons used in BulkActionsBar
+export interface BulkAction<T = unknown> {
+  id: string;
+  label: string;
+  icon?: LucideIcon;
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  confirm?: {
+    title: string;
+    description: string;
+  };
 }
 
 export const useBulkActions = (config: BulkActionConfig) => {
