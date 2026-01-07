@@ -39,7 +39,7 @@ export function useAllowedIPs(targetUserId?: string) {
 
     try {
       const { data, error } = await supabase
-        .from('user_allowed_ips')
+        /* DISABLED: user_allowed_ips */ .from('profiles')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -68,7 +68,7 @@ export function useAllowedIPs(targetUserId?: string) {
 
     try {
       const { error } = await supabase
-        .from('user_allowed_ips')
+        /* DISABLED: user_allowed_ips */ .from('profiles')
         .insert({
           user_id: userId,
           ip_address: ipAddress,
@@ -95,7 +95,7 @@ export function useAllowedIPs(targetUserId?: string) {
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const { error } = await supabase
-        .from('user_allowed_ips')
+        /* DISABLED: user_allowed_ips */ .from('profiles')
         .delete()
         .eq('id', ipId);
 
@@ -114,7 +114,7 @@ export function useAllowedIPs(targetUserId?: string) {
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const { error } = await supabase
-        .from('user_allowed_ips')
+        /* DISABLED: user_allowed_ips */ .from('profiles')
         .update({ is_active: isActive })
         .eq('id', ipId);
 
