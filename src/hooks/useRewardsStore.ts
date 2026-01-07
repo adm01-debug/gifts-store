@@ -39,7 +39,7 @@ export function useRewardsStore() {
     queryKey: ["store-rewards"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("store_rewards")
+        // .from("store_rewards") // DISABLED
         .select("*")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
@@ -57,7 +57,7 @@ export function useRewardsStore() {
       if (!user?.id) return [];
 
       const { data, error } = await supabase
-        .from("user_rewards")
+        // .from("user_rewards") // DISABLED
         .select(`
           *,
           reward:store_rewards(*)
@@ -91,7 +91,7 @@ export function useRewardsStore() {
 
       // Create purchase record
       const { data, error } = await supabase
-        .from("user_rewards")
+        // .from("user_rewards") // DISABLED
         .insert({
           user_id: user.id,
           reward_id: reward.id,
@@ -110,7 +110,7 @@ export function useRewardsStore() {
       // Update stock if applicable
       if (reward.stock !== null) {
         await supabase
-          .from("store_rewards")
+          // .from("store_rewards") // DISABLED
           .update({ stock: reward.stock - 1 })
           .eq("id", reward.id);
       }
@@ -133,7 +133,7 @@ export function useRewardsStore() {
       if (!user?.id) throw new Error("Não autenticado");
 
       const { error } = await supabase
-        .from("user_rewards")
+        // .from("user_rewards") // DISABLED
         .update({ is_active: isActive })
         .eq("user_id", user.id)
         .eq("reward_id", rewardId);
