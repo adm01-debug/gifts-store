@@ -1,19 +1,28 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from "@tanstack/react-query";
 
-export function usePriceHistory(productId: string) {
-  return useQuery({
-    queryKey: ['price-history', productId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('product_price_history')
-        .select('*')
-        .eq('product_id', productId)
-        .order('changed_at', { ascending: true });
-      
-      if (error) throw error;
-      return data;
+// DESABILITADO: tabela 'product_price_history' não existe no Supabase
+
+interface PriceHistory {
+  id: string;
+  product_id: string;
+  price: number;
+  created_at: string;
+}
+
+export function usePriceHistory(productId?: string) {
+  const query = useQuery({
+    queryKey: ["price-history", productId],
+    queryFn: async (): Promise<PriceHistory[]> => {
+      console.warn("usePriceHistory: tabela não existe no Supabase");
+      return [];
     },
-    enabled: !!productId
+    enabled: !!productId,
+    staleTime: Infinity,
   });
+
+  return {
+    priceHistory: query.data || [],
+    isLoading: false,
+    error: null,
+  };
 }
