@@ -6,7 +6,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import type { Product } from "@/data/mockData";
 import { toast } from "sonner";
-import { AddToCollectionModal } from "@/components/collections/AddToCollectionModal";
 
 export interface ProductCardProps {
   product: Product;
@@ -387,12 +386,7 @@ export function ProductCard({
       </div>
 
       {/* Collection Modal */}
-      <AddToCollectionModal
-        open={collectionModalOpen}
-        onOpenChange={setCollectionModalOpen}
-        productId={product.id}
-        productName={product.name}
-      />
+      
     </article>
   );
 }
