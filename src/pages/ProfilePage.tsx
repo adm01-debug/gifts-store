@@ -65,14 +65,14 @@ export default function ProfilePage() {
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        // .from("avatars") // DISABLED
         .upload(fileName, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
+        // .from("avatars") // DISABLED
         .getPublicUrl(fileName);
 
       // Update profile with new avatar URL (add timestamp to bust cache)
