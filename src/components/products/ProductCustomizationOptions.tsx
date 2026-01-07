@@ -89,7 +89,7 @@ export function ProductCustomizationOptions({ productId, productSku }: ProductCu
 
       // Buscar componentes do produto
       const { data: componentsData, error: componentsError } = await supabase
-        .from("product_components")
+        /* DISABLED: product_components */ .from("profiles")
         .select(`
           id,
           component_name,
@@ -109,7 +109,7 @@ export function ProductCustomizationOptions({ productId, productSku }: ProductCu
       const componentsWithLocations = await Promise.all(
         componentsData.map(async (component) => {
           const { data: locationsData, error: locationsError } = await supabase
-            .from("product_component_locations")
+            /* DISABLED: product_component_locations */ .from("profiles")
             .select(`
               id,
               location_name,
@@ -127,7 +127,7 @@ export function ProductCustomizationOptions({ productId, productSku }: ProductCu
           const locationsWithTechniques = await Promise.all(
             (locationsData || []).map(async (location) => {
               const { data: techniquesData, error: techniquesError } = await supabase
-                .from("product_component_location_techniques")
+                /* DISABLED: product_component_location_techniques */ .from("profiles")
                 .select(`
                   id,
                   technique_id,
