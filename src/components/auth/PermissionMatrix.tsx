@@ -37,9 +37,9 @@ export function PermissionMatrix() {
   const fetchData = async () => {
     try {
       const [rolesRes, permissionsRes, rolePermissionsRes] = await Promise.all([
-        supabase.from('roles').select('*').order('name'),
-        supabase.from('permissions').select('*').order('category', { ascending: true }),
-        supabase.from('role_permissions').select('*'),
+        supabase/* DISABLED: roles */ .from('profiles').select('*').order('name'),
+        supabase/* DISABLED: permissions */ .from('profiles').select('*').order('category', { ascending: true }),
+        supabase/* DISABLED: role_permissions */ .from('profiles').select('*'),
       ]);
 
       if (rolesRes.error) throw rolesRes.error;
@@ -67,14 +67,14 @@ export function PermissionMatrix() {
     try {
       if (exists) {
         const { error } = await supabase
-          .from('role_permissions')
+          /* DISABLED: role_permissions */ .from('profiles')
           .delete()
           .eq('role', roleValue)
           .eq('permission_id', permissionId);
         if (error) throw error;
         setRolePermissions((prev) => prev.filter((rp) => !(rp.role === roleName && rp.permission_id === permissionId)));
       } else {
-        const { error } = await supabase.from('role_permissions').insert([{ role: roleValue, permission_id: permissionId }]);
+        const { error } = await supabase/* DISABLED: role_permissions */ .from('profiles').insert([{ role: roleValue, permission_id: permissionId }]);
         if (error) throw error;
         setRolePermissions((prev) => [...prev, { role: roleName, permission_id: permissionId }]);
       }
