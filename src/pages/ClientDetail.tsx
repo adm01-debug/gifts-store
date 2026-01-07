@@ -112,15 +112,9 @@ export default function ClientDetail() {
       setClient(clientData);
       setIsLoading(false);
 
-      // Carregar deals do cliente
-      const { data: dealsData, error: dealsError } = await supabase
-        // .from("bitrix_deals") // DISABLED
-        .select("*")
-        .eq("bitrix_client_id", id)
-        .order("created_at_bitrix", { ascending: false });
-
-      if (dealsError) throw dealsError;
-      setDeals(dealsData || []);
+      // Carregar deals do cliente (DISABLED: bitrix_deals table does not exist)
+      // setDeals would need bitrix_deals table to be created
+      setDeals([]);
 
       // Carregar orçamentos do cliente
       const { data: quotesData } = await supabase
@@ -138,21 +132,11 @@ export default function ClientDetail() {
         .order("created_at", { ascending: false });
       setOrders(ordersData || []);
 
-      // Carregar conversas do cliente
-      const { data: conversationsData } = await supabase
-        // .from("expert_conversations") // DISABLED
-        .select("*")
-        .eq("client_id", clientData.id)
-        .order("created_at", { ascending: false });
-      setConversations(conversationsData || []);
+      // Carregar conversas do cliente (DISABLED: expert_conversations table does not exist)
+      setConversations([]);
 
-      // Carregar lembretes do cliente
-      const { data: remindersData } = await supabase
-        // .from("follow_up_reminders") // DISABLED
-        .select("*")
-        .eq("client_id", clientData.id)
-        .order("reminder_date", { ascending: false });
-      setReminders(remindersData || []);
+      // Carregar lembretes do cliente (DISABLED: follow_up_reminders table does not exist)
+      setReminders([]);
 
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao carregar dados";

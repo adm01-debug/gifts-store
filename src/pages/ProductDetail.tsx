@@ -22,6 +22,7 @@ import { RelatedProducts, RecommendedProducts } from "@/components/products/Rela
 import { ProductCustomizationOptions } from "@/components/products/ProductCustomizationOptions";
 import { ProductPersonalizationRules } from "@/components/products/ProductPersonalizationRules";
 import { SupplierComparisonModal } from "@/components/compare/SupplierComparisonModal";
+import { SyncedZoomGallery } from "@/components/compare/SyncedZoomGallery";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -151,6 +152,7 @@ export default function ProductDetail() {
         <div className="grid lg:grid-cols-2 gap-10">
           {/* Left column - Gallery */}
           <div className="space-y-6" style={{ animationDelay: '100ms' }}>
+            <SyncedZoomGallery
               images={displayImages}
               video={product.video}
               productName={product.name}

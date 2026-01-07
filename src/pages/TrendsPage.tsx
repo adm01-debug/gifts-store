@@ -77,33 +77,12 @@ export default function TrendsPage() {
     },
   });
 
-  // Fetch top searches
+  // Fetch top searches (DISABLED: search_analytics table does not exist)
   const { data: topSearches, isLoading: loadingSearches, refetch: refetchSearches } = useQuery({
     queryKey: ["trends-searches", dateRange],
     queryFn: async () => {
-      const { data, error } = await (supabase// .from("search_analytics") // DISABLED as any)
-        .select("search_term, results_count")
-        .gte("created_at", dateFilter)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      // Aggregate by search term
-      const searchMap = new Map<string, { count: number; avgResults: number; totalResults: number }>();
-      
-      data?.forEach((search) => {
-        const term = search.search_term.toLowerCase();
-        const existing = searchMap.get(term) || { count: 0, avgResults: 0, totalResults: 0 };
-        existing.count++;
-        existing.totalResults += search.results_count || 0;
-        existing.avgResults = Math.round(existing.totalResults / existing.count);
-        searchMap.set(term, existing);
-      });
-
-      return Array.from(searchMap.entries())
-        .map(([term, data]) => ({ term, ...data }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
+      // search_analytics table is disabled - return empty array
+      return [] as { term: string; count: number; avgResults: number; totalResults: number }[];
     },
   });
 
@@ -115,11 +94,7 @@ export default function TrendsPage() {
         .select("created_at")
         .gte("created_at", dateFilter);
 
-      const { data: searches, error: searchesError } = await (supabase// .from("search_analytics") // DISABLED as any)
-        .select("created_at")
-        .gte("created_at", dateFilter);
-
-      if (viewsError || searchesError) throw viewsError || searchesError;
+      if (viewsError) throw viewsError;
 
       // Group by day
       const dayMap = new Map<string, { date: string; views: number; searches: number }>();
@@ -130,17 +105,13 @@ export default function TrendsPage() {
         dayMap.set(date, { date, views: 0, searches: 0 });
       }
 
-      views?.forEach((v) => {
+      views?.forEach((v: { created_at: string }) => {
         const date = format(new Date(v.created_at), "yyyy-MM-dd");
         const existing = dayMap.get(date);
         if (existing) existing.views++;
       });
 
-      searches?.forEach((s) => {
-        const date = format(new Date(s.created_at), "yyyy-MM-dd");
-        const existing = dayMap.get(date);
-        if (existing) existing.searches++;
-      });
+      // Note: searches are disabled (search_analytics table doesn't exist)
 
       return Array.from(dayMap.values()).map(d => ({
         ...d,

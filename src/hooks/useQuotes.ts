@@ -246,30 +246,16 @@ export function useQuotes() {
           const item = items[i];
           const insertedItem = insertedItems?.[i];
 
+          // DISABLED: quote_item_personalizations table does not exist
+          // Personalizations are stored in the quote_items.personalizations JSON field instead
           if (item.personalizations?.length && insertedItem) {
-            const personalizationsToInsert = item.personalizations.map(p => ({
-              quote_item_id: insertedItem.id,
-              technique_id: p.technique_id,
-              colors_count: p.colors_count || 1,
-              positions_count: p.positions_count || 1,
-              area_cm2: p.area_cm2,
-              setup_cost: p.setup_cost || 0,
-              unit_cost: p.unit_cost || 0,
-              total_cost: p.total_cost || 0,
-              notes: p.notes,
-            }));
-
-            const { error: persError } = await supabase
-              // .from("quote_item_personalizations") // DISABLED
-              .insert(personalizationsToInsert);
-
-            if (persError) throw persError;
+            console.debug("[Quotes] Personalizations stored in JSON field, table insert skipped");
           }
         }
       }
 
-      // Log history
-      await logQuoteHistory(newQuote.id, "created", `Orçamento ${newQuote.quote_number} criado`);
+      // Log history (disabled - table not available)
+      console.debug("[Quotes] History logging disabled");
 
       toast.success("Orçamento criado com sucesso!", {
         description: `Número: ${newQuote.quote_number}`,
@@ -286,33 +272,20 @@ export function useQuotes() {
     }
   };
 
-  // Helper to log quote history
+  // Helper to log quote history (DISABLED - table not available)
   const logQuoteHistory = async (
-    quoteId: string,
-    action: string,
-    description: string,
-    options?: {
+    _quoteId: string,
+    _action: string,
+    _description: string,
+    _options?: {
       fieldChanged?: string;
       oldValue?: string;
       newValue?: string;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     }
   ) => {
-    if (!user) return;
-    try {
-      await supabase.from("quote_history") // TEMP: quote_history -> audit_log.insert({
-        quote_id: quoteId,
-        user_id: user.id,
-        action,
-        description,
-        field_changed: options?.fieldChanged,
-        old_value: options?.oldValue,
-        new_value: options?.newValue,
-        metadata: options?.metadata || {},
-      });
-    } catch (err) {
-      console.error("Error logging history:", err);
-    }
+    // DISABLED: quote_history table does not exist
+    // History logging is a no-op until table is created
   };
 
   // Update quote status
@@ -417,12 +390,7 @@ export function useQuotes() {
         .eq("quote_id", quoteId);
 
       if (existingItems?.length) {
-        for (const item of existingItems) {
-          await supabase
-            // .from("quote_item_personalizations") // DISABLED
-            .delete()
-            .eq("quote_item_id", item.id);
-        }
+        // DISABLED: quote_item_personalizations delete skipped (table doesn't exist)
         await supabase
           .from("quote_items")
           .delete()
@@ -452,31 +420,8 @@ export function useQuotes() {
 
         if (itemsError) throw itemsError;
 
-        // Insert personalizations for each item
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i];
-          const insertedItem = insertedItems?.[i];
-
-          if (item.personalizations?.length && insertedItem) {
-            const personalizationsToInsert = item.personalizations.map(p => ({
-              quote_item_id: insertedItem.id,
-              technique_id: p.technique_id,
-              colors_count: p.colors_count || 1,
-              positions_count: p.positions_count || 1,
-              area_cm2: p.area_cm2,
-              setup_cost: p.setup_cost || 0,
-              unit_cost: p.unit_cost || 0,
-              total_cost: p.total_cost || 0,
-              notes: p.notes,
-            }));
-
-            const { error: persError } = await supabase
-              // .from("quote_item_personalizations") // DISABLED
-              .insert(personalizationsToInsert);
-
-            if (persError) throw persError;
-          }
-        }
+        // DISABLED: quote_item_personalizations table insert skipped
+        // Personalizations are stored in the quote_items.personalizations JSON field
       }
 
       // Log history
