@@ -1,67 +1,124 @@
-import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 
-export function useQuoteApproval() {
-  const { user } = useAuth();
-  const [isGenerating, setIsGenerating] = useState(false);
+export interface QuoteApprovalToken {
+  id: string;
+  quote_id: string;
+  token: string;
+  expires_at: string;
+  used_at: string | null;
+  created_at: string;
+  created_by: string;
+}
 
-  const generateApprovalLink = async (
-    quoteId: string,
-    expirationDays: number = 30
-  ): Promise<string | null> => {
-    if (!user) {
-      toast.error("Usuário não autenticado");
-      return null;
-    }
+export function useQuoteApproval(quoteId?: string) {
+  const queryClient = useQueryClient();
 
-    setIsGenerating(true);
-    try {
-      // Generate a unique token
-      const token = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, "");
-      
-      // Calculate expiration date
+  const query = useQuery({
+    queryKey: ["quote-approval-tokens", quoteId],
+    queryFn: async (): Promise<QuoteApprovalToken[]> => {
+      if (!quoteId) return [];
+
+      const { data, error } = await supabase
+        .from("quote_approval_tokens")
+        .select("*")
+        .eq("quote_id", quoteId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Erro ao buscar tokens de aprovação:", error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!quoteId,
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const generateToken = useMutation({
+    mutationFn: async ({ quoteId, userId, expiresInDays = 7 }: { 
+      quoteId: string; 
+      userId: string; 
+      expiresInDays?: number 
+    }) => {
+      const token = uuidv4();
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + expirationDays);
+      expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 
-      // Insert token into database
-      const { error } = await supabase// .from("quote_approval_tokens") // DISABLED.insert({
-        quote_id: quoteId,
-        token,
-        expires_at: expiresAt.toISOString(),
-        created_by: user.id,
-      });
+      const { data, error } = await supabase
+        .from("quote_approval_tokens")
+        .insert({
+          quote_id: quoteId,
+          token,
+          expires_at: expiresAt.toISOString(),
+          created_by: userId,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
-
-      // Generate the public URL
-      const baseUrl = window.location.origin;
-      const approvalUrl = `${baseUrl}/aprovar-orcamento?token=${token}`;
-
-      toast.success("Link de aprovação gerado!");
-      return approvalUrl;
-    } catch (err) {
-      console.error("Error generating approval link:", err);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quote-approval-tokens"] });
+      toast.success("Link de aprovação gerado com sucesso!");
+    },
+    onError: (error) => {
       toast.error("Erro ao gerar link de aprovação");
-      return null;
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+      console.error(error);
+    },
+  });
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("Link copiado para a área de transferência!");
-    } catch (err) {
-      toast.error("Erro ao copiar link");
-    }
-  };
+  const validateToken = useMutation({
+    mutationFn: async (token: string) => {
+      const { data, error } = await supabase
+        .from("quote_approval_tokens")
+        .select("*, quotes(*)")
+        .eq("token", token)
+        .is("used_at", null)
+        .gt("expires_at", new Date().toISOString())
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onError: (error) => {
+      toast.error("Token inválido ou expirado");
+      console.error(error);
+    },
+  });
+
+  const useToken = useMutation({
+    mutationFn: async (token: string) => {
+      const { data, error } = await supabase
+        .from("quote_approval_tokens")
+        .update({ used_at: new Date().toISOString() })
+        .eq("token", token)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quote-approval-tokens"] });
+    },
+  });
+
+  const activeToken = query.data?.find(
+    (t) => !t.used_at && new Date(t.expires_at) > new Date()
+  );
 
   return {
-    generateApprovalLink,
-    copyToClipboard,
-    isGenerating,
+    tokens: query.data || [],
+    activeToken,
+    isLoading: query.isLoading,
+    error: query.error,
+    generateToken,
+    validateToken,
+    useToken,
   };
 }
