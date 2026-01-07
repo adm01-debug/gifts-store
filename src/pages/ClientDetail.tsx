@@ -37,8 +37,6 @@ import {
 } from "lucide-react";
 import { ExpertChatButton } from "@/components/expert/ExpertChatButton";
 import { ClientInteractionsTimeline } from "@/components/clients/ClientInteractionsTimeline";
-import { ClientContactsList } from "@/components/clients/ClientContactsList";
-import { ClientNotesTimeline } from "@/components/clients/ClientNotesTimeline";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState, useEffect, useMemo } from "react";
@@ -432,8 +430,6 @@ export default function ClientDetail() {
 
         {/* Contatos e Notas - Grid de 2 colunas */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ClientContactsList clientId={client.id} />
-          <ClientNotesTimeline clientId={client.id} />
         </div>
 
         {/* Histórico de Negócios */}
