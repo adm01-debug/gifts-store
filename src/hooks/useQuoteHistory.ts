@@ -1,6 +1,13 @@
+/**
+ * Hook de Histórico de Orçamentos - DESABILITADO
+ *
+ * Este módulo está temporariamente desabilitado.
+ * A tabela quote_history não existe no banco de dados atual.
+ *
+ * Para reativar, crie a tabela necessária no Supabase.
+ */
+
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { Json } from "@/integrations/supabase/types";
 
 export interface QuoteHistoryEntry {
@@ -16,138 +23,71 @@ export interface QuoteHistoryEntry {
   created_at: string;
 }
 
+// Hook desabilitado - retorna dados vazios e operações no-op
 export function useQuoteHistory() {
-  const { user } = useAuth();
-  const [history, setHistory] = useState<QuoteHistoryEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [history] = useState<QuoteHistoryEntry[]>([]);
+  const [isLoading] = useState(false);
 
-  const fetchHistory = async (quoteId: string): Promise<QuoteHistoryEntry[]> => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        // .from("quote_history") // DISABLED
-        .select("*")
-        .eq("quote_id", quoteId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setHistory(data || []);
-      return data || [];
-    } catch (err) {
-      console.error("Error fetching history:", err);
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
+  const fetchHistory = async (_quoteId: string): Promise<QuoteHistoryEntry[]> => {
+    // Módulo desabilitado - retorna array vazio
+    return [];
   };
 
   const addHistoryEntry = async (
-    quoteId: string,
-    action: string,
-    description: string,
-    options?: {
+    _quoteId: string,
+    _action: string,
+    _description: string,
+    _options?: {
       fieldChanged?: string;
       oldValue?: string;
       newValue?: string;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     }
   ): Promise<boolean> => {
-    if (!user) return false;
-
-    try {
-      const { error } = await supabase// .from("quote_history") // DISABLED.insert({
-        quote_id: quoteId,
-        user_id: user.id,
-        action,
-        description,
-        field_changed: options?.fieldChanged,
-        old_value: options?.oldValue,
-        new_value: options?.newValue,
-        metadata: options?.metadata || {},
-      });
-
-      if (error) throw error;
-      return true;
-    } catch (err) {
-      console.error("Error adding history entry:", err);
-      return false;
-    }
+    // Módulo desabilitado - não faz nada
+    return true;
   };
 
-  const logQuoteCreated = async (quoteId: string, quoteNumber: string) => {
-    return addHistoryEntry(quoteId, "created", `Orçamento ${quoteNumber} criado`);
+  const logQuoteCreated = async (_quoteId: string, _quoteNumber: string) => {
+    return true;
   };
 
-  const logQuoteUpdated = async (quoteId: string, changes: string[]) => {
-    const description = changes.length > 0 
-      ? `Orçamento atualizado: ${changes.join(", ")}`
-      : "Orçamento atualizado";
-    return addHistoryEntry(quoteId, "updated", description);
+  const logQuoteUpdated = async (_quoteId: string, _changes: string[]) => {
+    return true;
   };
 
   const logStatusChanged = async (
-    quoteId: string,
-    oldStatus: string,
-    newStatus: string
+    _quoteId: string,
+    _oldStatus: string,
+    _newStatus: string
   ) => {
-    const statusLabels: Record<string, string> = {
-      draft: "Rascunho",
-      pending: "Pendente",
-      sent: "Enviado",
-      approved: "Aprovado",
-      rejected: "Rejeitado",
-      expired: "Expirado",
-    };
-    return addHistoryEntry(
-      quoteId,
-      "status_changed",
-      `Status alterado de "${statusLabels[oldStatus] || oldStatus}" para "${statusLabels[newStatus] || newStatus}"`,
-      {
-        fieldChanged: "status",
-        oldValue: oldStatus,
-        newValue: newStatus,
-      }
-    );
+    return true;
   };
 
-  const logItemAdded = async (quoteId: string, productName: string, quantity: number) => {
-    return addHistoryEntry(
-      quoteId,
-      "item_added",
-      `Item adicionado: ${productName} (${quantity}x)`,
-      {
-        metadata: { productName, quantity },
-      }
-    );
+  const logItemAdded = async (_quoteId: string, _productName: string, _quantity: number) => {
+    return true;
   };
 
-  const logItemRemoved = async (quoteId: string, productName: string) => {
-    return addHistoryEntry(quoteId, "item_removed", `Item removido: ${productName}`);
+  const logItemRemoved = async (_quoteId: string, _productName: string) => {
+    return true;
   };
 
   const logItemUpdated = async (
-    quoteId: string,
-    productName: string,
-    change: string
+    _quoteId: string,
+    _productName: string,
+    _change: string
   ) => {
-    return addHistoryEntry(
-      quoteId,
-      "item_updated",
-      `Item "${productName}" atualizado: ${change}`
-    );
+    return true;
   };
 
-  const logDuplicated = async (quoteId: string, originalQuoteNumber: string) => {
-    return addHistoryEntry(
-      quoteId,
-      "created",
-      `Orçamento duplicado a partir de ${originalQuoteNumber}`
-    );
+  const logDuplicated = async (_quoteId: string, _originalQuoteNumber: string) => {
+    return true;
   };
 
   return {
     history,
     isLoading,
+    isEnabled: false, // Flag indicating module is disabled
     fetchHistory,
     addHistoryEntry,
     logQuoteCreated,

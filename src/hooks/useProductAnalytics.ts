@@ -40,18 +40,17 @@ export function useProductAnalytics() {
 
   const trackSearch = useCallback(
     async ({ searchTerm, resultsCount, filtersUsed = {} }: TrackSearchParams) => {
+      // DISABLED: search_analytics table does not exist
+      // This is a no-op until the table is created
       if (!user?.id || !searchTerm.trim()) return;
 
-      try {
-        // Using type assertion since table was just created
-        await (supabase// .from("search_analytics") // DISABLED: table does not exist as any).insert({
-          search_term: searchTerm.toLowerCase().trim(),
-          results_count: resultsCount,
-          seller_id: user.id,
-          filters_used: filtersUsed,
+      // Log locally for debugging
+      if (import.meta.env.DEV) {
+        console.debug("[Analytics] Search tracked:", {
+          term: searchTerm,
+          results: resultsCount,
+          filters: filtersUsed,
         });
-      } catch (error) {
-        console.error("Error tracking search:", error);
       }
     },
     [user?.id]

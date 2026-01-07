@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { registerServiceWorker } from "@/lib/sw-register";
-import EnhancedErrorBoundary from "@/components/errors/EnhancedErrorBoundary";
+import { ErrorBoundary } from "@/components/errors";
 import App from "./App.tsx";
 import "./index.css";
 import { setupLocale } from "./lib/locale-config";
@@ -23,9 +23,9 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <EnhancedErrorBoundary>
+    <ErrorBoundary showDetails={import.meta.env.DEV}>
       <App />
-    </EnhancedErrorBoundary>
+    </ErrorBoundary>
   </StrictMode>
 );
 
