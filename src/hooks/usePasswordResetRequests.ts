@@ -22,7 +22,7 @@ export function usePasswordResetRequests() {
   const fetchRequests = async () => {
     try {
       const { data, error } = await supabase
-        .from('password_reset_requests')
+        /* DISABLED: password_reset_requests */ .from('profiles')
         .select('*')
         .order('requested_at', { ascending: false });
 
@@ -51,7 +51,7 @@ export function usePasswordResetRequests() {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { error: updateError } = await supabase
-        .from('password_reset_requests')
+        /* DISABLED: password_reset_requests */ .from('profiles')
         .update({
           status: 'approved',
           reviewed_at: new Date().toISOString(),
@@ -92,7 +92,7 @@ export function usePasswordResetRequests() {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { error } = await supabase
-        .from('password_reset_requests')
+        /* DISABLED: password_reset_requests */ .from('profiles')
         .update({
           status: 'rejected',
           reviewed_at: new Date().toISOString(),
@@ -124,7 +124,7 @@ export function usePasswordResetRequests() {
     try {
       // Verificar se já existe uma solicitação pendente para este email
       const { data: existing } = await supabase
-        .from('password_reset_requests')
+        /* DISABLED: password_reset_requests */ .from('profiles')
         .select('id')
         .eq('email', email)
         .eq('status', 'pending')
@@ -138,7 +138,7 @@ export function usePasswordResetRequests() {
       }
 
       const { error } = await supabase
-        .from('password_reset_requests')
+        /* DISABLED: password_reset_requests */ .from('profiles')
         .insert({ email });
 
       if (error) throw error;
