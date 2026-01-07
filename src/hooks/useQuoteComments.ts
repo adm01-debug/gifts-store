@@ -10,7 +10,7 @@ export function useQuoteComments(quoteId: string) {
     queryKey: ['quote-comments', quoteId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('quote_comments')
+        .from('quote_history')
         .select('*, user:user_id(email, id)')
         .eq('quote_id', quoteId)
         .order('created_at', { ascending: true });
@@ -30,7 +30,7 @@ export function useQuoteComments(quoteId: string) {
       }
 
       const { error } = await supabase
-        .from('quote_comments')
+        .from('quote_history')
         .insert({
           quote_id: quoteId,
           user_id: user.id,
