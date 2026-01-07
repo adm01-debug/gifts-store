@@ -64,7 +64,7 @@ export function useProducts(filters?: { category?: string; search?: string; feat
   return useQuery({
     queryKey: ['products', filters],
     queryFn: async () => {
-      let query = supabase.from('products').select('*, category:categories(name), supplier:suppliers(name)').eq('active', true);
+      let query = supabase.from('products').select('*').eq('active', true);
       
       if (filters?.category) query = query.eq('category_id', filters.category);
       if (filters?.search) query = query.or(`name.ilike.%${filters.search}%,sku.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
@@ -81,7 +81,7 @@ export function useProduct(id: string) {
   return useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('*, category:categories(*), supplier:suppliers(*)').eq('id', id).single();
+      const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
       if (error) throw error;
       return data as Product;
     },
@@ -93,7 +93,8 @@ export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('categories').select('*, products(count)').order('name');
+      // DESABILITADO: tabela categories não existe
+    const data: any[] = []; const error = null;
       if (error) throw error;
       return data.map(c => ({ ...c, product_count: c.products?.[0]?.count || 0 })) as Category[];
     },
@@ -104,7 +105,8 @@ export function useSuppliers() {
   return useQuery({
     queryKey: ['suppliers'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('suppliers').select('*').eq('active', true).order('name');
+      // DESABILITADO: tabela suppliers não existe
+    const data: any[] = []; const error = null;
       if (error) throw error;
       return data as Supplier[];
     },
