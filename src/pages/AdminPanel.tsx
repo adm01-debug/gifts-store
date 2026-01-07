@@ -36,7 +36,7 @@ interface UserWithRole {
   user_id: string;
   full_name: string | null;
   email: string;
-  role: "admin" | "vendedor";
+  role: "admin" | "vendedor" | "gerente";
   created_at: string;
 }
 
@@ -50,31 +50,25 @@ export default function AdminPanel() {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      // Fetch profiles with their roles
+      // CORRIGIDO: Buscar role diretamente da tabela profiles
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, user_id, full_name, created_at");
+        .select("id, full_name, role, created_at");
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.warn("Erro ao buscar profiles:", profilesError.message);
+        throw profilesError;
+      }
 
-      const { data: roles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
-
-      if (rolesError) throw rolesError;
-
-      // Combine profiles with roles
-      const usersWithRoles: UserWithRole[] = (profiles || []).map((profile) => {
-        const userRole = roles?.find((r) => r.user_id === profile.user_id);
-        return {
-          id: profile.id,
-          user_id: profile.user_id,
-          full_name: profile.full_name,
-          email: "",
-          role: (userRole?.role as "admin" | "vendedor") || "vendedor",
-          created_at: profile.created_at,
-        };
-      });
+      // Mapear profiles para o formato esperado
+      const usersWithRoles: UserWithRole[] = (profiles || []).map((profile) => ({
+        id: profile.id,
+        user_id: profile.id, // id é o mesmo que user_id em profiles
+        full_name: profile.full_name,
+        email: "",
+        role: (profile.role as "admin" | "vendedor" | "gerente") || "vendedor",
+        created_at: profile.created_at,
+      }));
 
       setUsers(usersWithRoles);
     } catch (error) {
@@ -92,10 +86,11 @@ export default function AdminPanel() {
   const handleRoleChange = async (userId: string, newRole: "admin" | "vendedor") => {
     setUpdatingUserId(userId);
     try {
+      // CORRIGIDO: Atualizar role na tabela profiles
       const { error } = await supabase
-        .from("user_roles")
+        .from("profiles")
         .update({ role: newRole })
-        .eq("user_id", userId);
+        .eq("id", userId);
 
       if (error) throw error;
 
@@ -166,25 +161,27 @@ export default function AdminPanel() {
 
           <Card className="border-border/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Reset Pendentes</CardTitle>
-              <KeyRound className="h-4 w-4 text-warning" />
+              <CardTitle className="text-sm font-medium">Reset de Senha</CardTitle>
+              <KeyRound className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-warning">{pendingCount}</div>
+              <div className="text-2xl font-bold">
+                {pendingCount > 0 ? (
+                  <span className="text-orange-500">{pendingCount} pendente{pendingCount > 1 ? 's' : ''}</span>
+                ) : (
+                  <span className="text-green-500">0</span>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Tabs for Users, Products and Password Reset */}
+        {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-4">
           <TabsList>
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" />
               Usuários
-            </TabsTrigger>
-            <TabsTrigger value="products" className="gap-2">
-              <Package className="h-4 w-4" />
-              Produtos
             </TabsTrigger>
             <TabsTrigger value="password-reset" className="gap-2">
               <KeyRound className="h-4 w-4" />
@@ -195,25 +192,24 @@ export default function AdminPanel() {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="products" className="gap-2">
+              <Package className="h-4 w-4" />
+              Produtos
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
-            {/* Users Table */}
-            <Card className="border-border/50">
+            <Card>
               <CardHeader>
-                <CardTitle>Usuários do Sistema</CardTitle>
+                <CardTitle>Gerenciamento de Usuários</CardTitle>
                 <CardDescription>
-                  Gerencie as permissões de acesso de cada usuário
+                  Visualize e gerencie as permissões dos usuários do sistema
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : users.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    Nenhum usuário encontrado
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
                   <Table>
@@ -221,33 +217,32 @@ export default function AdminPanel() {
                       <TableRow>
                         <TableHead>Nome</TableHead>
                         <TableHead>Função</TableHead>
-                        <TableHead>Criado em</TableHead>
+                        <TableHead>Cadastrado em</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {users.map((userItem) => (
                         <TableRow key={userItem.id}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-2">
-                              {userItem.role === "admin" && (
-                                <ShieldCheck className="h-4 w-4 text-primary" />
-                              )}
+                          <TableCell>
+                            <div className="font-medium">
                               {userItem.full_name || "Sem nome"}
-                              {userItem.user_id === user?.id && (
-                                <Badge variant="outline" className="text-xs">Você</Badge>
-                              )}
                             </div>
                           </TableCell>
                           <TableCell>
                             <Badge
                               variant={userItem.role === "admin" ? "default" : "secondary"}
-                              className={userItem.role === "admin" ? "bg-primary" : ""}
+                              className="gap-1"
                             >
+                              {userItem.role === "admin" ? (
+                                <ShieldCheck className="h-3 w-3" />
+                              ) : (
+                                <Shield className="h-3 w-3" />
+                              )}
                               {userItem.role === "admin" ? "Administrador" : "Vendedor"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-muted-foreground">
+                          <TableCell>
                             {new Date(userItem.created_at).toLocaleDateString("pt-BR")}
                           </TableCell>
                           <TableCell className="text-right">
@@ -255,7 +250,7 @@ export default function AdminPanel() {
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button
-                                    variant={userItem.role === "admin" ? "outline" : "default"}
+                                    variant="outline"
                                     size="sm"
                                     disabled={updatingUserId === userItem.user_id}
                                   >
@@ -277,8 +272,8 @@ export default function AdminPanel() {
                                     </AlertDialogTitle>
                                     <AlertDialogDescription>
                                       {userItem.role === "admin"
-                                        ? `${userItem.full_name || "Este usuário"} perderá acesso ao painel administrativo.`
-                                        : `${userItem.full_name || "Este usuário"} terá acesso total ao painel administrativo.`}
+                                        ? `${userItem.full_name || "Este usuário"} perderá acesso às funções administrativas.`
+                                        : `${userItem.full_name || "Este usuário"} terá acesso total ao sistema, incluindo gerenciamento de usuários.`}
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
@@ -307,12 +302,12 @@ export default function AdminPanel() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="products">
-            <ProductsManager />
-          </TabsContent>
-
           <TabsContent value="password-reset">
             <PasswordResetApproval />
+          </TabsContent>
+
+          <TabsContent value="products">
+            <ProductsManager />
           </TabsContent>
         </Tabs>
       </div>
