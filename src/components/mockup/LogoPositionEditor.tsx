@@ -128,6 +128,12 @@ export function LogoPositionEditor({
   // Calculate logo display size based on cm (assuming ~3cm per 10% of canvas)
   const getLogoDisplaySize = useCallback(() => {
     const scale = canvasSize.width / 30; // 30cm reference product size
+  // Refs para callbacks para evitar loops de re-render
+  const onPositionChangeRef = useRef(onPositionChange);
+  const onSizeChangeRef = useRef(onSizeChange);
+  
+  useEffect(() => { onPositionChangeRef.current = onPositionChange; }, [onPositionChange]);
+  useEffect(() => { onSizeChangeRef.current = onSizeChange; }, [onSizeChange]);
     return {
       width: logoWidth * scale,
       height: logoHeight * scale,
@@ -256,7 +262,7 @@ export function LogoPositionEditor({
         img.on("moving", () => {
           const newX = Math.max(5, Math.min(95, ((img.left || 0) / canvasSize.width) * 100));
           const newY = Math.max(5, Math.min(95, ((img.top || 0) / canvasSize.height) * 100));
-          onPositionChange(Math.round(newX), Math.round(newY));
+          onPositionChangeRef.current(Math.round(newX), Math.round(newY));
         });
 
         // Handle object scaling
@@ -266,7 +272,7 @@ export function LogoPositionEditor({
           const scale = canvasSize.width / 30;
           const newWidth = ((img.width || 0) * currentScaleX) / scale;
           const newHeight = ((img.height || 0) * currentScaleY) / scale;
-          onSizeChange(
+          onSizeChangeRef.current(
             Math.max(1, Math.min(20, Math.round(newWidth * 10) / 10)),
             Math.max(1, Math.min(20, Math.round(newHeight * 10) / 10))
           );
@@ -277,7 +283,7 @@ export function LogoPositionEditor({
       .catch((err) => {
         console.error("Error loading logo:", err);
       });
-  }, [logoPreview, isReady, canvasSize, applyTechniqueFilter, getLogoDisplaySize, onPositionChange, onSizeChange, positionX, positionY]);
+  }, [logoPreview, isReady, canvasSize, applyTechniqueFilter, getLogoDisplaySize, positionX, positionY]);
 
   // Update technique filter when technique changes
   useEffect(() => {
@@ -468,3 +474,4 @@ export function LogoPositionEditor({
     </Card>
   );
 }
+
