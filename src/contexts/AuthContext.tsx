@@ -2,14 +2,15 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-type AppRole = "admin" | "vendedor";
+type AppRole = "admin" | "vendedor" | "gerente";
 
 interface Profile {
   id: string;
-  user_id: string;
+  user_id?: string;
   full_name: string | null;
   avatar_url: string | null;
   phone: string | null;
+  role?: string | null;
 }
 
 interface AuthContextType {
@@ -36,43 +37,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserData = async (userId: string) => {
     try {
-      // Fetch profile
-      const { data: profileData } = await supabase
+      // Fetch profile - role agora vem da tabela profiles
+      const { data: profileData, error } = await supabase
         .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
+        .select("id, full_name, avatar_url, phone, role")
+        .eq("id", userId)
+        .maybeSingle();
       
-      if (profileData) {
-        setProfile(profileData as Profile);
+      if (error) {
+        console.warn("Erro ao buscar profile:", error.message);
+        // Define role padrão se não conseguir buscar
+        setRole("vendedor");
+        return;
       }
 
-      // Fetch role
-      const { data: roleData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .single();
-      
-      if (roleData) {
-        setRole(roleData.role as AppRole);
+      if (profileData) {
+        setProfile(profileData as Profile);
+        // Role vem direto do profile
+        const userRole = (profileData.role as AppRole) || "vendedor";
+        setRole(userRole);
+      } else {
+        // Se não tem profile, define role padrão
+        setRole("vendedor");
       }
     } catch (error) {
-      // ✅ CORREÇÃO: Log apenas em desenvolvimento
-      if (import.meta.env.DEV) {
-        console.error("Error fetching user data:", error);
-      }
+      console.warn("Erro no fetchUserData:", error);
+      setRole("vendedor");
     }
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Defer Supabase calls with setTimeout to avoid deadlocks
         if (session?.user) {
           setTimeout(() => {
             fetchUserData(session.user.id);
@@ -86,7 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
