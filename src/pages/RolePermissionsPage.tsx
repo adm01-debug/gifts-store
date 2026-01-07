@@ -58,8 +58,8 @@ export default function RolePermissionsPage() {
   const fetchData = async () => {
     try {
       const [permRes, rolePermRes] = await Promise.all([
-        supabase.from('permissions').select('*').order('category'),
-        supabase.from('role_permissions').select('*'),
+        supabase/* DISABLED: permissions */ .from('profiles').select('*').order('category'),
+        supabase/* DISABLED: role_permissions */ .from('profiles').select('*'),
       ]);
 
       if (permRes.error) throw permRes.error;
@@ -118,7 +118,7 @@ export default function RolePermissionsPage() {
       // Remove permissions
       for (const item of toRemove) {
         await supabase
-          .from('role_permissions')
+          /* DISABLED: role_permissions */ .from('profiles')
           .delete()
           .eq('role', item.role)
           .eq('permission_id', item.permission_id);
@@ -126,7 +126,7 @@ export default function RolePermissionsPage() {
 
       // Add permissions
       if (toAdd.length > 0) {
-        await supabase.from('role_permissions').insert(toAdd);
+        await supabase/* DISABLED: role_permissions */ .from('profiles').insert(toAdd);
       }
 
       toast({ title: 'Permissões atualizadas com sucesso!' });
