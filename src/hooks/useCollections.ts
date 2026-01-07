@@ -1,171 +1,100 @@
-import { useState, useEffect, useCallback } from "react";
-import { PRODUCTS, type Product } from "@/data/mockData";
-
-const STORAGE_KEY = "product-collections";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface Collection {
   id: string;
+  organization_id: string;
   name: string;
+  slug: string;
   description?: string;
-  color: string;
-  icon: string;
-  productIds: string[];
-  createdAt: string;
-  updatedAt: string;
+  cover_image_url?: string;
+  is_featured: boolean;
+  is_active: boolean;
+  start_date?: string;
+  end_date?: string;
+  sort_order: number;
+  products_count?: number;
+  created_at: string;
 }
 
-const DEFAULT_COLORS = [
-  "#8B5CF6", // purple
-  "#EC4899", // pink
-  "#F59E0B", // amber
-  "#10B981", // emerald
-  "#3B82F6", // blue
-  "#EF4444", // red
-  "#6366F1", // indigo
-  "#14B8A6", // teal
-];
-
-const DEFAULT_ICONS = ["📁", "⭐", "🎁", "💼", "🎯", "💡", "🔥", "❤️"];
-
 export function useCollections() {
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Load from localStorage
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setCollections(JSON.parse(stored));
+  const collectionsQuery = useQuery({
+    queryKey: ["collections"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("collections")
+        .select(`
+          *,
+          products_count:collection_products(count)
+        `)
+        .eq("is_active", true)
+        .order("sort_order");
+
+      if (error) {
+        console.error("Erro ao buscar coleções:", error);
+        return [];
       }
-    } catch (e) {
-      console.error("Error loading collections:", e);
-    }
-    setIsLoaded(true);
-  }, []);
+      return data as Collection[];
+    },
+  });
 
-  // Save to localStorage
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(collections));
-    }
-  }, [collections, isLoaded]);
+  const featuredCollections = useQuery({
+    queryKey: ["collections", "featured"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("collections")
+        .select("*")
+        .eq("is_active", true)
+        .eq("is_featured", true)
+        .order("sort_order")
+        .limit(6);
 
-  const createCollection = useCallback((
-    name: string,
-    description?: string,
-    color?: string,
-    icon?: string
-  ): Collection => {
-    const newCollection: Collection = {
-      id: `col-${Date.now()}`,
-      name,
-      description,
-      color: color || DEFAULT_COLORS[Math.floor(Math.random() * DEFAULT_COLORS.length)],
-      icon: icon || DEFAULT_ICONS[0],
-      productIds: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+      if (error) return [];
+      return data as Collection[];
+    },
+  });
 
-    setCollections((prev) => [...prev, newCollection]);
-    return newCollection;
-  }, []);
+  const createCollection = useMutation({
+    mutationFn: async (collection: Partial<Collection>) => {
+      const slug = collection.name?.toLowerCase().replace(/\s+/g, "-");
+      const { data, error } = await supabase
+        .from("collections")
+        .insert({ ...collection, slug })
+        .select()
+        .single();
 
-  const updateCollection = useCallback((
-    id: string,
-    updates: Partial<Omit<Collection, "id" | "createdAt">>
-  ) => {
-    setCollections((prev) =>
-      prev.map((col) =>
-        col.id === id
-          ? { ...col, ...updates, updatedAt: new Date().toISOString() }
-          : col
-      )
-    );
-  }, []);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
+      toast.success("Coleção criada!");
+    },
+  });
 
-  const deleteCollection = useCallback((id: string) => {
-    setCollections((prev) => prev.filter((col) => col.id !== id));
-  }, []);
+  const addProductToCollection = useMutation({
+    mutationFn: async ({ collectionId, productId }: { collectionId: string; productId: string }) => {
+      const { error } = await supabase
+        .from("collection_products")
+        .insert({ collection_id: collectionId, product_id: productId });
 
-  const addProductToCollection = useCallback((collectionId: string, productId: string) => {
-    setCollections((prev) =>
-      prev.map((col) =>
-        col.id === collectionId && !col.productIds.includes(productId)
-          ? {
-              ...col,
-              productIds: [...col.productIds, productId],
-              updatedAt: new Date().toISOString(),
-            }
-          : col
-      )
-    );
-  }, []);
-
-  const removeProductFromCollection = useCallback((collectionId: string, productId: string) => {
-    setCollections((prev) =>
-      prev.map((col) =>
-        col.id === collectionId
-          ? {
-              ...col,
-              productIds: col.productIds.filter((id) => id !== productId),
-              updatedAt: new Date().toISOString(),
-            }
-          : col
-      )
-    );
-  }, []);
-
-  const addProductToMultipleCollections = useCallback((
-    productId: string,
-    collectionIds: string[]
-  ) => {
-    setCollections((prev) =>
-      prev.map((col) => {
-        if (collectionIds.includes(col.id) && !col.productIds.includes(productId)) {
-          return {
-            ...col,
-            productIds: [...col.productIds, productId],
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return col;
-      })
-    );
-  }, []);
-
-  const getCollectionProducts = useCallback((collectionId: string): Product[] => {
-    const collection = collections.find((col) => col.id === collectionId);
-    if (!collection) return [];
-
-    return collection.productIds
-      .map((id) => PRODUCTS.find((p) => p.id === id))
-      .filter((p): p is Product => p !== undefined);
-  }, [collections]);
-
-  const getProductCollections = useCallback((productId: string): Collection[] => {
-    return collections.filter((col) => col.productIds.includes(productId));
-  }, [collections]);
-
-  const isProductInCollection = useCallback((productId: string, collectionId: string): boolean => {
-    const collection = collections.find((col) => col.id === collectionId);
-    return collection?.productIds.includes(productId) ?? false;
-  }, [collections]);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
+      toast.success("Produto adicionado à coleção!");
+    },
+  });
 
   return {
-    collections,
-    isLoaded,
+    collections: collectionsQuery.data || [],
+    featuredCollections: featuredCollections.data || [],
+    isLoading: collectionsQuery.isLoading,
     createCollection,
-    updateCollection,
-    deleteCollection,
     addProductToCollection,
-    removeProductFromCollection,
-    addProductToMultipleCollections,
-    getCollectionProducts,
-    getProductCollections,
-    isProductInCollection,
-    defaultColors: DEFAULT_COLORS,
-    defaultIcons: DEFAULT_ICONS,
+    refetch: collectionsQuery.refetch,
   };
 }
