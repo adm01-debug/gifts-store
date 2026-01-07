@@ -1,18 +1,25 @@
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+/**
+ * Hook de Expert Conversations (Chat IA) - DESABILITADO
+ * 
+ * Este módulo está temporariamente desabilitado.
+ * A tabela expert_conversations não existe no banco de dados atual.
+ * 
+ * Para reativar, crie a tabela necessária no Supabase.
+ */
 
-export interface ExpertConversation {
+import { useState } from "react";
+
+// Tipos mock para manter compatibilidade
+interface ExpertConversation {
   id: string;
   seller_id: string;
-  client_id: string | null;
   title: string;
-  created_at: string;
-  updated_at: string;
+  context_type: string;
+  is_active: boolean;
+  message_count: number;
 }
 
-export interface ExpertMessage {
+interface ExpertMessage {
   id: string;
   conversation_id: string;
   role: "user" | "assistant";
@@ -20,147 +27,38 @@ export interface ExpertMessage {
   created_at: string;
 }
 
-export function useExpertConversations(clientId?: string) {
-  const { user } = useAuth();
-  const [conversations, setConversations] = useState<ExpertConversation[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const fetchConversations = useCallback(async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
-    try {
-      let query = supabase
-        .from("expert_conversations")
-        .select("*")
-        .eq("seller_id", user.id)
-        .order("updated_at", { ascending: false });
-
-      if (clientId) {
-        query = query.eq("client_id", clientId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setConversations(data || []);
-    } catch (error) {
-      console.error("Error fetching conversations:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, clientId]);
-
-  useEffect(() => {
-    fetchConversations();
-  }, [fetchConversations]);
-
-  const createConversation = async (title: string = "Nova conversa"): Promise<string | null> => {
-    if (!user) return null;
-
-    try {
-      const { data, error } = await supabase
-        .from("expert_conversations")
-        .insert({
-          seller_id: user.id,
-          client_id: clientId || null,
-          title,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setConversations(prev => [data, ...prev]);
-      return data.id;
-    } catch (error) {
-      console.error("Error creating conversation:", error);
-      toast.error("Erro ao criar conversa");
-      return null;
-    }
-  };
-
-  const updateConversationTitle = async (conversationId: string, title: string) => {
-    try {
-      const { error } = await supabase
-        .from("expert_conversations")
-        .update({ title, updated_at: new Date().toISOString() })
-        .eq("id", conversationId);
-
-      if (error) throw error;
-      
-      setConversations(prev => 
-        prev.map(c => c.id === conversationId ? { ...c, title, updated_at: new Date().toISOString() } : c)
-      );
-    } catch (error) {
-      console.error("Error updating conversation:", error);
-    }
-  };
-
-  const deleteConversation = async (conversationId: string) => {
-    try {
-      const { error } = await supabase
-        .from("expert_conversations")
-        .delete()
-        .eq("id", conversationId);
-
-      if (error) throw error;
-      
-      setConversations(prev => prev.filter(c => c.id !== conversationId));
-      toast.success("Conversa excluída");
-    } catch (error) {
-      console.error("Error deleting conversation:", error);
-      toast.error("Erro ao excluir conversa");
-    }
-  };
-
-  const fetchMessages = async (conversationId: string): Promise<ExpertMessage[]> => {
-    try {
-      const { data, error } = await supabase
-        .from("expert_messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as ExpertMessage[];
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      return [];
-    }
-  };
-
-  const saveMessage = async (conversationId: string, role: "user" | "assistant", content: string) => {
-    try {
-      const { error } = await supabase
-        .from("expert_messages")
-        .insert({
-          conversation_id: conversationId,
-          role,
-          content,
-        });
-
-      if (error) throw error;
-
-      // Update conversation updated_at
-      await supabase
-        .from("expert_conversations")
-        .update({ updated_at: new Date().toISOString() })
-        .eq("id", conversationId);
-
-    } catch (error) {
-      console.error("Error saving message:", error);
-    }
-  };
+// Hook desabilitado - retorna dados vazios
+export function useExpertConversations(_sellerId?: string) {
+  const [isLoading] = useState(false);
 
   return {
-    conversations,
+    // Dados vazios
+    conversations: [] as ExpertConversation[],
+    activeConversation: null as ExpertConversation | null,
+    messages: [] as ExpertMessage[],
+    
+    // Estados
     isLoading,
-    createConversation,
-    updateConversationTitle,
-    deleteConversation,
-    fetchMessages,
-    saveMessage,
-    refreshConversations: fetchConversations,
+    isEnabled: false, // Flag indicando que módulo está desabilitado
+    
+    // Funções que não fazem nada
+    createConversation: async (_title?: string) => {
+      console.warn("[Expert Chat] Módulo desabilitado");
+      return null;
+    },
+    sendMessage: async (_conversationId: string, _content: string) => {
+      console.warn("[Expert Chat] Módulo desabilitado");
+      return null;
+    },
+    deleteConversation: async (_id: string) => {
+      console.warn("[Expert Chat] Módulo desabilitado");
+    },
+    loadMessages: async (_conversationId: string) => {
+      console.warn("[Expert Chat] Módulo desabilitado");
+      return [];
+    },
+    refetch: async () => {},
   };
 }
+
+export default useExpertConversations;
