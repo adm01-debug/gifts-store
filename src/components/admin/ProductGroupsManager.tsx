@@ -68,7 +68,7 @@ export function ProductGroupsManager() {
     queryKey: ["product-groups"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("product_groups")
+        // .from("product_groups") // DISABLED
         .select("*")
         .order("group_name");
       if (error) throw error;
@@ -94,7 +94,7 @@ export function ProductGroupsManager() {
     queryKey: ["product-group-members"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("product_group_members")
+        // .from("product_group_members") // DISABLED
         .select("*");
       if (error) throw error;
       return data as ProductGroupMember[];
@@ -104,7 +104,7 @@ export function ProductGroupsManager() {
   // Add group mutation
   const addGroupMutation = useMutation({
     mutationFn: async (data: { group_code: string; group_name: string; description?: string }) => {
-      const { error } = await supabase.from("product_groups").insert(data);
+      const { error } = await supabase// .from("product_groups") // DISABLED.insert(data);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -119,7 +119,7 @@ export function ProductGroupsManager() {
   // Update group mutation
   const updateGroupMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: string; group_code?: string; group_name?: string; description?: string; is_active?: boolean }) => {
-      const { error } = await supabase.from("product_groups").update(data).eq("id", id);
+      const { error } = await supabase// .from("product_groups") // DISABLED.update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -132,7 +132,7 @@ export function ProductGroupsManager() {
   // Delete group mutation
   const deleteGroupMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("product_groups").delete().eq("id", id);
+      const { error } = await supabase// .from("product_groups") // DISABLED.delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -145,7 +145,7 @@ export function ProductGroupsManager() {
   // Add member mutation
   const addMemberMutation = useMutation({
     mutationFn: async (data: { product_group_id: string; product_id: string }) => {
-      const { error } = await supabase.from("product_group_members").insert(data);
+      const { error } = await supabase// .from("product_group_members") // DISABLED.insert(data);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -160,7 +160,7 @@ export function ProductGroupsManager() {
   // Remove member mutation
   const removeMemberMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("product_group_members").delete().eq("id", id);
+      const { error } = await supabase// .from("product_group_members") // DISABLED.delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
