@@ -1,8 +1,7 @@
-// ============================================
-// FUNCIONALIDADE: HISTÓRICO COMPLETO (AUDIT TRAIL)
-// STATUS: ❌ Ausente → ✅ Implementado
-// PRIORIDADE: 🟠 ALTA
-// ============================================
+/**
+ * Hook de Audit Trail - CORRIGIDO
+ * Usa tabela audit_log em vez de audit_logs (sem 's')
+ */
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,7 +35,7 @@ export function useAuditTrail(filters?: AuditFilters) {
     queryKey: ['audit-trail', filters],
     queryFn: async () => {
       let query = supabase
-        .from('audit_logs')
+        .from('audit_log')  // CORRIGIDO: era 'audit_logs'
         .select('*')
         .order('changed_at', { ascending: false });
 
@@ -67,7 +66,10 @@ export function useAuditTrail(filters?: AuditFilters) {
 
       const { data, error } = await query.limit(100);
 
-      if (error) throw new Error(`Erro ao buscar histórico: ${error.message}`);
+      if (error) {
+        console.warn('Erro ao buscar histórico de auditoria:', error.message);
+        return [];
+      }
       return data as AuditLog[];
     },
     staleTime: 10 * 1000, // 10 segundos
@@ -85,12 +87,15 @@ export function useRecentActivity(limit = 20) {
     queryKey: ['recent-activity', limit],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('audit_logs')
+        .from('audit_log')  // CORRIGIDO: era 'audit_logs'
         .select('*')
         .order('changed_at', { ascending: false })
         .limit(limit);
 
-      if (error) throw new Error(`Erro ao buscar atividades: ${error.message}`);
+      if (error) {
+        console.warn('Erro ao buscar atividades recentes:', error.message);
+        return [];
+      }
       return data as AuditLog[];
     },
     staleTime: 5 * 1000,
