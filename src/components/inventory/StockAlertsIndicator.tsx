@@ -97,7 +97,7 @@ export function StockAlertsIndicator({
 
       // Buscar estoques das variantes
       const { data: stocks, error: stocksError } = await supabase
-        .from("variant_stocks")
+        .from("products")
         .select(`
           variant_id,
           stock_quantity,
