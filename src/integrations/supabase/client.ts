@@ -2,22 +2,34 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+// As variáveis são mapeadas pelo vite.config.ts
+// SUPABASE_URL -> VITE_SUPABASE_URL
+// SUPABASE_PUBLISHABLE_KEY -> VITE_SUPABASE_ANON_KEY
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Valores de fallback para desenvolvimento
+// Valores de fallback para desenvolvimento local
 const FALLBACK_URL = 'https://placeholder.supabase.co';
 const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUxOTI4MDAsImV4cCI6MTk2MDc2ODgwMH0.placeholder';
 
 // Use valores reais se disponíveis, caso contrário use fallback
 const supabaseUrl = SUPABASE_URL || FALLBACK_URL;
-const supabaseKey = SUPABASE_PUBLISHABLE_KEY || FALLBACK_KEY;
+const supabaseKey = SUPABASE_ANON_KEY || FALLBACK_KEY;
 
-// Log de aviso se estiver usando fallback
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+// Log de aviso se estiver usando fallback (só em desenvolvimento)
+if ((!SUPABASE_URL || !SUPABASE_ANON_KEY) && import.meta.env.DEV) {
   console.warn(
     '⚠️ Supabase não configurado. Usando valores de fallback.\n' +
-    'Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nas variáveis de ambiente.'
+    'Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nas variáveis de ambiente.\n' +
+    'Ou use SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY da integração Vercel.'
+  );
+}
+
+// Log de erro em produção se não estiver configurado
+if ((!SUPABASE_URL || !SUPABASE_ANON_KEY) && import.meta.env.PROD) {
+  console.error(
+    '❌ ERRO: Supabase não configurado em produção!\n' +
+    'Verifique as variáveis de ambiente no painel da Vercel.'
   );
 }
 
@@ -26,7 +38,7 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
   auth: {
-    storage: localStorage,
+    storage: typeof window !== 'undefined' ? localStorage : undefined,
     persistSession: true,
     autoRefreshToken: true,
   }
