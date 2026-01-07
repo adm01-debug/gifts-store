@@ -35,7 +35,7 @@ export function useAuditTrail(filters?: AuditFilters) {
     queryKey: ['audit-trail', filters],
     queryFn: async () => {
       let query = supabase
-        .from('audit_log')  // CORRIGIDO: era 'audit_logs'
+        .from('quote_history')  // CORRIGIDO: era 'audit_logs'
         .select('*')
         .order('changed_at', { ascending: false });
 
@@ -87,7 +87,7 @@ export function useRecentActivity(limit = 20) {
     queryKey: ['recent-activity', limit],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('audit_log')  // CORRIGIDO: era 'audit_logs'
+        .from('quote_history')  // CORRIGIDO: era 'audit_logs'
         .select('*')
         .order('changed_at', { ascending: false })
         .limit(limit);
