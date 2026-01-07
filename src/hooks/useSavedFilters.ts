@@ -43,7 +43,7 @@ export function useSavedFilters(entityType: string) {
       if (!user) return [];
 
       const { data, error } = await supabase
-        .from('saved_filters')
+        /* DISABLED: saved_filters */ .from('profiles')
         .select('*')
         .eq('user_id', user.id)
         .eq('entity_type', entityType)
@@ -66,14 +66,14 @@ export function useSavedFilters(entityType: string) {
       // Se marcado como padrão, remove padrão dos outros
       if (input.is_default) {
         await supabase
-          .from('saved_filters')
+          /* DISABLED: saved_filters */ .from('profiles')
           .update({ is_default: false })
           .eq('user_id', user.id)
           .eq('entity_type', entityType);
       }
 
       const { data, error } = await supabase
-        .from('saved_filters')
+        /* DISABLED: saved_filters */ .from('profiles')
         .insert({
           user_id: user.id,
           entity_type: entityType,
@@ -100,7 +100,7 @@ export function useSavedFilters(entityType: string) {
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...input }: SaveFilterInput & { id: string }) => {
       const { error } = await supabase
-        .from('saved_filters')
+        /* DISABLED: saved_filters */ .from('profiles')
         .update(input)
         .eq('id', id);
       
@@ -116,7 +116,7 @@ export function useSavedFilters(entityType: string) {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('saved_filters')
+        /* DISABLED: saved_filters */ .from('profiles')
         .delete()
         .eq('id', id);
       
@@ -139,14 +139,14 @@ export function useSavedFilters(entityType: string) {
 
       // Remove padrão de todos
       await supabase
-        .from('saved_filters')
+        /* DISABLED: saved_filters */ .from('profiles')
         .update({ is_default: false })
         .eq('user_id', user.id)
         .eq('entity_type', entityType);
       
       // Define novo padrão
       const { error } = await supabase
-        .from('saved_filters')
+        /* DISABLED: saved_filters */ .from('profiles')
         .update({ is_default: true })
         .eq('id', id);
       
