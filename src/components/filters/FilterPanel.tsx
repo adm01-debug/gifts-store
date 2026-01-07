@@ -7,6 +7,8 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { useMaterials } from "@/hooks/useMaterials";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   COLORS,
   CATEGORIES,
@@ -15,7 +17,6 @@ import {
   DATAS_COMEMORATIVAS,
   ENDOMARKETING,
   NICHOS,
-  MATERIAIS,
   FAIXAS_PRECO,
 } from "@/data/mockData";
 
@@ -57,6 +58,7 @@ export const defaultFilters: FilterState = {
 };
 
 export function FilterPanel({ filters, onFilterChange, onReset, activeFiltersCount }: FilterPanelProps) {
+  const { materials, isLoading: loadingMaterials } = useMaterials();
   const [openSections, setOpenSections] = useState<string[]>(['cores', 'categorias', 'preco']);
 
   const toggleSection = (section: string) => {
@@ -276,21 +278,36 @@ export function FilterPanel({ filters, onFilterChange, onReset, activeFiltersCou
           </div>
         </FilterSection>
 
-        {/* Materiais */}
+        {/* Materiais - Dados do Supabase */}
         <FilterSection id="materiais" title="Materiais">
           <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin">
-            {MATERIAIS.slice(0, 12).map((material) => (
-              <div key={material} className="flex items-center gap-2">
-                <Checkbox
-                  id={`mat-${material}`}
-                  checked={filters.materiais.includes(material)}
-                  onCheckedChange={() => toggleArrayFilter('materiais', material)}
-                />
-                <Label htmlFor={`mat-${material}`} className="text-sm cursor-pointer">
-                  {material}
-                </Label>
+            {loadingMaterials ? (
+              <div className="space-y-2">
+                {[1,2,3,4].map((i) => (
+                  <Skeleton key={i} className="h-5 w-full" />
+                ))}
               </div>
-            ))}
+            ) : materials.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum material cadastrado</p>
+            ) : (
+              materials.slice(0, 15).map((material) => (
+                <div key={material.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`mat-${material.id}`}
+                    checked={filters.materiais.includes(material.name)}
+                    onCheckedChange={() => toggleArrayFilter('materiais', material.name)}
+                  />
+                  <Label htmlFor={`mat-${material.id}`} className="text-sm cursor-pointer">
+                    {material.name}
+                    {material.material_group && (
+                      <span className="text-muted-foreground ml-1 text-xs">
+                        ({material.material_group.name})
+                      </span>
+                    )}
+                  </Label>
+                </div>
+              ))
+            )}
           </div>
         </FilterSection>
 
