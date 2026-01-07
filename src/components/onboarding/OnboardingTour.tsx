@@ -1,240 +1,94 @@
-import { useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight, SkipForward, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useUserOnboarding } from "@/hooks/useUserOnboarding";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useOnboarding, ONBOARDING_STEPS } from "@/hooks/useOnboarding";
-import { useNavigate, useLocation } from "react-router-dom";
+import { Progress } from "@/components/ui/progress";
+import { CheckCircle2, ChevronRight, X } from "lucide-react";
 
-interface TooltipPosition {
-  top?: number;
-  left?: number;
-  right?: number;
-  bottom?: number;
+interface OnboardingStep {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
 }
 
-export function OnboardingTour() {
-  const {
-    showTour,
-    currentStep,
-    currentStepData,
-    totalSteps,
-    nextStep,
-    prevStep,
-    skipTour,
-  } = useOnboarding();
+const ONBOARDING_STEPS: OnboardingStep[] = [
+  { id: "welcome", title: "Bem-vindo!", description: "Vamos conhecer o sistema juntos.", icon: "👋" },
+  { id: "products", title: "Catálogo de Produtos", description: "Explore nossos produtos promocionais.", icon: "📦" },
+  { id: "quotes", title: "Criando Orçamentos", description: "Aprenda a criar orçamentos rapidamente.", icon: "📝" },
+  { id: "clients", title: "Gestão de Clientes", description: "Gerencie seus clientes em um só lugar.", icon: "👥" },
+  { id: "done", title: "Pronto!", description: "Você está pronto para começar!", icon: "🎉" },
+];
 
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({});
-  const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
+interface OnboardingTourProps {
+  userId: string;
+  onComplete?: () => void;
+}
 
-  const updatePositions = useCallback(() => {
-    if (!currentStepData) return;
+export function OnboardingTour({ userId, onComplete }: OnboardingTourProps) {
+  const { onboarding, hasCompletedTour, currentStep, startOnboarding, completeStep, completeTour } = useUserOnboarding(userId);
+  const [isOpen, setIsOpen] = useState(false);
 
-    const target = document.querySelector(currentStepData.targetSelector);
-    if (target) {
-      const rect = target.getBoundingClientRect();
-      setHighlightRect(rect);
+  useEffect(() => {
+    if (!hasCompletedTour && onboarding) {
+      setIsOpen(true);
+    }
+  }, [hasCompletedTour, onboarding]);
 
-      const padding = 16;
-      const tooltipWidth = 320;
-      const tooltipHeight = 200;
+  useEffect(() => {
+    if (!onboarding && userId) {
+      startOnboarding.mutate(userId);
+    }
+  }, [onboarding, userId]);
 
-      let position: TooltipPosition = {};
+  if (hasCompletedTour || !isOpen) return null;
 
-      switch (currentStepData.position) {
-        case "right":
-          position = {
-            top: rect.top + rect.height / 2 - tooltipHeight / 2,
-            left: rect.right + padding,
-          };
-          break;
-        case "left":
-          position = {
-            top: rect.top + rect.height / 2 - tooltipHeight / 2,
-            left: rect.left - tooltipWidth - padding,
-          };
-          break;
-        case "bottom":
-          position = {
-            top: rect.bottom + padding,
-            left: rect.left + rect.width / 2 - tooltipWidth / 2,
-          };
-          break;
-        case "top":
-          position = {
-            top: rect.top - tooltipHeight - padding,
-            left: rect.left + rect.width / 2 - tooltipWidth / 2,
-          };
-          break;
-      }
+  const step = ONBOARDING_STEPS[currentStep] || ONBOARDING_STEPS[0];
+  const progress = ((currentStep + 1) / ONBOARDING_STEPS.length) * 100;
+  const isLastStep = currentStep >= ONBOARDING_STEPS.length - 1;
 
-      // Ensure tooltip stays within viewport
-      if (position.left !== undefined && position.left < padding) {
-        position.left = padding;
-      }
-      if (position.left !== undefined && position.left + tooltipWidth > window.innerWidth - padding) {
-        position.left = window.innerWidth - tooltipWidth - padding;
-      }
-      if (position.top !== undefined && position.top < padding) {
-        position.top = padding;
-      }
-      if (position.top !== undefined && position.top + tooltipHeight > window.innerHeight - padding) {
-        position.top = window.innerHeight - tooltipHeight - padding;
-      }
-
-      setTooltipPosition(position);
+  const handleNext = () => {
+    if (isLastStep) {
+      completeTour.mutate(undefined, { onSuccess: () => { setIsOpen(false); onComplete?.(); } });
     } else {
-      // Fallback to center if target not found
-      setHighlightRect(null);
-      setTooltipPosition({
-        top: window.innerHeight / 2 - 100,
-        left: window.innerWidth / 2 - 160,
-      });
+      completeStep.mutate({ stepId: step.id });
     }
-  }, [currentStepData]);
+  };
 
-  // Navigate to correct route for step
-  useEffect(() => {
-    if (showTour && currentStepData?.route && location.pathname !== currentStepData.route) {
-      navigate(currentStepData.route);
-    }
-  }, [showTour, currentStepData, location.pathname, navigate]);
-
-  // Update positions when step changes or on resize
-  useEffect(() => {
-    if (!showTour) return;
-
-    // Small delay to allow DOM to update
-    const timer = setTimeout(updatePositions, 100);
-
-    window.addEventListener("resize", updatePositions);
-    window.addEventListener("scroll", updatePositions);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", updatePositions);
-      window.removeEventListener("scroll", updatePositions);
-    };
-  }, [showTour, currentStep, updatePositions]);
-
-  if (!showTour || !currentStepData) return null;
+  const handleSkip = () => {
+    completeTour.mutate(undefined, { onSuccess: () => { setIsOpen(false); onComplete?.(); } });
+  };
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[100] pointer-events-none">
-        {/* Overlay with spotlight effect */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 pointer-events-auto"
-          style={{
-            background: highlightRect
-              ? `radial-gradient(ellipse ${highlightRect.width + 40}px ${highlightRect.height + 40}px at ${highlightRect.left + highlightRect.width / 2}px ${highlightRect.top + highlightRect.height / 2}px, transparent 0%, rgba(0, 0, 0, 0.75) 100%)`
-              : "rgba(0, 0, 0, 0.75)",
-          }}
-          onClick={(e) => e.stopPropagation()}
-        />
-
-        {/* Highlight border around target element */}
-        {highlightRect && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="absolute border-2 border-primary rounded-lg pointer-events-none"
-            style={{
-              top: highlightRect.top - 4,
-              left: highlightRect.left - 4,
-              width: highlightRect.width + 8,
-              height: highlightRect.height + 8,
-              boxShadow: "0 0 0 4px rgba(var(--primary), 0.2), 0 0 20px rgba(var(--primary), 0.4)",
-            }}
-          />
-        )}
-
-        {/* Tooltip */}
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -10, scale: 0.95 }}
-          transition={{ duration: 0.2 }}
-          className="absolute w-80 pointer-events-auto"
-          style={{
-            top: tooltipPosition.top,
-            left: tooltipPosition.left,
-          }}
-        >
-          <div className="bg-card border border-border rounded-xl shadow-2xl overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-xs font-medium text-muted-foreground">
-                  Passo {currentStep + 1} de {totalSteps}
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={skipTour}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Content */}
-            <div className="p-4">
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                {currentStepData.title}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {currentStepData.description}
-              </p>
-            </div>
-
-            {/* Progress bar */}
-            <div className="px-4 pb-2">
-              <div className="h-1 bg-muted rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-primary"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
-                  transition={{ duration: 0.3 }}
-                />
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="px-4 pb-4 flex items-center justify-between gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={skipTour}
-                className="text-muted-foreground"
-              >
-                <SkipForward className="h-4 w-4 mr-1" />
-                Pular
-              </Button>
-
-              <div className="flex items-center gap-2">
-                {currentStep > 0 && (
-                  <Button variant="outline" size="sm" onClick={prevStep}>
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Anterior
-                  </Button>
-                )}
-                <Button size="sm" onClick={nextStep}>
-                  {currentStep === totalSteps - 1 ? "Concluir" : "Próximo"}
-                  {currentStep < totalSteps - 1 && <ChevronRight className="h-4 w-4 ml-1" />}
-                </Button>
-              </div>
-            </div>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="relative">
+          <Button variant="ghost" size="icon" className="absolute right-2 top-2" onClick={handleSkip}>
+            <X className="h-4 w-4" />
+          </Button>
+          <div className="text-center">
+            <span className="text-5xl mb-4 block">{step.icon}</span>
+            <CardTitle>{step.title}</CardTitle>
           </div>
-        </motion.div>
-      </div>
-    </AnimatePresence>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-muted-foreground mb-4">{step.description}</p>
+          <Progress value={progress} className="h-2" />
+          <p className="text-xs text-muted-foreground mt-2">
+            Passo {currentStep + 1} de {ONBOARDING_STEPS.length}
+          </p>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button variant="ghost" onClick={handleSkip}>Pular tour</Button>
+          <Button onClick={handleNext}>
+            {isLastStep ? (
+              <>Concluir <CheckCircle2 className="h-4 w-4 ml-1" /></>
+            ) : (
+              <>Próximo <ChevronRight className="h-4 w-4 ml-1" /></>
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
