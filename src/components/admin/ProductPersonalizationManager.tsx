@@ -178,7 +178,7 @@ export function ProductPersonalizationManager() {
     queryKey: ["admin-product-groups-search"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("product_groups")
+        /* DISABLED: product_groups */ .from("profiles")
         .select("id, group_code, group_name")
         .eq("is_active", true);
       if (error) throw error;
@@ -191,7 +191,7 @@ export function ProductPersonalizationManager() {
     queryKey: ["admin-all-memberships"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("product_group_members")
+        /* DISABLED: product_group_members */ .from("profiles")
         .select("product_id, product_group_id");
       if (error) throw error;
       return data as { product_id: string; product_group_id: string }[];
@@ -223,7 +223,7 @@ export function ProductPersonalizationManager() {
     queryFn: async () => {
       if (!selectedProduct) return null;
       const { data, error } = await supabase
-        .from("product_group_members")
+        /* DISABLED: product_group_members */ .from("profiles")
         .select(`
           *,
           product_group:product_groups(id, group_code, group_name)
@@ -242,7 +242,7 @@ export function ProductPersonalizationManager() {
     queryFn: async () => {
       if (!selectedProduct) return [];
       const { data, error } = await supabase
-        .from("product_components")
+        /* DISABLED: product_components */ .from("profiles")
         .select("*")
         .eq("product_id", selectedProduct)
         .order("sort_order");
@@ -259,7 +259,7 @@ export function ProductPersonalizationManager() {
       if (!components?.length) return [];
       const componentIds = components.map((c) => c.id);
       const { data, error } = await supabase
-        .from("product_component_locations")
+        /* DISABLED: product_component_locations */ .from("profiles")
         .select("*")
         .in("component_id", componentIds);
       if (error) throw error;
@@ -289,7 +289,7 @@ export function ProductPersonalizationManager() {
       if (!locations?.length) return [];
       const locationIds = locations.map((l) => l.id);
       const { data, error } = await supabase
-        .from("product_component_location_techniques")
+        /* DISABLED: product_component_location_techniques */ .from("profiles")
         .select(`
           *,
           technique:personalization_techniques(id, code, name)
@@ -305,7 +305,7 @@ export function ProductPersonalizationManager() {
   const toggleGroupRulesMutation = useMutation({
     mutationFn: async ({ id, use_group_rules }: { id: string; use_group_rules: boolean }) => {
       const { error } = await supabase
-        .from("product_group_members")
+        /* DISABLED: product_group_members */ .from("profiles")
         .update({ use_group_rules })
         .eq("id", id);
       if (error) throw error;
@@ -325,7 +325,7 @@ export function ProductPersonalizationManager() {
     try {
       // Fetch group components
       const { data: groupComponents } = await supabase
-        .from("product_group_components")
+        /* DISABLED: product_group_components */ .from("profiles")
         .select("*")
         .eq("product_group_id", productMembership.product_group_id);
 
@@ -336,14 +336,14 @@ export function ProductPersonalizationManager() {
 
       // Delete existing product components
       await supabase
-        .from("product_components")
+        /* DISABLED: product_components */ .from("profiles")
         .delete()
         .eq("product_id", selectedProduct);
 
       // Create product components from group template
       for (const gc of groupComponents) {
         const { data: newComponent, error: compError } = await supabase
-          .from("product_components")
+          /* DISABLED: product_components */ .from("profiles")
           .insert({
             product_id: selectedProduct,
             component_code: gc.component_code,
@@ -359,14 +359,14 @@ export function ProductPersonalizationManager() {
 
         // Fetch group locations for this component
         const { data: groupLocations } = await supabase
-          .from("product_group_locations")
+          /* DISABLED: product_group_locations */ .from("profiles")
           .select("*")
           .eq("group_component_id", gc.id);
 
         if (groupLocations?.length) {
           for (const gl of groupLocations) {
             const { data: newLocation, error: locError } = await supabase
-              .from("product_component_locations")
+              /* DISABLED: product_component_locations */ .from("profiles")
               .insert({
                 component_id: newComponent.id,
                 location_code: gl.location_code,
@@ -384,7 +384,7 @@ export function ProductPersonalizationManager() {
 
             // Fetch group techniques for this location
             const { data: groupTechniques } = await supabase
-              .from("product_group_location_techniques")
+              /* DISABLED: product_group_location_techniques */ .from("profiles")
               .select("*")
               .eq("group_location_id", gl.id);
 
@@ -394,7 +394,7 @@ export function ProductPersonalizationManager() {
                 const composedCode = `${gc.component_code}-${gl.location_code}-${technique?.code || ""}`;
 
                 await supabase
-                  .from("product_component_location_techniques")
+                  /* DISABLED: product_component_location_techniques */ .from("profiles")
                   .insert({
                     component_location_id: newLocation.id,
                     technique_id: gt.technique_id,
@@ -411,7 +411,7 @@ export function ProductPersonalizationManager() {
 
       // Set use_group_rules to false (now using custom)
       await supabase
-        .from("product_group_members")
+        /* DISABLED: product_group_members */ .from("profiles")
         .update({ use_group_rules: false })
         .eq("id", productMembership.id);
 
@@ -432,7 +432,7 @@ export function ProductPersonalizationManager() {
   // Mutations for components, locations, techniques
   const addComponentMutation = useMutation({
     mutationFn: async (data: { product_id: string; component_code: string; component_name: string }) => {
-      const { error } = await supabase.from("product_components").insert(data);
+      const { error } = await supabase/* DISABLED: product_components */ .from("profiles").insert(data);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -446,7 +446,7 @@ export function ProductPersonalizationManager() {
 
   const updateComponentMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: string; component_code?: string; component_name?: string; is_personalizable?: boolean; is_active?: boolean }) => {
-      const { error } = await supabase.from("product_components").update(data).eq("id", id);
+      const { error } = await supabase/* DISABLED: product_components */ .from("profiles").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -458,7 +458,7 @@ export function ProductPersonalizationManager() {
 
   const deleteComponentMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("product_components").delete().eq("id", id);
+      const { error } = await supabase/* DISABLED: product_components */ .from("profiles").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -477,7 +477,7 @@ export function ProductPersonalizationManager() {
       max_height_cm?: number;
       max_area_cm2?: number;
     }) => {
-      const { error } = await supabase.from("product_component_locations").insert(data);
+      const { error } = await supabase/* DISABLED: product_component_locations */ .from("profiles").insert(data);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -491,7 +491,7 @@ export function ProductPersonalizationManager() {
 
   const updateLocationMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: string; location_code?: string; location_name?: string; max_width_cm?: number | null; max_height_cm?: number | null; max_area_cm2?: number | null; area_image_url?: string | null; is_active?: boolean }) => {
-      const { error } = await supabase.from("product_component_locations").update(data).eq("id", id);
+      const { error } = await supabase/* DISABLED: product_component_locations */ .from("profiles").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -503,7 +503,7 @@ export function ProductPersonalizationManager() {
 
   const deleteLocationMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("product_component_locations").delete().eq("id", id);
+      const { error } = await supabase/* DISABLED: product_component_locations */ .from("profiles").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -520,7 +520,7 @@ export function ProductPersonalizationManager() {
       composed_code: string;
       max_colors?: number;
     }) => {
-      const { error } = await supabase.from("product_component_location_techniques").insert(data);
+      const { error } = await supabase/* DISABLED: product_component_location_techniques */ .from("profiles").insert(data);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -535,7 +535,7 @@ export function ProductPersonalizationManager() {
 
   const updateTechniqueMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: string; is_default?: boolean; max_colors?: number | null; is_active?: boolean }) => {
-      const { error } = await supabase.from("product_component_location_techniques").update(data).eq("id", id);
+      const { error } = await supabase/* DISABLED: product_component_location_techniques */ .from("profiles").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -547,7 +547,7 @@ export function ProductPersonalizationManager() {
 
   const deleteTechniqueMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("product_component_location_techniques").delete().eq("id", id);
+      const { error } = await supabase/* DISABLED: product_component_location_techniques */ .from("profiles").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -615,7 +615,7 @@ export function ProductPersonalizationManager() {
     for (let i = 0; i < reordered.length; i++) {
       if (reordered[i].sort_order !== i) {
         await supabase
-          .from("product_components")
+          /* DISABLED: product_components */ .from("profiles")
           .update({ sort_order: i })
           .eq("id", reordered[i].id);
       }
