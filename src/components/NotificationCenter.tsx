@@ -16,7 +16,7 @@ export function NotificationCenter() {
   const {
     notifications,
     unreadCount,
-    isLoading,
+    loading,
     markAsRead,
     markAllAsRead,
     deleteNotification,
@@ -37,7 +37,7 @@ export function NotificationCenter() {
           )}
         </Button>
       </PopoverTrigger>
-      
+
       <PopoverContent className="w-96 p-0" align="end">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold">Notificações</h3>
@@ -54,7 +54,7 @@ export function NotificationCenter() {
         </div>
 
         <ScrollArea className="h-[400px]">
-          {isLoading ? (
+          {loading ? (
             <div className="p-4 text-center text-muted-foreground">
               Carregando...
             </div>
@@ -72,33 +72,21 @@ export function NotificationCenter() {
                     "p-4 hover:bg-accent cursor-pointer transition-colors",
                     !notif.is_read && "bg-accent/50"
                   )}
-                  onClick={() => {
-                    markAsRead(notif.id);
-                    if (notif.action_url) {
-                      window.location.href = notif.action_url;
-                    }
-                  }}
+                  onClick={() => markAsRead(notif.id)}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className={cn(
-                          "text-sm font-medium",
-                          !notif.is_read && "font-semibold"
-                        )}>
-                          {notif.title}
-                        </p>
-                        {notif.is_grouped && notif.group_count > 1 && (
-                          <Badge variant="secondary" className="text-xs">
-                            {notif.group_count}
-                          </Badge>
-                        )}
-                      </div>
-                      
+                      <p className={cn(
+                        "text-sm font-medium",
+                        !notif.is_read && "font-semibold"
+                      )}>
+                        {notif.title}
+                      </p>
+
                       <p className="text-sm text-muted-foreground line-clamp-2">
                         {notif.message}
                       </p>
-                      
+
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span>
                           {formatDistanceToNow(new Date(notif.created_at), {
@@ -107,7 +95,7 @@ export function NotificationCenter() {
                           })}
                         </span>
                         <span>•</span>
-                        <span className="capitalize">{notif.source_system}</span>
+                        <span className="capitalize">{notif.type}</span>
                       </div>
                     </div>
 
@@ -125,7 +113,7 @@ export function NotificationCenter() {
                           <Check className="h-3 w-3" />
                         </Button>
                       )}
-                      
+
                       <Button
                         variant="ghost"
                         size="icon"
