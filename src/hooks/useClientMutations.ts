@@ -1,17 +1,30 @@
+/**
+ * Hook de Mutações de Clientes - CORRIGIDO
+ * Usa tabela bitrix_clients em vez de clients
+ */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export interface ClientInput {
-  name: string;
+  company_name?: string;
+  trading_name?: string;
+  name?: string;
   email?: string;
   phone?: string;
-  company?: string;
+  mobile?: string;
+  cnpj?: string;
+  cpf?: string;
   notes?: string;
+  address_street?: string;
+  address_city?: string;
+  address_state?: string;
+  address_zipcode?: string;
 }
 
 interface Client extends ClientInput {
   id: string;
+  is_active?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -21,13 +34,32 @@ export function useCreateClient() {
 
   return useMutation({
     mutationFn: async (newClient: ClientInput) => {
-      if (!newClient.name || newClient.name.trim().length < 2) {
+      // Validação
+      const name = newClient.trading_name || newClient.company_name || newClient.name;
+      if (!name || name.trim().length < 2) {
         throw new Error('Nome do cliente deve ter no mínimo 2 caracteres');
       }
 
+      // Preparar dados para bitrix_clients
+      const clientData = {
+        company_name: newClient.company_name || newClient.name,
+        trading_name: newClient.trading_name || newClient.name,
+        email: newClient.email,
+        phone: newClient.phone,
+        mobile: newClient.mobile,
+        cnpj: newClient.cnpj,
+        cpf: newClient.cpf,
+        notes: newClient.notes,
+        address_street: newClient.address_street,
+        address_city: newClient.address_city,
+        address_state: newClient.address_state,
+        address_zipcode: newClient.address_zipcode,
+        is_active: true,
+      };
+
       const { data, error } = await supabase
-        .from('clients')
-        .insert(newClient)
+        .from('bitrix_clients')  // CORRIGIDO: era 'clients'
+        .insert(clientData)
         .select()
         .single();
 
@@ -42,6 +74,7 @@ export function useCreateClient() {
         const optimisticClient: Client = {
           id: `temp-${Date.now()}`,
           ...newClient,
+          is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -69,7 +102,7 @@ export function useUpdateClient() {
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<ClientInput> }) => {
       const { data, error } = await supabase
-        .from('clients')
+        .from('bitrix_clients')  // CORRIGIDO: era 'clients'
         .update(updates)
         .eq('id', id)
         .select()
@@ -124,7 +157,12 @@ export function useDeleteClient() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('clients').delete().eq('id', id);
+      // Soft delete - apenas marca como inativo
+      const { error } = await supabase
+        .from('bitrix_clients')  // CORRIGIDO: era 'clients'
+        .update({ is_active: false })
+        .eq('id', id);
+        
       if (error) throw new Error(`Erro ao deletar cliente: ${error.message}`);
       return id;
     },
@@ -149,7 +187,7 @@ export function useDeleteClient() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
-      toast.success('Cliente deletado!');
+      toast.success('Cliente removido!');
     },
   });
 }
