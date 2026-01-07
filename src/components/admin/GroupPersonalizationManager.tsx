@@ -134,7 +134,7 @@ export function GroupPersonalizationManager() {
     queryKey: ["product-groups"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("product_groups")
+        /* DISABLED: product_groups */ .from("profiles")
         .select("id, group_code, group_name")
         .eq("is_active", true)
         .order("group_name");
@@ -149,7 +149,7 @@ export function GroupPersonalizationManager() {
     queryFn: async () => {
       if (!selectedGroup) return [];
       const { data, error } = await supabase
-        .from("product_group_components")
+        /* DISABLED: product_group_components */ .from("profiles")
         .select("*")
         .eq("product_group_id", selectedGroup)
         .order("sort_order");
@@ -166,7 +166,7 @@ export function GroupPersonalizationManager() {
       if (!components?.length) return [];
       const componentIds = components.map((c) => c.id);
       const { data, error } = await supabase
-        .from("product_group_locations")
+        /* DISABLED: product_group_locations */ .from("profiles")
         .select("*")
         .in("group_component_id", componentIds);
       if (error) throw error;
@@ -196,7 +196,7 @@ export function GroupPersonalizationManager() {
       if (!locations?.length) return [];
       const locationIds = locations.map((l) => l.id);
       const { data, error } = await supabase
-        .from("product_group_location_techniques")
+        /* DISABLED: product_group_location_techniques */ .from("profiles")
         .select(`
           *,
           technique:personalization_techniques(id, code, name)
@@ -211,7 +211,7 @@ export function GroupPersonalizationManager() {
   // Mutations
   const addComponentMutation = useMutation({
     mutationFn: async (data: { product_group_id: string; component_code: string; component_name: string }) => {
-      const { error } = await supabase.from("product_group_components").insert(data);
+      const { error } = await supabase/* DISABLED: product_group_components */ .from("profiles").insert(data);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -225,7 +225,7 @@ export function GroupPersonalizationManager() {
 
   const updateComponentMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: string; component_code?: string; component_name?: string; is_personalizable?: boolean; is_active?: boolean; sort_order?: number }) => {
-      const { error } = await supabase.from("product_group_components").update(data).eq("id", id);
+      const { error } = await supabase/* DISABLED: product_group_components */ .from("profiles").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -236,7 +236,7 @@ export function GroupPersonalizationManager() {
 
   const deleteComponentMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("product_group_components").delete().eq("id", id);
+      const { error } = await supabase/* DISABLED: product_group_components */ .from("profiles").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -255,7 +255,7 @@ export function GroupPersonalizationManager() {
       max_height_cm?: number;
       max_area_cm2?: number;
     }) => {
-      const { error } = await supabase.from("product_group_locations").insert(data);
+      const { error } = await supabase/* DISABLED: product_group_locations */ .from("profiles").insert(data);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -269,7 +269,7 @@ export function GroupPersonalizationManager() {
 
   const updateLocationMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: string; location_code?: string; location_name?: string; max_width_cm?: number | null; max_height_cm?: number | null; max_area_cm2?: number | null; area_image_url?: string | null; is_active?: boolean }) => {
-      const { error } = await supabase.from("product_group_locations").update(data).eq("id", id);
+      const { error } = await supabase/* DISABLED: product_group_locations */ .from("profiles").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -281,7 +281,7 @@ export function GroupPersonalizationManager() {
 
   const deleteLocationMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("product_group_locations").delete().eq("id", id);
+      const { error } = await supabase/* DISABLED: product_group_locations */ .from("profiles").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -297,7 +297,7 @@ export function GroupPersonalizationManager() {
       technique_id: string;
       max_colors?: number;
     }) => {
-      const { error } = await supabase.from("product_group_location_techniques").insert(data);
+      const { error } = await supabase/* DISABLED: product_group_location_techniques */ .from("profiles").insert(data);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -312,7 +312,7 @@ export function GroupPersonalizationManager() {
 
   const updateTechniqueMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: string; is_default?: boolean; max_colors?: number | null; is_active?: boolean }) => {
-      const { error } = await supabase.from("product_group_location_techniques").update(data).eq("id", id);
+      const { error } = await supabase/* DISABLED: product_group_location_techniques */ .from("profiles").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -324,7 +324,7 @@ export function GroupPersonalizationManager() {
 
   const deleteTechniqueMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("product_group_location_techniques").delete().eq("id", id);
+      const { error } = await supabase/* DISABLED: product_group_location_techniques */ .from("profiles").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -385,7 +385,7 @@ export function GroupPersonalizationManager() {
     for (let i = 0; i < reordered.length; i++) {
       if (reordered[i].sort_order !== i) {
         await supabase
-          .from("product_group_components")
+          /* DISABLED: product_group_components */ .from("profiles")
           .update({ sort_order: i })
           .eq("id", reordered[i].id);
       }
