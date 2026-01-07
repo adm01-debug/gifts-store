@@ -1,27 +1,29 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from "@tanstack/react-query";
 
-export interface Category {
+// DESABILITADO: tabela 'categories' não existe no Supabase
+// Categorias vêm do campo products.category_name
+
+interface Category {
   id: string;
   name: string;
   slug: string;
-  icon?: string;
-  description?: string;
-  created_at?: string;
+  parent_id: string | null;
 }
 
 export function useCategories() {
-  return useQuery<Category[]>({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-
-      if (error) throw new Error(`Failed to fetch categories: ${error.message}`);
-      return data || [];
+  const query = useQuery({
+    queryKey: ["categories"],
+    queryFn: async (): Promise<Category[]> => {
+      // Retorna array vazio - categorias devem ser extraídas de products.category_name
+      console.warn("useCategories: tabela 'categories' não existe. Use products.category_name");
+      return [];
     },
-    staleTime: 30 * 60 * 1000, // 30 min (dados estáveis)
+    staleTime: Infinity,
   });
+
+  return {
+    categories: query.data || [],
+    isLoading: false,
+    error: null,
+  };
 }
