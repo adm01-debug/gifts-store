@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { PRODUCTS, CATEGORIES, SUPPLIERS, type Product, type Client } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { useFavoritesContext } from "@/contexts/FavoritesContext";
+import { FeaturedCollections } from "@/components/home/FeaturedCollections";
 import { useComparisonContext } from "@/contexts/ComparisonContext";
 
 type ViewMode = 'grid' | 'list';
@@ -392,6 +393,9 @@ export default function Index() {
         </div>
 
         {/* Client Filter Section */}
+        {/* Featured Collections from Supabase */}
+        <FeaturedCollections />
+
         {selectedClient && (
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-4">
