@@ -15,7 +15,6 @@ import {
   Building2
 } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { ProductGallery } from "@/components/products/ProductGallery";
 import { ProductVariations } from "@/components/products/ProductVariations";
 import { KitComposition } from "@/components/products/KitComposition";
 import { ShareActions } from "@/components/products/ShareActions";
@@ -152,7 +151,6 @@ export default function ProductDetail() {
         <div className="grid lg:grid-cols-2 gap-10">
           {/* Left column - Gallery */}
           <div className="space-y-6" style={{ animationDelay: '100ms' }}>
-            <ProductGallery
               images={displayImages}
               video={product.video}
               productName={product.name}
