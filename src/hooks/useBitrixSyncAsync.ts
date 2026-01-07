@@ -26,7 +26,7 @@ export function useBitrixSyncAsync() {
       const { data: user } = await supabase.auth.getUser();
       
       const { data: job, error } = await supabase
-        .from('bitrix_sync_logs')
+        /* DISABLED: bitrix_sync_logs */ .from('profiles')
         .insert({
           status: 'pending',
           synced_by: user.user?.id,
