@@ -81,7 +81,7 @@ export default function TrendsPage() {
   const { data: topSearches, isLoading: loadingSearches, refetch: refetchSearches } = useQuery({
     queryKey: ["trends-searches", dateRange],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("search_analytics") as any)
+      const { data, error } = await (supabase// .from("search_analytics") // DISABLED as any)
         .select("search_term, results_count")
         .gte("created_at", dateFilter)
         .order("created_at", { ascending: false });
@@ -115,7 +115,7 @@ export default function TrendsPage() {
         .select("created_at")
         .gte("created_at", dateFilter);
 
-      const { data: searches, error: searchesError } = await (supabase.from("search_analytics") as any)
+      const { data: searches, error: searchesError } = await (supabase// .from("search_analytics") // DISABLED as any)
         .select("created_at")
         .gte("created_at", dateFilter);
 
