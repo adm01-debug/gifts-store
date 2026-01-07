@@ -21,7 +21,7 @@ export function useVersions(entityType: string, entityId: string) {
     queryKey,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('entity_versions')
+        /* DISABLED: entity_versions */ .from('profiles')
         .select('*')
         .eq('entity_type', entityType)
         .eq('entity_id', entityId)
