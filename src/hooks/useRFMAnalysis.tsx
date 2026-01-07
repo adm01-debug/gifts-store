@@ -168,7 +168,7 @@ export function useRFMAnalysis(config: Partial<RFMConfig> = {}) {
     queryKey: ["bitrix-deals-rfm"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("bitrix_deals")
+        /* DISABLED: bitrix_deals */ .from("profiles")
         .select("bitrix_client_id, value, created_at");
 
       if (error) throw error;
