@@ -51,7 +51,7 @@ export function ImageUploadButton({
       const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
       const { data, error } = await supabase.storage
-        .from("personalization-images")
+        .from("personalization_simulations")
         .upload(fileName, file, {
           cacheControl: "3600",
           upsert: false,
@@ -61,7 +61,7 @@ export function ImageUploadButton({
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from("personalization-images")
+        .from("personalization_simulations")
         .getPublicUrl(data.path);
 
       onUpload(urlData.publicUrl);
@@ -85,7 +85,7 @@ export function ImageUploadButton({
       const urlParts = currentImageUrl.split("/personalization-images/");
       if (urlParts.length > 1) {
         const filePath = urlParts[1];
-        await supabase.storage.from("personalization-images").remove([filePath]);
+        await supabase.storage.from("personalization_simulations").remove([filePath]);
       }
       onRemove();
       toast.success("Imagem removida!");
