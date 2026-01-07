@@ -300,7 +300,7 @@ export function useQuotes() {
   ) => {
     if (!user) return;
     try {
-      await supabase.from("audit_log") // TEMP: quote_history -> audit_log.insert({
+      await supabase.from("quote_history") // TEMP: quote_history -> audit_log.insert({
         quote_id: quoteId,
         user_id: user.id,
         action,
