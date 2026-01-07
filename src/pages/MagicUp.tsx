@@ -215,7 +215,7 @@ export default function MagicUp() {
     try {
       // Criar job
       const { data: job, error: jobError } = await supabase
-        .from("mockup_generation_jobs")
+        .from("generated_mockups")
         .insert({
           user_id: user!.id,
           product_id: selectedProduct.id,
