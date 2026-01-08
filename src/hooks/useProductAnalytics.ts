@@ -43,13 +43,14 @@ export function useProductAnalytics() {
       if (!user?.id || !searchTerm.trim()) return;
 
       try {
-        // Using type assertion since table was just created
-        await (supabase// .from("search_analytics") // DISABLED: table does not exist as any).insert({
-          search_term: searchTerm.toLowerCase().trim(),
-          results_count: resultsCount,
-          seller_id: user.id,
-          filters_used: filtersUsed,
-        });
+        // DISABLED: table "search_analytics" does not exist yet
+        // await (supabase.from("search_analytics") as any).insert({
+        //   search_term: searchTerm.toLowerCase().trim(),
+        //   results_count: resultsCount,
+        //   seller_id: user.id,
+        //   filters_used: filtersUsed,
+        // });
+        console.warn("[Analytics] Tracking search disabled: table 'search_analytics' missing");
       } catch (error) {
         console.error("Error tracking search:", error);
       }

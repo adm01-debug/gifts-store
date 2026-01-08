@@ -1,4 +1,4 @@
--- ============================================================
+0-- ============================================================
 -- GIFTS STORE - MIGRATION 07 - ESTRUTURA COMPLETA PARA BRINDES
 -- Sistema Promobrind - Estrutura perfeita para catálogo
 -- Data: 03/01/2025
